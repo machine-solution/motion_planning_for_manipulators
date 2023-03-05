@@ -55,15 +55,16 @@ JointState randomState(size_t dof)
 }
 
 
-ManipulatorPlanner::ManipulatorPlanner(size_t dof)
+ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
 {
     _dof = dof;
+    _model = model;
+    _data = data;
     initPrimitiveSteps();
 }
-ManipulatorPlanner::ManipulatorPlanner(size_t dof, const JointState& startPos, const JointState& endPos)
+ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data,
+    const JointState& startPos, const JointState& endPos) : ManipulatorPlanner(dof, model, data)
 {
-    _dof = dof;
-    initPrimitiveSteps();
     planSteps(startPos, endPos);
 }
 
@@ -81,17 +82,14 @@ bool ManipulatorPlanner::goalAchieved()
     return _nextStepId >= _solveSteps.size();
 }
 
-void ManipulatorPlanner::initPrimitiveSteps()
+bool ManipulatorPlanner::checkCollision(const JointState& position)
 {
-    _zeroStep = JointState(_dof, 0.0);
-
-    _primitiveSteps.assign(2 * _dof, JointState(_dof, 0.0));
-
-    for (int i = 0; i < _dof; ++i)
+    for (size_t i = 0; i < _dof; ++i)
     {
-        _primitiveSteps[i][i] = _eps;
-        _primitiveSteps[i + _dof][i] = -_eps;
+        _data->qpos[i] = position[i];
     }
+    mj_step1(_model, _data);
+    return _data->ncon;
 }
 
 void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& endPos)
@@ -104,16 +102,35 @@ void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState&
     {
         while (fabs(currentPos[i] - endPos[i]) > _eps / 2)
         {
+            size_t t = -1;
             if (currentPos[i] < endPos[i]) // + eps
             {
-                _solveSteps.push_back(i);
-                currentPos += _primitiveSteps[i];
+                t = i;
             }
             else if (currentPos[i] > endPos[i]) // - eps
             {
-                _solveSteps.push_back(i + _dof);
-                currentPos += _primitiveSteps[i + _dof];
+                t = i + _dof;
             }
+
+            currentPos += _primitiveSteps[t];
+            if (checkCollision(currentPos))
+            {
+                return; // we temporary need to give up : TODO
+            }
+            _solveSteps.push_back(t);
         }
+    }
+}
+
+void ManipulatorPlanner::initPrimitiveSteps()
+{
+    _zeroStep = JointState(_dof, 0.0);
+
+    _primitiveSteps.assign(2 * _dof, JointState(_dof, 0.0));
+
+    for (int i = 0; i < _dof; ++i)
+    {
+        _primitiveSteps[i][i] = _eps;
+        _primitiveSteps[i + _dof][i] = -_eps;
     }
 }

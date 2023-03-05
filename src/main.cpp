@@ -141,6 +141,13 @@ int main(int argc, const char** argv)
     // make data
     d = mj_makeData(m);
 
+    // make copy for planner
+    // this is really crutch and it will be work only
+    // with static obstacles
+
+    mjModel* mCopy = mj_copyModel(NULL, m);
+    mjData* dCopy = mj_makeData(mCopy);
+
 
     // init GLFW
     if (!glfwInit())
@@ -185,11 +192,11 @@ int main(int argc, const char** argv)
     JointState goal = randomState(2);
     d->qpos[2] = goal[0];
     d->qpos[3] = goal[1];
-    ManipulatorPlanner planner(2, {d->qpos[0], d->qpos[1]}, goal);
+    ManipulatorPlanner planner(2, mCopy, dCopy, {d->qpos[0], d->qpos[1]}, goal);
     printf("Simulation is started!\n");
 
     // use the first while condition if you want to simulate for a period.
-    while( !glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(window))
     {
         // advance interactive simulation for 1/60 sec
         //  Assuming MuJoCo can simulate faster than real-time, which it usually can,

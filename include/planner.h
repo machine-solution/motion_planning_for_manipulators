@@ -6,6 +6,8 @@
 #include <initializer_list>
 #include <cmath>
 
+#include <mujoco/mujoco.h>
+
 using std::vector;
 
 class JointState
@@ -30,12 +32,15 @@ JointState randomState(size_t dof);
 class ManipulatorPlanner
 {
 public:
-    ManipulatorPlanner(size_t dof);
-    ManipulatorPlanner(size_t dof, const JointState& startPos, const JointState& endPos);
+    ManipulatorPlanner(size_t dof, mjModel* model, mjData* data);
+    ManipulatorPlanner(size_t dof, mjModel* model, mjData* data,
+        const JointState& startPos, const JointState& endPos);
 
     JointState& nextStep();
 
     bool goalAchieved();
+
+    bool checkCollision(const JointState& position);
 
     void planSteps(const JointState& startPos, const JointState& endPos);
 
@@ -47,6 +52,9 @@ private:
     vector<size_t> _solveSteps; // vector id-s of primitiveSteps  
     size_t _nextStepId;
     size_t _dof;
+
+    mjModel* _model; // model for collision checks
+    mjData* _data; // data for collision checks
 
     const double _eps = 1.0 / 1024.0;
 };
