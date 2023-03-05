@@ -2,3 +2,4 @@
 obj/
 manipulator
 *.o
+*.TXT
