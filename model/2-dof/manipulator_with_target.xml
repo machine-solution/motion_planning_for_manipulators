@@ -34,7 +34,16 @@
             </body>
         </body>
 
+        <body name="obstacle 0">
+            <geom name="geom obstacle 0" type="box" size="0.1 0.2 0.3" pos="0.5 0.3 0.0" material="blue"/>
+        </body>
+
     </worldbody>
+
+    <contact>
+        <pair geom1="geom edge 0" geom2="geom obstacle 0"/>
+        <pair geom1="geom edge 1" geom2="geom obstacle 0"/>
+    </contact>
 
     <sensor>
       <framepos objtype="site" objname="tip"/>
