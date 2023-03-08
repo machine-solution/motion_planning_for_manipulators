@@ -32,3 +32,15 @@ After this operation in the root of this repository you can find 'manipulator' f
 ```
 ./manipulator
 ```
+
+If you get into trouble with running some of this files, do this and try again:
+```
+chmod +x <execution_file>
+```
+
+# Run tests
+For run tests you just need to execute this file.
+```
+./run_tests
+```
+First run may be slow.

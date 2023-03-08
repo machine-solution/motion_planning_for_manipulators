@@ -1,20 +1,27 @@
-FLAGS = -O2 -I include # -mavx -pthread -Wl,-rpath,'$$ORIGIN'
+FLAGS = -I include # -mavx -pthread -Wl,-rpath,'$$ORIGIN'
 LIBS = -lmujoco -lglfw
 CXX = g++
 OBJ = obj
 SRC = src
 TARGET = manipulator
 
-.PHONY: all clean
+.PHONY: all clean testing simulator
 
-all: $(TARGET)
+all: $(TARGET) tests/tests
 
 clean:
 	rm -rf $(OBJ)
 	rm -f $(TARGET)
 
+testing: tests/tests
+
+simulator: $(TARGET)
+
 $(TARGET): $(OBJ)/planner.o $(OBJ)/main.o
 	$(CXX) $(OBJ)/planner.o $(OBJ)/main.o $(LIBS) -o $(TARGET)
+
+tests/tests: $(OBJ)/catch_amalgamated.o $(OBJ)/planner.o tests/main.cpp
+	$(CXX) $(FLAGS) $(OBJ)/catch_amalgamated.o $(OBJ)/planner.o tests/main.cpp $(LIBS) -o tests/tests
 
 # compile commands
 $(OBJ)/planner.o: $(SRC)/planner.cpp include/planner.h
@@ -24,3 +31,8 @@ $(OBJ)/planner.o: $(SRC)/planner.cpp include/planner.h
 $(OBJ)/main.o: $(SRC)/main.cpp include/planner.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/main.cpp $(LIBS) -c -o $(OBJ)/main.o
+
+# test "lib" catch2
+$(OBJ)/catch_amalgamated.o: tests/catch2/catch_amalgamated.cpp include/catch2/catch_amalgamated.hpp
+	mkdir -p $(OBJ)
+	$(CXX) $(FLAGS) tests/catch2/catch_amalgamated.cpp -c -o $(OBJ)/catch_amalgamated.o
