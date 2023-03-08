@@ -104,16 +104,18 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
 
 void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
 {
+    static JointState currentState;
     if (planner.goalAchieved())
     {
-        JointState goal = randomState(2);
-        d->qpos[2] = goal[0];
-        d->qpos[3] = goal[1];
-        planner.planSteps({d->qpos[0], d->qpos[1]}, goal);
+        JointState goal = randomState(2, planner.units);
+        d->qpos[2] = goal[0] * planner.eps;
+        d->qpos[3] = goal[1] * planner.eps;
+        planner.planSteps(currentState, goal);
     }
     JointState delta = planner.nextStep();
-    d->qpos[0] += delta[0];
-    d->qpos[1] += delta[1];
+    currentState += delta;
+    d->qpos[0] = currentState[0] * planner.eps;
+    d->qpos[1] = currentState[1] * planner.eps;
 }
 
 void step(mjModel* m, mjData* d, ManipulatorPlanner& planner) {
@@ -189,10 +191,7 @@ int main(int argc, const char** argv)
     srand(seed);
 
     // make planner
-    JointState goal = randomState(2);
-    d->qpos[2] = goal[0];
-    d->qpos[3] = goal[1];
-    ManipulatorPlanner planner(2, mCopy, dCopy, {d->qpos[0], d->qpos[1]}, goal);
+    ManipulatorPlanner planner(2, mCopy, dCopy);
     printf("Simulation is started!\n");
 
     // use the first while condition if you want to simulate for a period.
