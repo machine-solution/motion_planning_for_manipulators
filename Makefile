@@ -3,18 +3,18 @@ LIBS = -lmujoco -lglfw
 CXX = g++
 OBJ = obj
 SRC = src
-NAME = manipulator
+TARGET = manipulator
 
 .PHONY: all clean
 
-all: $(NAME)
+all: $(TARGET)
 
 clean:
 	rm -rf $(OBJ)
-	rm -f $(NAME)
+	rm -f $(TARGET)
 
-$(NAME): $(OBJ)/planner.o $(OBJ)/main.o
-	$(CXX) $(OBJ)/planner.o $(OBJ)/main.o $(LIBS) -o $(NAME)
+$(TARGET): $(OBJ)/planner.o $(OBJ)/main.o
+	$(CXX) $(OBJ)/planner.o $(OBJ)/main.o $(LIBS) -o $(TARGET)
 
 # compile commands
 $(OBJ)/planner.o: $(SRC)/planner.cpp include/planner.h

@@ -1,0 +1,4 @@
+cd tests && \
+make all && \
+cd .. && \
+./tests/tests
