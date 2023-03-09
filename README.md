@@ -25,7 +25,7 @@ For run on linux you can use 'run_linux' file. Execute this in the root of the r
 
 Or you can compile this using Makefile
 ```
-make
+make simulator
 ```
 
 After this operation in the root of this repository you can find 'manipulator' file. Run it.  

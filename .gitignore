@@ -1,5 +1,5 @@
 .vscode
 obj/
-manipulator
+simulator
 *.o
 *.TXT
