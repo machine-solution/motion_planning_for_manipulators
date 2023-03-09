@@ -108,14 +108,14 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
     if (planner.goalAchieved())
     {
         JointState goal = randomState(2, planner.units);
-        d->qpos[2] = goal[0] * planner.eps;
-        d->qpos[3] = goal[1] * planner.eps;
+        d->qpos[2] = goal.rad(0);
+        d->qpos[3] = goal.rad(1);
         planner.planSteps(currentState, goal);
     }
     JointState delta = planner.nextStep();
     currentState += delta;
-    d->qpos[0] = currentState[0] * planner.eps;
-    d->qpos[1] = currentState[1] * planner.eps;
+    d->qpos[0] = currentState.rad(0);
+    d->qpos[1] = currentState.rad(1);
 }
 
 void step(mjModel* m, mjData* d, ManipulatorPlanner& planner) {
@@ -182,10 +182,6 @@ int main(int argc, const char** argv)
     cam.lookat[0] = arr_view[3];
     cam.lookat[1] = arr_view[4];
     cam.lookat[2] = arr_view[5];
-
-    // m->opt.gravity[2] = -1.0;
-    // d->qpos[0] = 1;
-    // d->qpos[1] = -1;
 
     const int seed = 12345;
     srand(seed);

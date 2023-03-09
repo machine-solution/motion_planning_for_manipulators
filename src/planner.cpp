@@ -25,6 +25,15 @@ int& JointState::operator[](size_t i)
     // TODO
     return _joints[i];
 }
+JointState& JointState::operator=(const JointState& other)
+{
+    // TODO if (dof != other.dof)
+    for (size_t i = 0; i < _dof; ++i)
+    {
+        _joints[i] = other._joints[i];
+    }
+    return *this;
+}
 JointState& JointState::operator+=(const JointState& other)
 {
     // TODO if (dof != other.dof)
@@ -54,6 +63,11 @@ bool operator==(const JointState& state1, const JointState& state2)
 bool operator!=(const JointState& state1, const JointState& state2)
 {
     return !(state1 == state2);
+}
+
+double JointState::rad(size_t i)
+{
+    return eps * _joints[i];
 }
 
 JointState randomState(size_t dof, int units)
@@ -136,9 +150,9 @@ void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState&
 
 void ManipulatorPlanner::initPrimitiveSteps()
 {
-    _zeroStep = JointState(_dof, 0.0);
+    _zeroStep = JointState(_dof, 0);
 
-    _primitiveSteps.assign(2 * _dof, JointState(_dof, 0.0));
+    _primitiveSteps.assign(2 * _dof, JointState(_dof, 0));
 
     for (int i = 0; i < _dof; ++i)
     {

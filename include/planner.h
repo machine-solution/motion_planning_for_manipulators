@@ -10,6 +10,11 @@
 
 using std::vector;
 
+namespace {
+const int g_units = 2048; // the number of units from [0, pi]
+const double g_eps = (M_PI / g_units); // length of 1 unit
+}
+
 class JointState
 {
 public:
@@ -18,10 +23,17 @@ public:
     
     int operator[](size_t i) const;
     int& operator[](size_t i);
+    JointState& operator=(const JointState& other);
     JointState& operator+=(const JointState& other);
 
     friend bool operator==(const JointState& state1, const JointState& state2);
     friend bool operator!=(const JointState& state1, const JointState& state2);
+
+    // returns angle of i-th joint in radians (-pi, pi]
+    double rad(size_t i);
+
+    const int units = g_units;
+    const double eps = g_eps;
 
 private:
     vector<int> _joints;
@@ -43,8 +55,8 @@ public:
 
     void planSteps(const JointState& startPos, const JointState& endPos);
 
-    const int units = 2048; // the number of units from [0, pi]
-    const double eps = (M_PI / units); // length of 1 unit
+    const int units = g_units;
+    const double eps = g_eps;
 
 private:
     void initPrimitiveSteps();
