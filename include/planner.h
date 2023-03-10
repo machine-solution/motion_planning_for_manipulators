@@ -1,5 +1,4 @@
-#ifndef PLANNER_H
-#define PLANNER_H
+#pragma once
 
 #include <vector>
 #include <stddef.h>
@@ -72,5 +71,3 @@ private:
     mjModel* _model; // model for collision checks
     mjData* _data; // data for collision checks
 };
-
-#endif
