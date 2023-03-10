@@ -3,7 +3,26 @@
 
 #include "planner.h"
 
-TEST_CASE("2 + 2 = 4")
+TEST_CASE("JointState arithmetic")
 {
-    REQUIRE(2 + 2 == 4);
+    JointState a({1, 2});
+    JointState b({3, -4});
+    a += b;
+    REQUIRE(a == JointState({4, -2}));
+    b += JointState({1, 0});
+    REQUIRE(b == JointState({4, -4}));
+    REQUIRE(a != b);
+}
+
+TEST_CASE("Planner on empty plane")
+{
+    ManipulatorPlanner planner(2);
+    JointState a({1, 2});
+    JointState b({3, -4});
+    planner.planSteps(a, b);
+    while (!planner.goalAchieved())
+    {
+        a += planner.nextStep();
+    }
+    REQUIRE(a == b);
 }

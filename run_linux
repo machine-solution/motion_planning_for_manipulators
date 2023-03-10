@@ -1,2 +1,2 @@
-make simulator
-./manipulator
+make simulator && \
+./simulator

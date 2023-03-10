@@ -3,7 +3,7 @@ LIBS = -lmujoco -lglfw
 CXX = g++
 OBJ = obj
 SRC = src
-TARGET = manipulator
+TARGET = simulator
 
 .PHONY: all clean testing simulator
 
