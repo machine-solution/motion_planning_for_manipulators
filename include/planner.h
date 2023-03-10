@@ -53,13 +53,15 @@ public:
 
     bool checkCollision(const JointState& position);
 
-    void planSteps(const JointState& startPos, const JointState& endPos);
+    void planSteps(const JointState& startPos, const JointState& goalPos);
 
     const int units = g_units;
     const double eps = g_eps;
 
 private:
     void initPrimitiveSteps();
+
+    void linearPlanning(const JointState& startPos, const JointState& goalPos);
 
     vector<JointState> _primitiveSteps;
     JointState _zeroStep;

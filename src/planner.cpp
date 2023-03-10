@@ -118,34 +118,9 @@ bool ManipulatorPlanner::checkCollision(const JointState& position)
     return _data->ncon;
 }
 
-void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& endPos)
+void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos)
 {
-    _nextStepId = 0;
-    _solveSteps.clear();
-
-    JointState currentPos = startPos;
-    for (size_t i = 0; i < _dof; ++i)
-    {
-        while (currentPos[i] != endPos[i])
-        {
-            size_t t = -1;
-            if (currentPos[i] < endPos[i]) // + eps
-            {
-                t = i;
-            }
-            else if (currentPos[i] > endPos[i]) // - eps
-            {
-                t = i + _dof;
-            }
-
-            currentPos += _primitiveSteps[t];
-            if (checkCollision(currentPos))
-            {
-                return; // we temporary need to give up : TODO
-            }
-            _solveSteps.push_back(t);
-        }
-    }
+    linearPlanning(startPos, goalPos);
 }
 
 void ManipulatorPlanner::initPrimitiveSteps()
@@ -158,5 +133,35 @@ void ManipulatorPlanner::initPrimitiveSteps()
     {
         _primitiveSteps[i][i] = 1;
         _primitiveSteps[i + _dof][i] = -1;
+    }
+}
+
+void ManipulatorPlanner::linearPlanning(const JointState& startPos, const JointState& goalPos)
+{
+    _nextStepId = 0;
+    _solveSteps.clear();
+
+    JointState currentPos = startPos;
+    for (size_t i = 0; i < _dof; ++i)
+    {
+        while (currentPos[i] != goalPos[i])
+        {
+            size_t t = -1;
+            if (currentPos[i] < goalPos[i]) // + eps
+            {
+                t = i;
+            }
+            else if (currentPos[i] > goalPos[i]) // - eps
+            {
+                t = i + _dof;
+            }
+
+            currentPos += _primitiveSteps[t];
+            if (checkCollision(currentPos))
+            {
+                return; // we temporary need to give up : TODO
+            }
+            _solveSteps.push_back(t);
+        }
     }
 }
