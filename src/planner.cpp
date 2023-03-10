@@ -25,6 +25,13 @@ int& JointState::operator[](size_t i)
     // TODO
     return _joints[i];
 }
+
+JointState JointState::operator+(const JointState& other) const
+{
+    JointState result = *this;
+    return (result += other);
+}
+
 JointState& JointState::operator=(const JointState& other)
 {
     // TODO if (dof != other.dof)

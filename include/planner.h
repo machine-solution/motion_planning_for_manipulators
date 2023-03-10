@@ -22,6 +22,9 @@ public:
     
     int operator[](size_t i) const;
     int& operator[](size_t i);
+
+    JointState operator+(const JointState& other) const;
+
     JointState& operator=(const JointState& other);
     JointState& operator+=(const JointState& other);
 

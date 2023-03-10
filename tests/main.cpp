@@ -12,6 +12,9 @@ TEST_CASE("JointState arithmetic")
     b += JointState({1, 0});
     REQUIRE(b == JointState({4, -4}));
     REQUIRE(a != b);
+    REQUIRE(JointState{4, 0} + JointState{0, -4} == b);
+    b += a;
+    REQUIRE(JointState{4, -4} + a == b);
 }
 
 TEST_CASE("Planner on empty plane")
