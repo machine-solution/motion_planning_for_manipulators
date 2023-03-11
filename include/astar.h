@@ -5,6 +5,7 @@
 #include <set>
 
 using std::set;
+using std::multiset;
 
 namespace astar
 {
@@ -36,6 +37,11 @@ class CmpByState
 public:
     bool operator()(SearchNode* a, SearchNode* b) const;
 };
+class CmpByPriority
+{
+public:
+    bool operator()(SearchNode* a, SearchNode* b) const;
+};
 
 /*
 This is a container and data structure for A* algorithm.
@@ -56,7 +62,7 @@ public:
 private:
     bool wasExpanded(SearchNode* node) const;
     // sort by priority
-    set<SearchNode*> _open;
+    multiset<SearchNode*, CmpByPriority> _open;
     // sort by state
     set<SearchNode*, CmpByState> _closed;
 };

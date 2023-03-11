@@ -48,6 +48,10 @@ bool CmpByState::operator()(SearchNode* a, SearchNode* b) const
 {
     return a->state() < b->state();
 }
+bool CmpByPriority::operator()(SearchNode* a, SearchNode* b) const
+{
+    return *a < *b;
+}
 
 
 SearchTree::SearchTree() {}

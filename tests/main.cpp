@@ -4,6 +4,8 @@
 #include "planner.h"
 #include "astar.h"
 
+#include <cstdio>
+
 TEST_CASE("JointState arithmetic")
 {
     JointState a({1, 2});
@@ -47,17 +49,24 @@ TEST_CASE("Linear planner on empty plane")
     REQUIRE(a == b);
 }
 
-TEST_CASE("A* planner on empty plane")
+// test empty plane scenarioo
+void testPlanningFromTo(JointState a, JointState b, int alg)
 {
     ManipulatorPlanner planner(2);
-    JointState a({11, 20});
-    JointState b({30, -44});
-    planner.planSteps(a, b, ALG_ASTAR);
+    planner.planSteps(a, b, alg);
     while (!planner.goalAchieved())
     {
         a += planner.nextStep();
     }
     REQUIRE(a == b);
+}
+
+TEST_CASE("A* planner on empty plane")
+{
+    testPlanningFromTo({0, 0}, {0, 0}, ALG_ASTAR);
+    testPlanningFromTo({0, 0}, {1, 1}, ALG_ASTAR);
+    testPlanningFromTo({1, 2}, {3, -4}, ALG_ASTAR);
+    testPlanningFromTo({5, -3}, {-1, -3}, ALG_ASTAR);
 }
 
 TEST_CASE("A* Nodes has operators")
@@ -73,19 +82,21 @@ TEST_CASE("A* Nodes has operators")
 TEST_CASE("A* Search Tree")
 {
     astar::SearchTree tree;
-    astar::SearchNode* n1 = new astar::SearchNode(1, 0, JointState(1, 0)); // same state as 2
-    astar::SearchNode* n2 = new astar::SearchNode(2, 0, JointState(1, 0));
-    astar::SearchNode* n3 = new astar::SearchNode(1, 0, JointState(1, 1)); // same state as 4
-    astar::SearchNode* n4 = new astar::SearchNode(2, 0, JointState(1, 1));
+    astar::SearchNode* n1 = new astar::SearchNode(1, 0, JointState({1, 0})); // same state as 2
+    astar::SearchNode* n2 = new astar::SearchNode(2, 0, JointState({1, 0}));
+    astar::SearchNode* n3 = new astar::SearchNode(1, 0, JointState({1, 1})); // same state as 4
+    astar::SearchNode* n4 = new astar::SearchNode(2, 0, JointState({1, 1}));
     tree.addToOpen(n1);
     tree.addToOpen(n2);
     tree.addToOpen(n3);
     tree.addToOpen(n4);
     astar::SearchNode* best = tree.extractBestNode();
     REQUIRE(best != nullptr);
+    REQUIRE(best->f() == 1);
     tree.addToClosed(best);
     best = tree.extractBestNode();
     REQUIRE(best != nullptr);
+    REQUIRE(best->f() == 1);
     tree.addToClosed(best);
     best = tree.extractBestNode();
     REQUIRE(best == nullptr);

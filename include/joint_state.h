@@ -7,7 +7,7 @@
 
 using std::vector;
 
-const int g_units = 2048; // the number of units from [0, pi]
+const int g_units = 1024; // the number of units from [0, pi]
 const double g_eps = (M_PI / g_units); // length of 1 unit
 
 class JointState
@@ -35,6 +35,9 @@ public:
     double rad(size_t i) const;
 
     size_t dof() const;
+
+    int maxJoint() const;
+    int minJoint() const;
 
     const int units = g_units;
     const double eps = g_eps;

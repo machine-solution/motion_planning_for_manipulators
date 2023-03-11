@@ -1,5 +1,7 @@
 #include "joint_state.h"
 
+#include <algorithm>
+
 JointState::JointState(size_t dof, int value)
 {
     _dof = dof;
@@ -90,6 +92,15 @@ size_t JointState::dof() const
     return _dof;
 }
 
+int JointState::maxJoint() const
+{
+    return *std::max_element(_joints.begin(), _joints.end());
+}
+int JointState::minJoint() const
+{
+    return *std::min_element(_joints.begin(), _joints.end());
+}
+
 int manhattanDistance(const JointState& state1, const JointState& state2)
 {
     int dist = 0;
@@ -105,7 +116,7 @@ JointState randomState(size_t dof, int units)
     JointState state(dof);
     for (size_t i = 0; i < dof; ++i)
     {
-        state[i] = rand() % (units * 2) - M_PI - units + 1;
+        state[i] = rand() % (units * 2) - units + 1;
     }
     return state;
 }

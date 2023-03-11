@@ -39,6 +39,10 @@ bool ManipulatorPlanner::checkCollision(const JointState& position)
 
 void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg)
 {
+    if (checkCollision(goalPos))
+    {
+        return; // incorrect aim
+    }
     switch (alg)
     {
     case ALG_LINEAR:
@@ -109,18 +113,25 @@ vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
     vector<astar::SearchNode*> result;
     for (size_t i = 0; i < _primitiveSteps.size(); ++i)
     {
-        if (!checkCollision(node->state() + _primitiveSteps[i]))
+        JointState newState = node->state() + _primitiveSteps[i];
+        if (checkCollision(newState))
         {
-            result.push_back(
-                new astar::SearchNode(
-                    node->g() + costMove(node->state(), node->state() + _primitiveSteps[i]),
-                    heuristicFunc(node->state() + _primitiveSteps[i], goal),
-                    node->state() + _primitiveSteps[i],
-                    i,
-                    node
-                )
-            );
+            continue;
         }
+        if (newState.maxJoint() > newState.units || 
+            newState.minJoint() <= -newState.units)
+        {
+            continue;
+        }
+        result.push_back(
+            new astar::SearchNode(
+                node->g() + costMove(node->state(), newState),
+                heuristicFunc(newState, goal),
+                newState,
+                i,
+                node
+            )
+        );
     }
     return result;
 }
@@ -130,9 +141,13 @@ void ManipulatorPlanner::astarPlanning(
     int (*heuristicFunc)(const JointState& state1, const JointState& state2)
 )
 {
+    // reset solve
+    _nextStepId = 0;
+    _solveSteps.clear();
+
     // init search tree
     astar::SearchTree tree;
-    astar::SearchNode* startNode = new astar::SearchNode(0, 0, startPos);
+    astar::SearchNode* startNode = new astar::SearchNode(0, heuristicFunc(startPos, goalPos), startPos);
     tree.addToOpen(startNode);
     astar::SearchNode* currentNode = tree.extractBestNode();
 
@@ -163,7 +178,6 @@ void ManipulatorPlanner::astarPlanning(
         }
 
         // push steps
-        _nextStepId = 0;
         for (int i = steps.size() - 1; i >= 0; --i)
         {
             _solveSteps.push_back(steps[i]);
@@ -171,6 +185,6 @@ void ManipulatorPlanner::astarPlanning(
     }
     else
     {
-        _nextStepId = 0; // give up
+        return; // give up
     }
 }

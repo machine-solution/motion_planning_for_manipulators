@@ -32,7 +32,7 @@ $(OBJ)/joint_state.o: $(SRC)/joint_state.cpp include/joint_state.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/joint_state.cpp $(LIBS) -c -o $(OBJ)/joint_state.o
 
-$(OBJ)/planner.o: $(SRC)/planner.cpp include/planner.h
+$(OBJ)/planner.o: $(SRC)/planner.cpp include/planner.h include/joint_state.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/planner.cpp $(LIBS) -c -o $(OBJ)/planner.o
 
