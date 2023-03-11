@@ -1,93 +1,5 @@
 #include "planner.h"
 
-#include <cmath>
-
-#include <cstdio>
-
-JointState::JointState(size_t dof, int value)
-{
-    _dof = dof;
-    _joints.assign(_dof, value);
-}
-JointState::JointState(std::initializer_list<int> list)
-{
-    _joints.assign(list);
-    _dof = _joints.size();
-}
-
-int JointState::operator[](size_t i) const
-{
-    // TODO 
-    return _joints[i];
-}
-int& JointState::operator[](size_t i)
-{
-    // TODO
-    return _joints[i];
-}
-
-JointState JointState::operator+(const JointState& other) const
-{
-    JointState result = *this;
-    return (result += other);
-}
-
-JointState& JointState::operator=(const JointState& other)
-{
-    // TODO if (dof != other.dof)
-    for (size_t i = 0; i < _dof; ++i)
-    {
-        _joints[i] = other._joints[i];
-    }
-    return *this;
-}
-JointState& JointState::operator+=(const JointState& other)
-{
-    // TODO if (dof != other.dof)
-    for (size_t i = 0; i < _dof; ++i)
-    {
-        _joints[i] += other._joints[i];
-    }
-    return *this;
-}
-
-bool operator==(const JointState& state1, const JointState& state2)
-{
-    if (state1._dof != state2._dof)
-    {
-        return false;
-    }
-    for (size_t i = 0; i < state1._dof; ++i)
-    {
-        if (state1._joints[i] != state2._joints[i])
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-bool operator!=(const JointState& state1, const JointState& state2)
-{
-    return !(state1 == state2);
-}
-
-double JointState::rad(size_t i)
-{
-    return eps * _joints[i];
-}
-
-JointState randomState(size_t dof, int units)
-{
-    JointState state(dof);
-    for (size_t i = 0; i < dof; ++i)
-    {
-        state[i] = rand() % (units * 2) - M_PI - units + 1;
-    }
-    return state;
-}
-
-
 ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
 {
     _dof = dof;
@@ -112,7 +24,7 @@ bool ManipulatorPlanner::goalAchieved()
 
 bool ManipulatorPlanner::checkCollision(const JointState& position)
 {
-    if (_model == NULL || _data == NULL) // if we have not data for check
+    if (_model == nullptr || _data == nullptr) // if we have not data for check
     {
         return false;
     }
@@ -125,9 +37,20 @@ bool ManipulatorPlanner::checkCollision(const JointState& position)
     return _data->ncon;
 }
 
-void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos)
+void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg)
 {
-    linearPlanning(startPos, goalPos);
+    switch (alg)
+    {
+    case ALG_LINEAR:
+        linearPlanning(startPos, goalPos);
+        break;
+    case ALG_ASTAR:
+        astarPlanning(startPos, goalPos, manhattanDistance);
+        break;
+    default:
+        // TODO exception
+        break;
+    }
 }
 
 void ManipulatorPlanner::initPrimitiveSteps()
@@ -170,5 +93,84 @@ void ManipulatorPlanner::linearPlanning(const JointState& startPos, const JointS
             }
             _solveSteps.push_back(t);
         }
+    }
+}
+
+int ManipulatorPlanner::costMove(const JointState& state1, const JointState& state2)
+{
+    return manhattanDistance(state1, state2);
+}
+vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
+    astar::SearchNode* node,
+    const JointState& goal,
+    int (*heuristicFunc)(const JointState& state1, const JointState& state2)
+)
+{
+    vector<astar::SearchNode*> result;
+    for (size_t i = 0; i < _primitiveSteps.size(); ++i)
+    {
+        if (!checkCollision(node->state() + _primitiveSteps[i]))
+        {
+            result.push_back(
+                new astar::SearchNode(
+                    node->g() + costMove(node->state(), node->state() + _primitiveSteps[i]),
+                    heuristicFunc(node->state() + _primitiveSteps[i], goal),
+                    node->state() + _primitiveSteps[i],
+                    i,
+                    node
+                )
+            );
+        }
+    }
+    return result;
+}
+
+void ManipulatorPlanner::astarPlanning(
+    const JointState& startPos, const JointState& goalPos,
+    int (*heuristicFunc)(const JointState& state1, const JointState& state2)
+)
+{
+    // init search tree
+    astar::SearchTree tree;
+    astar::SearchNode* startNode = new astar::SearchNode(0, 0, startPos);
+    tree.addToOpen(startNode);
+    astar::SearchNode* currentNode = tree.extractBestNode();
+
+    while (currentNode != nullptr)
+    {
+        if (currentNode->state() == goalPos)
+        {
+            break;
+        }
+        // expand current node
+        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, goalPos, heuristicFunc);
+        for (auto successor : successors)
+        {
+            tree.addToOpen(successor);
+        }
+        // retake node from tree
+        tree.addToClosed(currentNode);
+        currentNode = tree.extractBestNode();
+    }
+
+    if (currentNode != nullptr)
+    {
+        vector<size_t> steps;
+        while (currentNode->parent() != nullptr)
+        {
+            steps.push_back(currentNode->stepNum());
+            currentNode = currentNode->parent();
+        }
+
+        // push steps
+        _nextStepId = 0;
+        for (int i = steps.size() - 1; i >= 0; --i)
+        {
+            _solveSteps.push_back(steps[i]);
+        }
+    }
+    else
+    {
+        _nextStepId = 0; // give up
     }
 }
