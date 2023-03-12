@@ -31,7 +31,7 @@ bool ManipulatorPlanner::checkCollision(const JointState& position)
 
     for (size_t i = 0; i < _dof; ++i)
     {
-        _data->qpos[i] = position[i] * eps;
+        _data->qpos[i] = position.rad(i);
     }
     mj_step1(_model, _data);
     return _data->ncon;
@@ -118,8 +118,8 @@ vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
         {
             continue;
         }
-        if (newState.maxJoint() > newState.units || 
-            newState.minJoint() <= -newState.units)
+        if (newState.maxJoint() >= newState.units ||
+            newState.minJoint() < -newState.units)
         {
             continue;
         }

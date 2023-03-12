@@ -31,7 +31,7 @@ public:
     friend bool operator==(const JointState& state1, const JointState& state2);
     friend bool operator!=(const JointState& state1, const JointState& state2);
 
-    // returns angle of i-th joint in radians (-pi, pi]
+    // returns angle of i-th joint in radians [-pi, pi)
     double rad(size_t i) const;
 
     size_t dof() const;
@@ -43,6 +43,8 @@ public:
     const double eps = g_eps;
 
 private:
+    void normalize();
+
     vector<int> _joints;
     size_t _dof;
 };

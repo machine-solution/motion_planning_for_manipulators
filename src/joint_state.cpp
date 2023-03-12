@@ -2,15 +2,35 @@
 
 #include <algorithm>
 
+// return n % (2 * mod) in [-mod, mod)
+int trueMod(int n, int mod)
+{
+    n = n % (2 * mod);
+    if (n < -mod)
+    {
+        return n + 2 * mod;
+    }
+    else if (n >= mod)
+    {
+        return n - 2 * mod;
+    }
+    else
+    {
+        return n;
+    }
+}
+
 JointState::JointState(size_t dof, int value)
 {
     _dof = dof;
     _joints.assign(_dof, value);
+    normalize();
 }
 JointState::JointState(std::initializer_list<int> list)
 {
     _joints.assign(list);
     _dof = _joints.size();
+    normalize();
 }
 
 int JointState::operator[](size_t i) const
@@ -37,6 +57,7 @@ JointState& JointState::operator=(const JointState& other)
     {
         _joints[i] = other._joints[i];
     }
+    normalize();
     return *this;
 }
 JointState& JointState::operator+=(const JointState& other)
@@ -46,6 +67,7 @@ JointState& JointState::operator+=(const JointState& other)
     {
         _joints[i] += other._joints[i];
     }
+    normalize();
     return *this;
 }
 
@@ -106,9 +128,21 @@ int manhattanDistance(const JointState& state1, const JointState& state2)
     int dist = 0;
     for (size_t i = 0; i < state1.dof(); ++i)
     {
-        dist += abs(state1[i] - state2[i]);
+        if (i == 0)
+        {
+            dist += std::min(abs(state1[i] - state2[i]), 2 * state1.units - abs(state1[i] - state2[i]));
+        }
+        else
+        {
+            dist += abs(state1[i] - state2[i]);
+        }
     }
     return dist;
+}
+
+void JointState::normalize()
+{
+    _joints[0] = trueMod(_joints[0], units);
 }
 
 JointState randomState(size_t dof, int units)
@@ -116,7 +150,7 @@ JointState randomState(size_t dof, int units)
     JointState state(dof);
     for (size_t i = 0; i < dof; ++i)
     {
-        state[i] = rand() % (units * 2) - units + 1;
+        state[i] = rand() % (units * 2) - units;
     }
     return state;
 }
