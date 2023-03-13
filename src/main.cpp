@@ -104,18 +104,44 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
 
 void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
 {
+    static int counter = 0;
+    static int slowDown = 0;
+    static bool haveToPlan = false;
     static JointState currentState;
-    if (planner.goalAchieved())
+    static JointState goal;
+    if (planner.goalAchieved() && !haveToPlan)
     {
-        JointState goal = randomState(2, planner.units);
+        printf("robot = (%f, %f) target = (%f, %f)\n",
+        d->qpos[0], d->qpos[1],
+        d->qpos[2], d->qpos[3]);
+        
+        goal = randomState(2, goal.units);
         d->qpos[2] = goal.rad(0);
         d->qpos[3] = goal.rad(1);
-        planner.planSteps(currentState, goal);
+        haveToPlan = true;
     }
-    JointState delta = planner.nextStep();
-    currentState += delta;
-    d->qpos[0] = currentState.rad(0);
-    d->qpos[1] = currentState.rad(1);
+    else if (haveToPlan)
+    {
+        ++counter;
+        if (counter > 8) // to first of all simulator can show picture
+        {
+            counter = 0;
+            planner.planSteps(currentState, goal, ALG_ASTAR);
+            haveToPlan = false;
+        }
+    }
+    if (slowDown++ >= 1) // this slows down simulation in several times (TODO remove)
+    {
+        printf("robot = (%f, %f) target = (%f, %f)\n",
+        d->qpos[0], d->qpos[1],
+        d->qpos[2], d->qpos[3]);
+
+        JointState delta = planner.nextStep();
+        currentState += delta;
+        d->qpos[0] = currentState.rad(0);
+        d->qpos[1] = currentState.rad(1);
+        slowDown = 0;
+    }
 }
 
 void step(mjModel* m, mjData* d, ManipulatorPlanner& planner) {
@@ -203,8 +229,6 @@ int main(int argc, const char** argv)
         {
             step(m, d, planner);
         }
-
-        printf("robot = (%f, %f) target = (%f, %f)\n", d->qpos[0], d->qpos[1], d->qpos[2], d->qpos[3]);
 
         // end go to target
 

@@ -1,86 +1,5 @@
 #include "planner.h"
 
-#include <cmath>
-
-#include <cstdio>
-
-JointState::JointState(size_t dof, int value)
-{
-    _dof = dof;
-    _joints.assign(_dof, value);
-}
-JointState::JointState(std::initializer_list<int> list)
-{
-    _joints.assign(list);
-    _dof = _joints.size();
-}
-
-int JointState::operator[](size_t i) const
-{
-    // TODO 
-    return _joints[i];
-}
-int& JointState::operator[](size_t i)
-{
-    // TODO
-    return _joints[i];
-}
-JointState& JointState::operator=(const JointState& other)
-{
-    // TODO if (dof != other.dof)
-    for (size_t i = 0; i < _dof; ++i)
-    {
-        _joints[i] = other._joints[i];
-    }
-    return *this;
-}
-JointState& JointState::operator+=(const JointState& other)
-{
-    // TODO if (dof != other.dof)
-    for (size_t i = 0; i < _dof; ++i)
-    {
-        _joints[i] += other._joints[i];
-    }
-    return *this;
-}
-
-bool operator==(const JointState& state1, const JointState& state2)
-{
-    if (state1._dof != state2._dof)
-    {
-        return false;
-    }
-    for (size_t i = 0; i < state1._dof; ++i)
-    {
-        if (state1._joints[i] != state2._joints[i])
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-bool operator!=(const JointState& state1, const JointState& state2)
-{
-    return !(state1 == state2);
-}
-
-double JointState::rad(size_t i)
-{
-    return eps * _joints[i];
-}
-
-JointState randomState(size_t dof, int units)
-{
-    JointState state(dof);
-    for (size_t i = 0; i < dof; ++i)
-    {
-        state[i] = rand() % (units * 2) - M_PI - units + 1;
-    }
-    return state;
-}
-
-
 ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
 {
     _dof = dof;
@@ -105,20 +24,53 @@ bool ManipulatorPlanner::goalAchieved()
 
 bool ManipulatorPlanner::checkCollision(const JointState& position)
 {
-    if (_model == NULL || _data == NULL) // if we have not data for check
+    if (_model == nullptr || _data == nullptr) // if we have not data for check
     {
         return false;
     }
 
     for (size_t i = 0; i < _dof; ++i)
     {
-        _data->qpos[i] = position[i] * eps;
+        _data->qpos[i] = position.rad(i);
     }
     mj_step1(_model, _data);
     return _data->ncon;
 }
 
-void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& endPos)
+void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg)
+{
+    if (checkCollision(goalPos))
+    {
+        return; // incorrect aim
+    }
+    switch (alg)
+    {
+    case ALG_LINEAR:
+        linearPlanning(startPos, goalPos);
+        break;
+    case ALG_ASTAR:
+        astarPlanning(startPos, goalPos, manhattanDistance);
+        break;
+    default:
+        // TODO exception
+        break;
+    }
+}
+
+void ManipulatorPlanner::initPrimitiveSteps()
+{
+    _zeroStep = JointState(_dof, 0);
+
+    _primitiveSteps.assign(2 * _dof, JointState(_dof, 0));
+
+    for (int i = 0; i < _dof; ++i)
+    {
+        _primitiveSteps[i][i] = 1;
+        _primitiveSteps[i + _dof][i] = -1;
+    }
+}
+
+void ManipulatorPlanner::linearPlanning(const JointState& startPos, const JointState& goalPos)
 {
     _nextStepId = 0;
     _solveSteps.clear();
@@ -126,14 +78,14 @@ void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState&
     JointState currentPos = startPos;
     for (size_t i = 0; i < _dof; ++i)
     {
-        while (currentPos[i] != endPos[i])
+        while (currentPos[i] != goalPos[i])
         {
             size_t t = -1;
-            if (currentPos[i] < endPos[i]) // + eps
+            if (currentPos[i] < goalPos[i]) // + eps
             {
                 t = i;
             }
-            else if (currentPos[i] > endPos[i]) // - eps
+            else if (currentPos[i] > goalPos[i]) // - eps
             {
                 t = i + _dof;
             }
@@ -148,15 +100,91 @@ void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState&
     }
 }
 
-void ManipulatorPlanner::initPrimitiveSteps()
+int ManipulatorPlanner::costMove(const JointState& state1, const JointState& state2)
 {
-    _zeroStep = JointState(_dof, 0);
-
-    _primitiveSteps.assign(2 * _dof, JointState(_dof, 0));
-
-    for (int i = 0; i < _dof; ++i)
+    return manhattanDistance(state1, state2);
+}
+vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
+    astar::SearchNode* node,
+    const JointState& goal,
+    int (*heuristicFunc)(const JointState& state1, const JointState& state2)
+)
+{
+    vector<astar::SearchNode*> result;
+    for (size_t i = 0; i < _primitiveSteps.size(); ++i)
     {
-        _primitiveSteps[i][i] = 1;
-        _primitiveSteps[i + _dof][i] = -1;
+        JointState newState = node->state() + _primitiveSteps[i];
+        if (checkCollision(newState))
+        {
+            continue;
+        }
+        if (newState.maxJoint() >= newState.units ||
+            newState.minJoint() < -newState.units)
+        {
+            continue;
+        }
+        result.push_back(
+            new astar::SearchNode(
+                node->g() + costMove(node->state(), newState),
+                heuristicFunc(newState, goal),
+                newState,
+                i,
+                node
+            )
+        );
+    }
+    return result;
+}
+
+void ManipulatorPlanner::astarPlanning(
+    const JointState& startPos, const JointState& goalPos,
+    int (*heuristicFunc)(const JointState& state1, const JointState& state2)
+)
+{
+    // reset solve
+    _nextStepId = 0;
+    _solveSteps.clear();
+
+    // init search tree
+    astar::SearchTree tree;
+    astar::SearchNode* startNode = new astar::SearchNode(0, heuristicFunc(startPos, goalPos), startPos);
+    tree.addToOpen(startNode);
+    astar::SearchNode* currentNode = tree.extractBestNode();
+
+    while (currentNode != nullptr)
+    {
+        if (currentNode->state() == goalPos)
+        {
+            break;
+        }
+        // expand current node
+        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, goalPos, heuristicFunc);
+        for (auto successor : successors)
+        {
+            tree.addToOpen(successor);
+        }
+        // retake node from tree
+        tree.addToClosed(currentNode);
+        currentNode = tree.extractBestNode();
+    }
+
+    if (currentNode != nullptr)
+    {
+        vector<size_t> steps;
+        while (currentNode->parent() != nullptr)
+        {
+            steps.push_back(currentNode->stepNum());
+            currentNode = currentNode->parent();
+        }
+
+        // push steps
+        for (int i = steps.size() - 1; i >= 0; --i)
+        {
+            _solveSteps.push_back(steps[i]);
+        }
+    }
+    else
+    {
+        return; // give up
     }
 }
