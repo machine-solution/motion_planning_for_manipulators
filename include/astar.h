@@ -59,6 +59,8 @@ public:
     // returns best node and remove it from open
     SearchNode* extractBestNode();
 
+    size_t size() const;
+
 private:
     bool wasExpanded(SearchNode* node) const;
     // sort by priority

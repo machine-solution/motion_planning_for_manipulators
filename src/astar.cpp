@@ -100,6 +100,11 @@ SearchNode* SearchTree::extractBestNode()
     return nullptr;
 }
 
+size_t SearchTree::size() const
+{
+    return _open.size() + _closed.size();
+}
+
 bool SearchTree::wasExpanded(SearchNode* node) const
 {
     return _closed.count(node);

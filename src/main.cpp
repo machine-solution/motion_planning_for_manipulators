@@ -5,9 +5,11 @@
 
 #include <mujoco/mujoco.h>
 #include <GLFW/glfw3.h>
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fstream>
 
 // path from bin/
 char filename[] = "model/2-dof/manipulator_with_target.xml";
@@ -111,10 +113,6 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
     static JointState goal;
     if (planner.goalAchieved() && !haveToPlan)
     {
-        printf("robot = (%f, %f) target = (%f, %f)\n",
-        d->qpos[0], d->qpos[1],
-        d->qpos[2], d->qpos[3]);
-        
         goal = randomState(2, goal.units);
         d->qpos[2] = goal.rad(0);
         d->qpos[3] = goal.rad(1);
@@ -128,13 +126,17 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
             counter = 0;
             planner.planSteps(currentState, goal, ALG_ASTAR);
             haveToPlan = false;
+
+            printf("expansions: %zu\nmax tree size: %zu\nruntime: %.3fs\ncost of path: %d\n\n",
+            planner.stats().expansions,
+            planner.stats().maxTreeSize,
+            planner.stats().runtime,
+            planner.stats().pathCost
+            );
         }
     }
     if (slowDown++ >= 1) // this slows down simulation in several times (TODO remove)
     {
-        printf("robot = (%f, %f) target = (%f, %f)\n",
-        d->qpos[0], d->qpos[1],
-        d->qpos[2], d->qpos[3]);
 
         JointState delta = planner.nextStep();
         currentState += delta;
@@ -219,7 +221,7 @@ int main(int argc, const char** argv)
     // use the first while condition if you want to simulate for a period.
     while (!glfwWindowShouldClose(window))
     {
-        // advance interactive simulation for 1/60 sec
+        //  advance interactive simulation for 1/60 sec
         //  Assuming MuJoCo can simulate faster than real-time, which it usually can,
         //  this loop will finish on time for the next frame to be rendered at 60 fps.
         //  Otherwise add a cpu timer and exit this loop when it is time to render.

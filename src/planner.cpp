@@ -1,5 +1,7 @@
 #include "planner.h"
 
+#include <time.h> 
+
 ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
 {
     _dof = dof;
@@ -55,6 +57,11 @@ void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState&
         // TODO exception
         break;
     }
+}
+
+Stats ManipulatorPlanner::stats() const
+{
+    return _stats;
 }
 
 void ManipulatorPlanner::initPrimitiveSteps()
@@ -141,9 +148,13 @@ void ManipulatorPlanner::astarPlanning(
     int (*heuristicFunc)(const JointState& state1, const JointState& state2)
 )
 {
+    Stats stats;
     // reset solve
     _nextStepId = 0;
     _solveSteps.clear();
+
+    // start timer
+    clock_t start = clock();
 
     // init search tree
     astar::SearchTree tree;
@@ -157,6 +168,9 @@ void ManipulatorPlanner::astarPlanning(
         {
             break;
         }
+        // count statistic
+        stats.maxTreeSize = std::max(stats.maxTreeSize, tree.size());
+        ++stats.expansions;
         // expand current node
         vector<astar::SearchNode*> successors = generateSuccessors(currentNode, goalPos, heuristicFunc);
         for (auto successor : successors)
@@ -168,11 +182,18 @@ void ManipulatorPlanner::astarPlanning(
         currentNode = tree.extractBestNode();
     }
 
+    // end timer
+    clock_t end = clock();
+    stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+
     if (currentNode != nullptr)
     {
         vector<size_t> steps;
         while (currentNode->parent() != nullptr)
         {
+            // count stats
+            stats.pathCost += costMove(currentNode->state(), currentNode->parent()->state());
+            //
             steps.push_back(currentNode->stepNum());
             currentNode = currentNode->parent();
         }
@@ -183,8 +204,6 @@ void ManipulatorPlanner::astarPlanning(
             _solveSteps.push_back(steps[i]);
         }
     }
-    else
-    {
-        return; // give up
-    }
+    // reset stats
+    _stats = stats;
 }

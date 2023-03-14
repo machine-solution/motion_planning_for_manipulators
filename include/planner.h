@@ -11,6 +11,14 @@ enum Algorithm
     ALG_MAX
 };
 
+struct Stats
+{
+    size_t expansions = 0;
+    double runtime = 0.0;
+    int pathCost = 0;
+    size_t maxTreeSize = 0;
+};
+
 class ManipulatorPlanner
 {
 public:
@@ -23,6 +31,8 @@ public:
     bool checkCollision(const JointState& position);
 
     void planSteps(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1);
+
+    Stats stats() const;
 
     const int units = g_units;
     const double eps = g_eps;
@@ -53,4 +63,6 @@ private:
 
     mjModel* _model; // model for collision checks
     mjData* _data; // data for collision checks
+
+    Stats _stats;
 };

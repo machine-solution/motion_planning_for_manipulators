@@ -90,6 +90,7 @@ TEST_CASE("A* Search Tree")
     tree.addToOpen(n2);
     tree.addToOpen(n3);
     tree.addToOpen(n4);
+    REQUIRE(tree.size() == 4);
     astar::SearchNode* best = tree.extractBestNode();
     REQUIRE(best != nullptr);
     REQUIRE(best->f() == 1);
