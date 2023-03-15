@@ -77,12 +77,13 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
             currentPos += _primitiveSteps[t];
             if (checkCollision(currentPos))
             {
-                return Solution(_primitiveSteps, _zeroStep); // we temporary need to give up : TODO
+                return solution; // we temporary need to give up : TODO
             }
             solution.addStep(t);
         }
     }
 
+    solution.stats.pathFound = true;
     return solution;
 }
 
@@ -164,6 +165,7 @@ Solution ManipulatorPlanner::astarPlanning(
 
     if (currentNode != nullptr)
     {
+        solution.stats.pathFound = true;
         vector<size_t> steps;
         while (currentNode->parent() != nullptr)
         {

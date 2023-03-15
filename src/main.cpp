@@ -129,7 +129,10 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
             solution = planner.planSteps(currentState, goal, ALG_ASTAR);
             haveToPlan = false;
 
-            printf("expansions: %zu\nmax tree size: %zu\nruntime: %.3fs\ncost of path: %d\n\n",
+            std::string yn[] = {"NO", "YES"};
+
+            printf("path found: %s\nexpansions: %zu\nmax tree size: %zu\nruntime: %.3fs\ncost of path: %d\n\n",
+            yn[solution.stats.pathFound].c_str(),
             solution.stats.expansions,
             solution.stats.maxTreeSize,
             solution.stats.runtime,
