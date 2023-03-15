@@ -109,9 +109,11 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
     static int counter = 0;
     static int slowDown = 0;
     static bool haveToPlan = false;
+
+    static Solution solution;
     static JointState currentState;
     static JointState goal;
-    if (planner.goalAchieved() && !haveToPlan)
+    if (solution.goalAchieved() && !haveToPlan)
     {
         goal = randomState(2, goal.units);
         d->qpos[2] = goal.rad(0);
@@ -124,21 +126,20 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
         if (counter > 8) // to first of all simulator can show picture
         {
             counter = 0;
-            planner.planSteps(currentState, goal, ALG_ASTAR);
+            solution = planner.planSteps(currentState, goal, ALG_ASTAR);
             haveToPlan = false;
 
             printf("expansions: %zu\nmax tree size: %zu\nruntime: %.3fs\ncost of path: %d\n\n",
-            planner.stats().expansions,
-            planner.stats().maxTreeSize,
-            planner.stats().runtime,
-            planner.stats().pathCost
+            solution.stats.expansions,
+            solution.stats.maxTreeSize,
+            solution.stats.runtime,
+            solution.stats.pathCost
             );
         }
     }
     if (slowDown++ >= 1) // this slows down simulation in several times (TODO remove)
     {
-
-        JointState delta = planner.nextStep();
+        JointState delta = solution.nextStep();
         currentState += delta;
         d->qpos[0] = currentState.rad(0);
         d->qpos[1] = currentState.rad(1);

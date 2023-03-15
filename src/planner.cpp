@@ -10,20 +10,6 @@ ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
     initPrimitiveSteps();
 }
 
-JointState& ManipulatorPlanner::nextStep()
-{
-    if (_nextStepId >= _solveSteps.size())
-    {
-        return _zeroStep;
-    }
-    return _primitiveSteps[_solveSteps[_nextStepId++]];
-}
-
-bool ManipulatorPlanner::goalAchieved()
-{
-    return _nextStepId >= _solveSteps.size();
-}
-
 bool ManipulatorPlanner::checkCollision(const JointState& position)
 {
     if (_model == nullptr || _data == nullptr) // if we have not data for check
@@ -39,29 +25,21 @@ bool ManipulatorPlanner::checkCollision(const JointState& position)
     return _data->ncon;
 }
 
-void ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg)
+Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg)
 {
     if (checkCollision(goalPos))
     {
-        return; // incorrect aim
+        return Solution(_primitiveSteps, _zeroStep); // incorrect aim
     }
     switch (alg)
     {
     case ALG_LINEAR:
-        linearPlanning(startPos, goalPos);
-        break;
+        return linearPlanning(startPos, goalPos);
     case ALG_ASTAR:
-        astarPlanning(startPos, goalPos, manhattanDistance);
-        break;
+        return astarPlanning(startPos, goalPos, manhattanDistance);
     default:
-        // TODO exception
-        break;
+        return Solution(_primitiveSteps, _zeroStep);
     }
-}
-
-Stats ManipulatorPlanner::stats() const
-{
-    return _stats;
 }
 
 void ManipulatorPlanner::initPrimitiveSteps()
@@ -77,10 +55,9 @@ void ManipulatorPlanner::initPrimitiveSteps()
     }
 }
 
-void ManipulatorPlanner::linearPlanning(const JointState& startPos, const JointState& goalPos)
+Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const JointState& goalPos)
 {
-    _nextStepId = 0;
-    _solveSteps.clear();
+    Solution solution(_primitiveSteps, _zeroStep);
 
     JointState currentPos = startPos;
     for (size_t i = 0; i < _dof; ++i)
@@ -100,11 +77,13 @@ void ManipulatorPlanner::linearPlanning(const JointState& startPos, const JointS
             currentPos += _primitiveSteps[t];
             if (checkCollision(currentPos))
             {
-                return; // we temporary need to give up : TODO
+                return Solution(_primitiveSteps, _zeroStep); // we temporary need to give up : TODO
             }
-            _solveSteps.push_back(t);
+            solution.addStep(t);
         }
     }
+
+    return solution;
 }
 
 int ManipulatorPlanner::costMove(const JointState& state1, const JointState& state2)
@@ -143,15 +122,12 @@ vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
     return result;
 }
 
-void ManipulatorPlanner::astarPlanning(
+Solution ManipulatorPlanner::astarPlanning(
     const JointState& startPos, const JointState& goalPos,
     int (*heuristicFunc)(const JointState& state1, const JointState& state2)
 )
 {
-    Stats stats;
-    // reset solve
-    _nextStepId = 0;
-    _solveSteps.clear();
+    Solution solution(_primitiveSteps, _zeroStep);
 
     // start timer
     clock_t start = clock();
@@ -169,8 +145,8 @@ void ManipulatorPlanner::astarPlanning(
             break;
         }
         // count statistic
-        stats.maxTreeSize = std::max(stats.maxTreeSize, tree.size());
-        ++stats.expansions;
+        solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
+        ++solution.stats.expansions;
         // expand current node
         vector<astar::SearchNode*> successors = generateSuccessors(currentNode, goalPos, heuristicFunc);
         for (auto successor : successors)
@@ -184,7 +160,7 @@ void ManipulatorPlanner::astarPlanning(
 
     // end timer
     clock_t end = clock();
-    stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+    solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
 
     if (currentNode != nullptr)
     {
@@ -192,7 +168,7 @@ void ManipulatorPlanner::astarPlanning(
         while (currentNode->parent() != nullptr)
         {
             // count stats
-            stats.pathCost += costMove(currentNode->state(), currentNode->parent()->state());
+            solution.stats.pathCost += costMove(currentNode->state(), currentNode->parent()->state());
             //
             steps.push_back(currentNode->stepNum());
             currentNode = currentNode->parent();
@@ -201,9 +177,9 @@ void ManipulatorPlanner::astarPlanning(
         // push steps
         for (int i = steps.size() - 1; i >= 0; --i)
         {
-            _solveSteps.push_back(steps[i]);
+            solution.addStep(steps[i]);
         }
     }
-    // reset stats
-    _stats = stats;
+
+    return solution;
 }

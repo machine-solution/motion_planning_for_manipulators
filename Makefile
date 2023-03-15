@@ -17,11 +17,11 @@ testing: tests/tests
 
 simulator: $(TARGET)
 
-$(TARGET): $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/main.o
-	$(CXX) $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/main.o $(LIBS) -o $(TARGET)
+$(TARGET): $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/main.o $(OBJ)/solution.o
+	$(CXX) $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/main.o $(OBJ)/solution.o $(LIBS) -o $(TARGET)
 
-tests/tests: $(OBJ)/catch_amalgamated.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o tests/main.cpp
-	$(CXX) $(FLAGS) $(OBJ)/catch_amalgamated.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o tests/main.cpp $(LIBS) -o tests/tests
+tests/tests: $(OBJ)/catch_amalgamated.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/solution.o tests/main.cpp
+	$(CXX) $(FLAGS) $(OBJ)/catch_amalgamated.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/solution.o tests/main.cpp $(LIBS) -o tests/tests
 
 # compile commands
 $(OBJ)/main.o: $(SRC)/main.cpp include/planner.h
@@ -32,13 +32,17 @@ $(OBJ)/joint_state.o: $(SRC)/joint_state.cpp include/joint_state.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/joint_state.cpp $(LIBS) -c -o $(OBJ)/joint_state.o
 
-$(OBJ)/planner.o: $(SRC)/planner.cpp include/planner.h include/joint_state.h
+$(OBJ)/planner.o: $(SRC)/planner.cpp include/planner.h include/joint_state.h include/solution.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/planner.cpp $(LIBS) -c -o $(OBJ)/planner.o
 
-$(OBJ)/astar.o: $(SRC)/astar.cpp include/astar.h include/planner.h
+$(OBJ)/astar.o: $(SRC)/astar.cpp include/astar.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/astar.cpp $(LIBS) -c -o $(OBJ)/astar.o
+
+$(OBJ)/solution.o: $(SRC)/solution.cpp include/solution.h
+	mkdir -p $(OBJ)
+	$(CXX) $(FLAGS) $(SRC)/solution.cpp $(LIBS) -c -o $(OBJ)/solution.o
 
 # test "lib" catch2
 $(OBJ)/catch_amalgamated.o: tests/catch2/catch_amalgamated.cpp include/catch2/catch_amalgamated.hpp
