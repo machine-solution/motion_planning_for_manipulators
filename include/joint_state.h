@@ -39,8 +39,10 @@ public:
     int maxJoint() const;
     int minJoint() const;
 
-    const int units = g_units;
-    const double eps = g_eps;
+    bool isCorrect() const;
+
+    // const int units = g_units;
+    // const double eps = g_eps;
 
 private:
     void normalize();
@@ -51,4 +53,4 @@ private:
 
 int manhattanDistance(const JointState& state1, const JointState& state2);
 
-JointState randomState(size_t dof, int units);
+JointState randomState(size_t dof, int units = g_units);

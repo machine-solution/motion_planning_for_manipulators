@@ -110,8 +110,7 @@ vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
         {
             continue;
         }
-        if (newState.maxJoint() >= newState.units ||
-            newState.minJoint() < -newState.units)
+        if (!newState.isCorrect())
         {
             continue;
         }

@@ -147,7 +147,7 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
     static JointState goal;
     if (solution.goalAchieved() && !haveToPlan)
     {
-        goal = randomState(2, goal.units);
+        goal = randomState(2, g_units);
         d->qpos[2] = goal.rad(0);
         d->qpos[3] = goal.rad(1);
         haveToPlan = true;

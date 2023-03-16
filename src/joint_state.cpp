@@ -106,7 +106,7 @@ bool operator!=(const JointState& state1, const JointState& state2)
 
 double JointState::rad(size_t i) const
 {
-    return eps * _joints[i];
+    return g_eps * _joints[i];
 }
 
 size_t JointState::dof() const
@@ -123,6 +123,11 @@ int JointState::minJoint() const
     return *std::min_element(_joints.begin(), _joints.end());
 }
 
+bool JointState::isCorrect() const
+{
+    return minJoint() >= -g_units && maxJoint() < g_units;
+}
+
 int manhattanDistance(const JointState& state1, const JointState& state2)
 {
     int dist = 0;
@@ -130,7 +135,7 @@ int manhattanDistance(const JointState& state1, const JointState& state2)
     {
         if (i == 0)
         {
-            dist += std::min(abs(state1[i] - state2[i]), 2 * state1.units - abs(state1[i] - state2[i]));
+            dist += std::min(abs(state1[i] - state2[i]), 2 * g_units - abs(state1[i] - state2[i]));
         }
         else
         {
@@ -142,7 +147,7 @@ int manhattanDistance(const JointState& state1, const JointState& state2)
 
 void JointState::normalize()
 {
-    _joints[0] = trueMod(_joints[0], units);
+    _joints[0] = trueMod(_joints[0], g_units);
 }
 
 JointState randomState(size_t dof, int units)
