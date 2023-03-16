@@ -132,6 +132,8 @@ Solution ManipulatorPlanner::astarPlanning(
 
     // start timer
     clock_t start = clock();
+    clock_t generateSuccessorsTime = 0;
+    clock_t treeQueryTime = 0;
 
     // init search tree
     astar::SearchTree tree;
@@ -149,19 +151,27 @@ Solution ManipulatorPlanner::astarPlanning(
         solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
         ++solution.stats.expansions;
         // expand current node
+        generateSuccessorsTime -= clock();
         vector<astar::SearchNode*> successors = generateSuccessors(currentNode, goalPos, heuristicFunc);
+        generateSuccessorsTime += clock();
         for (auto successor : successors)
         {
+            treeQueryTime -= clock();
             tree.addToOpen(successor);
+            treeQueryTime += clock();
         }
         // retake node from tree
+        treeQueryTime -= clock();
         tree.addToClosed(currentNode);
         currentNode = tree.extractBestNode();
+        treeQueryTime += clock();
     }
 
     // end timer
     clock_t end = clock();
     solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+    solution.stats.runtimeTreeQuery = (double)treeQueryTime / CLOCKS_PER_SEC;
+    solution.stats.runtimeGenerateSuccessors = (double)generateSuccessorsTime / CLOCKS_PER_SEC;
 
     if (currentNode != nullptr)
     {

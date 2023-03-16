@@ -131,12 +131,14 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
 
             std::string yn[] = {"NO", "YES"};
 
-            printf("path found: %s\nexpansions: %zu\nmax tree size: %zu\nruntime: %.3fs\ncost of path: %d\n\n",
-            yn[solution.stats.pathFound].c_str(),
-            solution.stats.expansions,
-            solution.stats.maxTreeSize,
-            solution.stats.runtime,
-            solution.stats.pathCost
+            printf("path found: %s\nexpansions: %zu\nmax tree size: %zu\ncost of path: %d\nruntime: %.3fs\n* GS runtime: %.3f\n* TQ runtime: %.3f\n\n",
+                yn[solution.stats.pathFound].c_str(),
+                solution.stats.expansions,
+                solution.stats.maxTreeSize,
+                solution.stats.pathCost,
+                solution.stats.runtime,
+                solution.stats.runtimeGenerateSuccessors,
+                solution.stats.runtimeTreeQuery
             );
         }
     }

@@ -3,6 +3,7 @@
 #include "joint_state.h"
 #include "astar.h"
 #include "solution.h"
+#include "utils.h"
 #include <mujoco/mujoco.h>
 
 enum Algorithm
@@ -12,7 +13,7 @@ enum Algorithm
     ALG_MAX
 };
 
-class ManipulatorPlanner
+class ManipulatorPlanner : Profiler
 {
 public:
     ManipulatorPlanner(size_t dof, mjModel* model = nullptr, mjData* data = nullptr);
