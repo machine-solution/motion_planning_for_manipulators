@@ -1,6 +1,7 @@
 #pragma once
 
 #include "joint_state.h"
+#include "utils.h"
 
 struct Stats
 {
@@ -10,9 +11,6 @@ struct Stats
     bool pathFound = false;
 
     double runtime = 0.0;
-
-    double runtimeTreeQuery = 0.0;
-    double runtimeGenerateSuccessors = 0.0;
 };
 
 class Solution
@@ -27,6 +25,9 @@ public:
     bool goalAchieved() const;
 
     Stats stats;
+
+    vector<ProfileInfo> plannerProfile;
+    vector<ProfileInfo> searchTreeProfile;
 
 private:
     vector<JointState> _primitiveSteps;

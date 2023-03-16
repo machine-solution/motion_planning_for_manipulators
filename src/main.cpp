@@ -104,6 +104,38 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
     mjv_moveCamera(m, mjMOUSE_ZOOM, 0, -0.05*yoffset, &scn, &cam);
 }
 
+void printLog(FILE* file, const Solution& solution)
+{
+    std::string yn[] = {"NO", "YES"};
+
+    fprintf(file, "path found: %s\nexpansions: %zu\nmax tree size: %zu\ncost of path: %d\nruntime: %.3fs\n",
+        yn[solution.stats.pathFound].c_str(),
+        solution.stats.expansions,
+        solution.stats.maxTreeSize,
+        solution.stats.pathCost,
+        solution.stats.runtime
+    );
+    fprintf(file, "---Planner Profile---\n");
+    for (const ProfileInfo& info : solution.plannerProfile)
+    {
+        fprintf(file, "%.3f\t%zu\t%s\n",
+            info.runtime,
+            info.calls,
+            info.funcName.c_str()
+        );
+    }
+    fprintf(file, "---Search Tree Profile---\n");
+    for (const ProfileInfo& info : solution.searchTreeProfile)
+    {
+        fprintf(file, "%.3f\t%zu\t%s\n",
+            info.runtime,
+            info.calls,
+            info.funcName.c_str()
+        );
+    }
+    fprintf(file, "\n");
+}
+
 void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
 {
     static int counter = 0;
@@ -129,17 +161,7 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
             solution = planner.planSteps(currentState, goal, ALG_ASTAR);
             haveToPlan = false;
 
-            std::string yn[] = {"NO", "YES"};
-
-            printf("path found: %s\nexpansions: %zu\nmax tree size: %zu\ncost of path: %d\nruntime: %.3fs\n* GS runtime: %.3f\n* TQ runtime: %.3f\n\n",
-                yn[solution.stats.pathFound].c_str(),
-                solution.stats.expansions,
-                solution.stats.maxTreeSize,
-                solution.stats.pathCost,
-                solution.stats.runtime,
-                solution.stats.runtimeGenerateSuccessors,
-                solution.stats.runtimeTreeQuery
-            );
+            printLog(stdout, solution);
         }
     }
     if (slowDown++ >= 1) // this slows down simulation in several times (TODO remove)

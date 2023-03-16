@@ -1,4 +1,4 @@
-FLAGS = -I include # -mavx -pthread -Wl,-rpath,'$$ORIGIN'
+FLAGS = -O3 -I include # -mavx -pthread -Wl,-rpath,'$$ORIGIN'
 LIBS = -lmujoco -lglfw
 CXX = g++
 OBJ = obj
@@ -34,11 +34,11 @@ $(OBJ)/joint_state.o: $(SRC)/joint_state.cpp include/joint_state.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/joint_state.cpp $(LIBS) -c -o $(OBJ)/joint_state.o
 
-$(OBJ)/planner.o: $(SRC)/planner.cpp include/planner.h include/joint_state.h include/solution.h
+$(OBJ)/planner.o: $(SRC)/planner.cpp include/planner.h include/joint_state.h include/solution.h include/utils.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/planner.cpp $(LIBS) -c -o $(OBJ)/planner.o
 
-$(OBJ)/astar.o: $(SRC)/astar.cpp include/astar.h
+$(OBJ)/astar.o: $(SRC)/astar.cpp include/astar.h include/utils.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/astar.cpp $(LIBS) -c -o $(OBJ)/astar.o
 

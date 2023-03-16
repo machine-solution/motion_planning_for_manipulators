@@ -12,6 +12,7 @@ ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
 
 bool ManipulatorPlanner::checkCollision(const JointState& position)
 {
+    startProfiling();
     if (_model == nullptr || _data == nullptr) // if we have not data for check
     {
         return false;
@@ -22,11 +23,14 @@ bool ManipulatorPlanner::checkCollision(const JointState& position)
         _data->qpos[i] = position.rad(i);
     }
     mj_step1(_model, _data);
+    stopProfiling();
     return _data->ncon;
 }
 
 Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg)
 {
+    clearAllProfiling(); // reset profiling
+
     if (checkCollision(goalPos))
     {
         return Solution(_primitiveSteps, _zeroStep); // incorrect aim
@@ -97,6 +101,7 @@ vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
     int (*heuristicFunc)(const JointState& state1, const JointState& state2)
 )
 {
+    startProfiling();
     vector<astar::SearchNode*> result;
     for (size_t i = 0; i < _primitiveSteps.size(); ++i)
     {
@@ -120,6 +125,8 @@ vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
             )
         );
     }
+
+    stopProfiling();
     return result;
 }
 
@@ -132,8 +139,6 @@ Solution ManipulatorPlanner::astarPlanning(
 
     // start timer
     clock_t start = clock();
-    clock_t generateSuccessorsTime = 0;
-    clock_t treeQueryTime = 0;
 
     // init search tree
     astar::SearchTree tree;
@@ -151,31 +156,26 @@ Solution ManipulatorPlanner::astarPlanning(
         solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
         ++solution.stats.expansions;
         // expand current node
-        generateSuccessorsTime -= clock();
         vector<astar::SearchNode*> successors = generateSuccessors(currentNode, goalPos, heuristicFunc);
-        generateSuccessorsTime += clock();
         for (auto successor : successors)
         {
-            treeQueryTime -= clock();
             tree.addToOpen(successor);
-            treeQueryTime += clock();
         }
         // retake node from tree
-        treeQueryTime -= clock();
         tree.addToClosed(currentNode);
         currentNode = tree.extractBestNode();
-        treeQueryTime += clock();
     }
 
     // end timer
     clock_t end = clock();
     solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
-    solution.stats.runtimeTreeQuery = (double)treeQueryTime / CLOCKS_PER_SEC;
-    solution.stats.runtimeGenerateSuccessors = (double)generateSuccessorsTime / CLOCKS_PER_SEC;
 
     if (currentNode != nullptr)
     {
         solution.stats.pathFound = true;
+        solution.plannerProfile = getSortedProfileInfo();
+        solution.searchTreeProfile = tree.getSortedProfileInfo();
+        
         vector<size_t> steps;
         while (currentNode->parent() != nullptr)
         {

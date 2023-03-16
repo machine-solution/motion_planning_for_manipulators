@@ -13,35 +13,35 @@ bool operator>(const ProfileInfo& pi1, const ProfileInfo& pi2)
 
 Profiler::Profiler() {}
 
-void Profiler::startProfiling(std::string funcName)
+void Profiler::startProfiling(std::string funcName) const
 {
     ++_callMap[funcName];
     _timeMap[funcName] -= clock();
 }
-void Profiler::endProfiling(std::string funcName)
+void Profiler::stopProfiling(std::string funcName) const
 {
     _timeMap[funcName] += clock();
 }
-void Profiler::clearAllProfiling()
+void Profiler::clearAllProfiling() const
 {
     _timeMap.clear();
     _callMap.clear();
 }
 
-vector<ProfileInfo> Profiler::getProfileInfo()
+vector<ProfileInfo> Profiler::getProfileInfo() const
 {
     vector<ProfileInfo> result;
     for (auto& mem : _timeMap)
     {
         ProfileInfo info;
         info.funcName = mem.first;
-        info.runtime = mem.second;
+        info.runtime = (double)mem.second / CLOCKS_PER_SEC;
         info.calls = _callMap[mem.first];
         result.push_back(info);
     }
     return result;
 }
-vector<ProfileInfo> Profiler::getSortedProfileInfo()
+vector<ProfileInfo> Profiler::getSortedProfileInfo() const
 {
     vector<ProfileInfo> result = getProfileInfo();
     std::sort(result.begin(), result.end(), std::greater<ProfileInfo>());

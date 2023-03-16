@@ -13,7 +13,7 @@ enum Algorithm
     ALG_MAX
 };
 
-class ManipulatorPlanner : Profiler
+class ManipulatorPlanner : public Profiler
 {
 public:
     ManipulatorPlanner(size_t dof, mjModel* model = nullptr, mjData* data = nullptr);

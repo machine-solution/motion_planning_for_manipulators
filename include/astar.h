@@ -48,7 +48,7 @@ public:
 This is a container and data structure for A* algorithm.
 A* relies on this Tree in deletation nodes.
 */
-class SearchTree : Profiler
+class SearchTree : public Profiler
 {
 public:
     SearchTree();
