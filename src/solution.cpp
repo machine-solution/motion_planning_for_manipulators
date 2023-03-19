@@ -1,4 +1,5 @@
 #include "solution.h"
+#include "utils.h"
 
 Solution::Solution()
 {

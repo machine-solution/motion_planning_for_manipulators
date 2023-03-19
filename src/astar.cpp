@@ -1,4 +1,5 @@
 #include "astar.h"
+#include "utils.h"
 
 #include <vector>
 

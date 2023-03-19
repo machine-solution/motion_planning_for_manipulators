@@ -21,34 +21,34 @@ testing: tests/tests
 
 simulator: $(TARGET)
 
-$(TARGET): $(SOURCES) $(INCLUDES) $(OBJ)/main.o
+$(TARGET): $(SOURCES) $(OBJ)/main.o
 	$(CXX) $(SOURCES) $(OBJ)/main.o $(LIBS) -o $(TARGET)
 
-tests/tests: $(SOURCES) $(INCLUDES) $(OBJ)/catch_amalgamated.o tests/main.cpp
+tests/tests: $(SOURCES) $(INC)/planner.h $(INC)/astar.h $(OBJ)/catch_amalgamated.o tests/main.cpp
 	$(CXX) $(FLAGS) $(SOURCES) $(OBJ)/catch_amalgamated.o tests/main.cpp $(LIBS) -o tests/tests
 
 # compile commands
-$(OBJ)/main.o: $(SRC)/main.cpp $(INCLUDES)
+$(OBJ)/main.o: $(SRC)/main.cpp $(INC)/planner.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/main.cpp $(LIBS) -c -o $(OBJ)/main.o
 
-$(OBJ)/joint_state.o: $(SRC)/joint_state.cpp $(INCLUDES)
+$(OBJ)/joint_state.o: $(SRC)/joint_state.cpp $(INC)/joint_state.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/joint_state.cpp $(LIBS) -c -o $(OBJ)/joint_state.o
 
-$(OBJ)/planner.o: $(SRC)/planner.cpp $(INCLUDES)
+$(OBJ)/planner.o: $(SRC)/planner.cpp $(INC)/planner.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/planner.cpp $(LIBS) -c -o $(OBJ)/planner.o
 
-$(OBJ)/astar.o: $(SRC)/astar.cpp $(INCLUDES)
+$(OBJ)/astar.o: $(SRC)/astar.cpp $(INC)/astar.h $(INC)/utils.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/astar.cpp $(LIBS) -c -o $(OBJ)/astar.o
 
-$(OBJ)/solution.o: $(SRC)/solution.cpp $(INCLUDES)
+$(OBJ)/solution.o: $(SRC)/solution.cpp $(INC)/solution.h $(INC)/utils.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/solution.cpp $(LIBS) -c -o $(OBJ)/solution.o
 
-$(OBJ)/utils.o: $(SRC)/utils.cpp $(INCLUDES)
+$(OBJ)/utils.o: $(SRC)/utils.cpp $(INC)/utils.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/utils.cpp $(LIBS) -c -o $(OBJ)/utils.o
 
