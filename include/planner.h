@@ -18,8 +18,12 @@ class ManipulatorPlanner : public Profiler
 public:
     ManipulatorPlanner(size_t dof, mjModel* model = nullptr, mjData* data = nullptr);
 
-    bool checkCollision(const JointState& position);
-    bool checkCollisionAction(const JointState& start, const JointState& delta);
+    bool checkCollision(const JointState& position) const;
+    bool checkCollisionAction(const JointState& start, const JointState& delta) const;
+
+    // return C-Space as strings where @ an obstacle, . - is not
+    // only for _dof = 2 now
+    vector<string> configurationSpace() const;
 
     Solution planSteps(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1);
 
@@ -48,6 +52,6 @@ private:
     JointState _zeroStep;
     size_t _dof;
 
-    mjModel* _model; // model for collision checks
-    mjData* _data; // data for collision checks
+    mutable mjModel* _model; // model for collision checks
+    mutable mjData* _data; // data for collision checks
 };

@@ -10,7 +10,7 @@ ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
     initPrimitiveSteps();
 }
 
-bool ManipulatorPlanner::checkCollision(const JointState& position)
+bool ManipulatorPlanner::checkCollision(const JointState& position) const
 {
     startProfiling();
     if (_model == nullptr || _data == nullptr) // if we have not data for check
@@ -27,7 +27,7 @@ bool ManipulatorPlanner::checkCollision(const JointState& position)
     return _data->ncon;
 }
 
-bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const JointState& delta)
+bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const JointState& delta) const
 {
     startProfiling();
     if (_model == nullptr || _data == nullptr) // if we have not data for check
@@ -55,6 +55,20 @@ bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Joi
     }
     stopProfiling();
     return false;
+}
+
+vector<string> ManipulatorPlanner::configurationSpace() const
+{
+    vector<string> cSpace(g_units * 2, string(g_units * 2, '.'));
+    for (int i = -g_units; i < g_units; ++i)
+    {
+        for (int j = -g_units; j < g_units; ++j)
+        {
+            if (checkCollision({i, j}))
+                cSpace[g_units - 1 - j][i + g_units] = '@';
+        }
+    }
+    return cSpace;
 }
 
 Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg)

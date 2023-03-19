@@ -12,7 +12,7 @@
 #include <fstream>
 
 // path from bin/
-char filename[] = "model/2-dof/manipulator_with_target.xml";
+char filename[] = "model/2-dof/manipulator_4.xml";
 
 // MuJoCo data structures
 mjModel* m = NULL;                  // MuJoCo model
@@ -136,15 +136,25 @@ void printLog(FILE* file, const Solution& solution)
     fprintf(file, "\n");
 }
 
+void printCSpace(FILE* file, const vector<string>& cSpace)
+{
+    for (size_t i = 0; i < cSpace.size(); ++i)
+    {
+        fprintf(file, "%s\n", cSpace[i].c_str());
+    }
+}
+
 void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
 {
     static int counter = 0;
-    static int slowDown = 0;
+    static int partOfMove = 0;
     static bool haveToPlan = false;
 
     static Solution solution;
     static JointState currentState;
     static JointState goal;
+    static JointState delta;
+
     if (solution.goalAchieved() && !haveToPlan)
     {
         goal = randomState(2, g_units);
@@ -164,13 +174,19 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
             printLog(stdout, solution);
         }
     }
-    if (slowDown++ >= 1) // this slows down simulation in several times (TODO remove)
+    if (partOfMove == g_unitSize) // this slows down simulation in several times (TODO remove)
     {
-        JointState delta = solution.nextStep();
         currentState += delta;
         d->qpos[0] = currentState.rad(0);
         d->qpos[1] = currentState.rad(1);
-        slowDown = 0;
+        delta = solution.nextStep();
+        partOfMove = 0;
+    }
+    else
+    {
+        ++partOfMove;
+        d->qpos[0] = currentState.rad(0) + delta[0] * g_worldEps * partOfMove;
+        d->qpos[1] = currentState.rad(1) + delta[1] * g_worldEps * partOfMove;
     }
 }
 
@@ -258,6 +274,10 @@ int main(int argc, const char** argv)
         while (d->time - simstart < 1.0 / fps)
         {
             step(m, d, planner);
+            if (d->ncon)
+            {
+                printf("Collision detected! Acc = (%f, %f)\n", fabs(d->qacc[0]), fabs(d->qacc[1]));
+            }
         }
 
         // end go to target
