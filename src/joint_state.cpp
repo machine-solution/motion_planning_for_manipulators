@@ -81,7 +81,7 @@ bool operator<(const JointState& state1, const JointState& state2)
 }
 bool operator>(const JointState& state1, const JointState& state2)
 {
-    return !((state1 < state2) || (state1 == state2));
+    return state2 < state1;
 }
 bool operator<=(const JointState& state1, const JointState& state2)
 {
