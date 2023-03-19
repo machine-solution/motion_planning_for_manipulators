@@ -27,6 +27,36 @@ bool ManipulatorPlanner::checkCollision(const JointState& position)
     return _data->ncon;
 }
 
+bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const JointState& delta)
+{
+    startProfiling();
+    if (_model == nullptr || _data == nullptr) // if we have not data for check
+    {
+        return false;
+    }
+
+    for (size_t i = 0; i < _dof; ++i)
+    {
+        _data->qpos[i] = start.rad(i);
+    }
+
+    for (size_t t = 0; t < g_unitSize; ++t)
+    {
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            _data->qpos[i] += g_worldEps * delta[i]; // temporary we use global constant here for speed
+        }
+        mj_step1(_model, _data);
+        if (_data->ncon)
+        {
+            stopProfiling();
+            return true;
+        }
+    }
+    stopProfiling();
+    return false;
+}
+
 Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg)
 {
     clearAllProfiling(); // reset profiling
@@ -78,11 +108,11 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
                 t = i + _dof;
             }
 
-            currentPos += _primitiveSteps[t];
-            if (checkCollision(currentPos))
+            if (checkCollisionAction(currentPos, _primitiveSteps[t]))
             {
                 return solution; // we temporary need to give up : TODO
             }
+            currentPos += _primitiveSteps[t];
             solution.addStep(t);
         }
     }
@@ -106,7 +136,7 @@ vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
     for (size_t i = 0; i < _primitiveSteps.size(); ++i)
     {
         JointState newState = node->state() + _primitiveSteps[i];
-        if (checkCollision(newState))
+        if (checkCollisionAction(node->state(), _primitiveSteps[i]))
         {
             continue;
         }

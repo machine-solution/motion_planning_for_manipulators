@@ -118,8 +118,8 @@ void printLog(FILE* file, const Solution& solution)
     fprintf(file, "---Planner Profile---\n");
     for (const ProfileInfo& info : solution.plannerProfile)
     {
-        fprintf(file, "%.3f\t%zu\t%s\n",
-            info.runtime,
+        fprintf(file, "%.1fms\t%zu\t%s\n",
+            info.runtime * 1000,
             info.calls,
             info.funcName.c_str()
         );
@@ -127,8 +127,8 @@ void printLog(FILE* file, const Solution& solution)
     fprintf(file, "---Search Tree Profile---\n");
     for (const ProfileInfo& info : solution.searchTreeProfile)
     {
-        fprintf(file, "%.3f\t%zu\t%s\n",
-            info.runtime,
+        fprintf(file, "%.1fms\t%zu\t%s\n",
+            info.runtime * 1000,
             info.calls,
             info.funcName.c_str()
         );

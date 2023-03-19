@@ -19,6 +19,7 @@ public:
     ManipulatorPlanner(size_t dof, mjModel* model = nullptr, mjData* data = nullptr);
 
     bool checkCollision(const JointState& position);
+    bool checkCollisionAction(const JointState& start, const JointState& delta);
 
     Solution planSteps(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1);
 
