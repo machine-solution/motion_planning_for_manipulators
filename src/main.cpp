@@ -16,7 +16,6 @@ char resfile[] = "scenaries/runtime.log";
 
 FILE* logfile = nullptr;
 
-
 const int seed = 12345;
 
 // MuJoCo data structures
@@ -194,8 +193,10 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
     if (solution.goalAchieved() && !haveToPlan)
     {
         goal = randomState(2, g_units);
-        d->qpos[2] = goal.rad(0);
-        d->qpos[3] = goal.rad(1);
+        for (size_t i = 0; i < planner.dof(); ++i)
+        {
+            d->qpos[i + planner.dof()] = goal.rad(i);
+        }
         haveToPlan = true;
     }
     else if (haveToPlan)
@@ -228,16 +229,20 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
     if (partOfMove == g_unitSize)
     {
         currentState += delta;
-        d->qpos[0] = currentState.rad(0);
-        d->qpos[1] = currentState.rad(1);
+        for (size_t i = 0; i < planner.dof(); ++i)
+        {
+            d->qpos[i] = currentState.rad(i);
+        }
         delta = solution.nextStep();
         partOfMove = 0;
     }
     else
     {
         ++partOfMove;
-        d->qpos[0] = currentState.rad(0) + delta[0] * g_worldEps * partOfMove;
-        d->qpos[1] = currentState.rad(1) + delta[1] * g_worldEps * partOfMove;
+        for (size_t i = 0; i < planner.dof(); ++i)
+        {
+            d->qpos[i] = currentState.rad(i) + delta[i] * g_worldEps * partOfMove;
+        }
     }
 }
 
@@ -310,7 +315,7 @@ int main(int argc, const char** argv)
     srand(seed);
 
     // make planner
-    ManipulatorPlanner planner(2, mCopy, dCopy);
+    ManipulatorPlanner planner(m->nq / 2, mCopy, dCopy);
     printf("Simulation is started!\n");
 
     // use the first while condition if you want to simulate for a period.

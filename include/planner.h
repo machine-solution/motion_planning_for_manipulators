@@ -18,6 +18,8 @@ class ManipulatorPlanner : public Profiler
 public:
     ManipulatorPlanner(size_t dof, mjModel* model = nullptr, mjData* data = nullptr);
 
+    size_t dof() const;
+
     bool checkCollision(const JointState& position) const;
     bool checkCollisionAction(const JointState& start, const JointState& delta) const;
 

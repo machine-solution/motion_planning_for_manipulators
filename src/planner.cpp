@@ -14,6 +14,11 @@ ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
     initPrimitiveSteps();
 }
 
+size_t ManipulatorPlanner::dof() const
+{
+    return _dof;
+}
+
 bool ManipulatorPlanner::checkCollision(const JointState& position) const
 {
     if (_model == nullptr || _data == nullptr) // if we have not data for check
