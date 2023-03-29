@@ -11,8 +11,13 @@
 #include <string.h>
 #include <fstream>
 
-// path from bin/
 char filename[] = "model/2-dof/manipulator_4.xml";
+char resfile[] = "scenaries/runtime.log";
+
+FILE* logfile = nullptr;
+
+
+const int seed = 12345;
 
 // MuJoCo data structures
 mjModel* m = NULL;                  // MuJoCo model
@@ -136,6 +141,36 @@ void printLog(FILE* file, const Solution& solution)
     fprintf(file, "\n");
 }
 
+void printRuntimeLogHeader(FILE* file, const Solution& solution)
+{
+    for (const ProfileInfo& info : solution.plannerProfile)
+    {
+        fprintf(file, "%s_time,", info.funcName.c_str());
+        fprintf(file, "%s_calls,", info.funcName.c_str());
+    }
+    for (const ProfileInfo& info : solution.searchTreeProfile)
+    {
+        fprintf(file, "%s_time,", info.funcName.c_str());
+        fprintf(file, "%s_calls,", info.funcName.c_str());
+    }
+    fprintf(file, "whole_runtime\n");
+}
+
+void printRuntimeLog(FILE* file, const Solution& solution)
+{
+    for (const ProfileInfo& info : solution.plannerProfile)
+    {
+        fprintf(file, "%f,", info.runtime * 1000);
+        fprintf(file, "%ld,", info.calls);
+    }
+    for (const ProfileInfo& info : solution.searchTreeProfile)
+    {
+        fprintf(file, "%f,", info.runtime * 1000);
+        fprintf(file, "%ld,", info.calls);
+    }
+    fprintf(file, "%f\n", solution.stats.runtime * 1000);
+}
+
 void printCSpace(FILE* file, const vector<string>& cSpace)
 {
     for (size_t i = 0; i < cSpace.size(); ++i)
@@ -149,6 +184,7 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
     static int counter = 0;
     static int partOfMove = 0;
     static bool haveToPlan = false;
+    static int solved = 0;
 
     static Solution solution;
     static JointState currentState;
@@ -172,9 +208,24 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
             haveToPlan = false;
 
             printLog(stdout, solution);
+            if (solution.stats.pathFound)
+            {
+                if (solved == 0)
+                {
+                    printRuntimeLogHeader(logfile, solution);
+                }
+                printRuntimeLog(logfile, solution);
+                ++solved;
+                if (solved == 100)
+                {
+                    fclose(logfile);
+                    exit(0);
+                }
+            }
+            printf("solved %d/100\n", solved);
         }
     }
-    if (partOfMove == g_unitSize) // this slows down simulation in several times (TODO remove)
+    if (partOfMove == g_unitSize)
     {
         currentState += delta;
         d->qpos[0] = currentState.rad(0);
@@ -222,6 +273,7 @@ int main(int argc, const char** argv)
     mjModel* mCopy = mj_copyModel(NULL, m);
     mjData* dCopy = mj_makeData(mCopy);
 
+    logfile = fopen(resfile, "w+");
 
     // init GLFW
     if (!glfwInit())
@@ -255,7 +307,6 @@ int main(int argc, const char** argv)
     cam.lookat[1] = arr_view[4];
     cam.lookat[2] = arr_view[5];
 
-    const int seed = 12345;
     srand(seed);
 
     // make planner

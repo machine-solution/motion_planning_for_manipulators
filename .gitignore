@@ -4,3 +4,6 @@ simulator
 *.o
 *.TXT
 *.map
+*.log
+venv/
+*.ipynb_checkpoints

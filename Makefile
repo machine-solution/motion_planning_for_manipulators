@@ -28,7 +28,7 @@ tests/tests: $(SOURCES) $(INC)/planner.h $(INC)/astar.h $(OBJ)/catch_amalgamated
 	$(CXX) $(FLAGS) $(SOURCES) $(OBJ)/catch_amalgamated.o tests/main.cpp $(LIBS) -o tests/tests
 
 # compile commands
-$(OBJ)/main.o: $(SRC)/main.cpp $(INC)/planner.h
+$(OBJ)/main.o: $(SRC)/main.cpp $(INC)/planner.h $(INC)/joint_state.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/main.cpp $(LIBS) -c -o $(OBJ)/main.o
 
@@ -36,7 +36,7 @@ $(OBJ)/joint_state.o: $(SRC)/joint_state.cpp $(INC)/joint_state.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/joint_state.cpp $(LIBS) -c -o $(OBJ)/joint_state.o
 
-$(OBJ)/planner.o: $(SRC)/planner.cpp $(INC)/planner.h
+$(OBJ)/planner.o: $(SRC)/planner.cpp $(INC)/planner.h $(INC)/joint_state.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/planner.cpp $(LIBS) -c -o $(OBJ)/planner.o
 

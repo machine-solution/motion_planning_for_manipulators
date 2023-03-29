@@ -47,6 +47,8 @@ public:
     vector<ProfileInfo> getProfileInfo() const;
     // returns sorted by runtime vector of profile infos
     vector<ProfileInfo> getSortedProfileInfo() const;
+    // returns sorted by name vector of profile infos
+    vector<ProfileInfo> getNamedProfileInfo() const;
 
 private:
     mutable unordered_map<string, clock_t> _timeMap;

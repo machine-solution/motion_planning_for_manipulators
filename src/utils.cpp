@@ -11,6 +11,15 @@ bool operator>(const ProfileInfo& pi1, const ProfileInfo& pi2)
     return pi1.runtime > pi2.runtime;
 }
 
+class CmpByName
+{
+public:
+    bool operator()(const ProfileInfo& pi1, const ProfileInfo& pi2)
+    {
+        return pi1.funcName < pi2.funcName;
+    }
+};
+
 Profiler::Profiler() {}
 
 void Profiler::startProfiling(std::string funcName) const
@@ -45,5 +54,12 @@ vector<ProfileInfo> Profiler::getSortedProfileInfo() const
 {
     vector<ProfileInfo> result = getProfileInfo();
     std::sort(result.begin(), result.end(), std::greater<ProfileInfo>());
+    return result;
+}
+
+vector<ProfileInfo> Profiler::getNamedProfileInfo() const
+{
+    vector<ProfileInfo> result = getProfileInfo();
+    std::sort(result.begin(), result.end(), CmpByName());
     return result;
 }
