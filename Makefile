@@ -6,8 +6,8 @@ SRC = src
 INC = include
 TARGET = simulator
 
-SOURCES = $(OBJ)/utils.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/solution.o
-INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $(INC)/solution.h
+SOURCES = $(OBJ)/utils.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/solution.o $(OBJ)/light_mujoco.o
+INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $(INC)/solution.h $(INC)/light_mujoco.h
 
 .PHONY: all clean testing simulator
 
@@ -36,7 +36,7 @@ $(OBJ)/joint_state.o: $(SRC)/joint_state.cpp $(INC)/joint_state.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/joint_state.cpp $(LIBS) -c -o $(OBJ)/joint_state.o
 
-$(OBJ)/planner.o: $(SRC)/planner.cpp $(INC)/planner.h $(INC)/joint_state.h
+$(OBJ)/planner.o: $(SRC)/planner.cpp $(INC)/planner.h $(INC)/joint_state.h $(INC)/light_mujoco.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/planner.cpp $(LIBS) -c -o $(OBJ)/planner.o
 
@@ -51,6 +51,10 @@ $(OBJ)/solution.o: $(SRC)/solution.cpp $(INC)/solution.h $(INC)/utils.h
 $(OBJ)/utils.o: $(SRC)/utils.cpp $(INC)/utils.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/utils.cpp $(LIBS) -c -o $(OBJ)/utils.o
+
+$(OBJ)/light_mujoco.o: $(SRC)/light_mujoco.cpp $(INC)/light_mujoco.h
+	mkdir -p $(OBJ)
+	$(CXX) $(FLAGS) $(SRC)/light_mujoco.cpp $(LIBS) -c -o $(OBJ)/light_mujoco.o
 
 # test "lib" catch2
 $(OBJ)/catch_amalgamated.o: tests/catch2/catch_amalgamated.cpp include/catch2/catch_amalgamated.hpp
