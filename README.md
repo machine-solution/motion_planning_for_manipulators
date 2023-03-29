@@ -30,7 +30,7 @@ make simulator
 
 After this operation in the root of this repository you can find 'manipulator' file. Run it.  
 ```
-./manipulator
+./simulator
 ```
 
 If you get into trouble with running some of this files, do this and try again:
