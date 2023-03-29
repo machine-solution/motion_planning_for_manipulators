@@ -7,8 +7,11 @@
 
 using std::vector;
 
-const int g_units = 1024; // the number of units from [0, pi]
-const double g_eps = (M_PI / g_units); // length of 1 unit
+const int g_units = 128; // the number of planner units from [0, pi]
+const double g_eps = (M_PI / g_units); // length of 1 planner unit
+const int g_unitSize = 8; // the number of world units in planner unit;
+const int g_worldUnits = g_units * g_unitSize;
+const double g_worldEps = (M_PI / g_worldUnits);
 
 class JointState
 {
@@ -39,8 +42,10 @@ public:
     int maxJoint() const;
     int minJoint() const;
 
-    const int units = g_units;
-    const double eps = g_eps;
+    bool isCorrect() const;
+
+    // const int units = g_units;
+    // const double eps = g_eps;
 
 private:
     void normalize();
@@ -51,4 +56,4 @@ private:
 
 int manhattanDistance(const JointState& state1, const JointState& state2);
 
-JointState randomState(size_t dof, int units);
+JointState randomState(size_t dof, int units = g_units);

@@ -1,4 +1,5 @@
 #include "astar.h"
+#include "utils.h"
 
 #include <vector>
 
@@ -74,15 +75,20 @@ SearchTree::~SearchTree()
 
 void SearchTree::addToOpen(SearchNode* node)
 {
+    startProfiling();
     _open.insert(node);
+    stopProfiling();
 }
 void SearchTree::addToClosed(SearchNode* node)
 {
+    startProfiling();
     _closed.insert(node);
+    stopProfiling();
 }
 
 SearchNode* SearchTree::extractBestNode()
 {
+    startProfiling();
     while (!_open.empty())
     {
         SearchNode* best = *_open.begin();
@@ -94,15 +100,25 @@ SearchNode* SearchTree::extractBestNode()
         }
         else
         {
+            stopProfiling();
             return best;
         }
     }
+    stopProfiling();
     return nullptr;
+}
+
+size_t SearchTree::size() const
+{
+    return _open.size() + _closed.size();
 }
 
 bool SearchTree::wasExpanded(SearchNode* node) const
 {
-    return _closed.count(node);
+    startProfiling();
+    bool res = _closed.count(node);
+    stopProfiling();
+    return res;
 }
 
 } // namespace astar

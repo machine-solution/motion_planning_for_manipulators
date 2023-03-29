@@ -2,6 +2,8 @@
 
 #include "joint_state.h"
 #include "astar.h"
+#include "solution.h"
+#include "utils.h"
 #include <mujoco/mujoco.h>
 
 enum Algorithm
@@ -11,18 +13,19 @@ enum Algorithm
     ALG_MAX
 };
 
-class ManipulatorPlanner
+class ManipulatorPlanner : public Profiler
 {
 public:
     ManipulatorPlanner(size_t dof, mjModel* model = nullptr, mjData* data = nullptr);
 
-    JointState& nextStep();
+    bool checkCollision(const JointState& position) const;
+    bool checkCollisionAction(const JointState& start, const JointState& delta) const;
 
-    bool goalAchieved();
+    // return C-Space as strings where @ an obstacle, . - is not
+    // only for _dof = 2 now
+    vector<string> configurationSpace() const;
 
-    bool checkCollision(const JointState& position);
-
-    void planSteps(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1);
+    Solution planSteps(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1);
 
     const int units = g_units;
     const double eps = g_eps;
@@ -30,7 +33,7 @@ public:
 private:
     void initPrimitiveSteps();
 
-    void linearPlanning(const JointState& startPos, const JointState& goalPos);
+    Solution linearPlanning(const JointState& startPos, const JointState& goalPos);
 
     int costMove(const JointState& state1, const JointState& state2);
     // allocates on heap and returns successors
@@ -40,17 +43,15 @@ private:
         int (*heuristicFunc)(const JointState& state1, const JointState& state2)
     );
 
-    void astarPlanning(
+    Solution astarPlanning(
         const JointState& startPos, const JointState& goalPos,
         int (*heuristicFunc)(const JointState& state1, const JointState& state2)
     );
 
     vector<JointState> _primitiveSteps;
     JointState _zeroStep;
-    vector<size_t> _solveSteps; // vector id-s of primitiveSteps  
-    size_t _nextStepId;
     size_t _dof;
 
-    mjModel* _model; // model for collision checks
-    mjData* _data; // data for collision checks
+    mutable mjModel* _model; // model for collision checks
+    mutable mjData* _data; // data for collision checks
 };

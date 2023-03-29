@@ -1,5 +1,3 @@
-<!-- https://mujoco.readthedocs.io/en/latest/overview.html?highlight=hello.xml#examples -->
-
 <mujoco>
 	<asset>
 		<material name="red"   rgba="1 0 0 1"/>
@@ -40,6 +38,12 @@
         <body name="obstacle 1">
             <geom name="geom obstacle 1" type="sphere" size="0.2" pos="0.0 -1.5 0.0" material="blue"/>
         </body>
+        <body name="obstacle 2">
+            <geom name="geom obstacle 2" type="sphere" size="0.4" pos="-1.5 0.0 0.0" material="blue"/>
+        </body>
+        <body name="obstacle 3">
+            <geom name="geom obstacle 3" type="box" size="0.2 0.1 0.3" pos="1.5 0.9 0.0" material="blue"/>
+        </body>
 
     </worldbody>
 
@@ -48,6 +52,10 @@
         <pair geom1="geom edge 1" geom2="geom obstacle 0"/>
         <pair geom1="geom edge 0" geom2="geom obstacle 1"/>
         <pair geom1="geom edge 1" geom2="geom obstacle 1"/>
+        <pair geom1="geom edge 0" geom2="geom obstacle 2"/>
+        <pair geom1="geom edge 1" geom2="geom obstacle 2"/>
+        <pair geom1="geom edge 0" geom2="geom obstacle 3"/>
+        <pair geom1="geom edge 1" geom2="geom obstacle 3"/>
     </contact>
 
     <sensor>

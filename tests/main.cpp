@@ -36,29 +36,24 @@ TEST_CASE("JointState comparation")
     REQUIRE(c == JointState({5}));
 }
 
-TEST_CASE("Linear planner on empty plane")
-{
-    ManipulatorPlanner planner(2);
-    JointState a({1, 2});
-    JointState b({3, -4});
-    planner.planSteps(a, b, ALG_LINEAR);
-    while (!planner.goalAchieved())
-    {
-        a += planner.nextStep();
-    }
-    REQUIRE(a == b);
-}
-
 // test empty plane scenarioo
 void testPlanningFromTo(JointState a, JointState b, int alg)
 {
     ManipulatorPlanner planner(2);
-    planner.planSteps(a, b, alg);
-    while (!planner.goalAchieved())
+    Solution solution = planner.planSteps(a, b, alg);
+    while (!solution.goalAchieved())
     {
-        a += planner.nextStep();
+        a += solution.nextStep();
     }
     REQUIRE(a == b);
+}
+
+TEST_CASE("Linear planner on empty plane")
+{
+    testPlanningFromTo({0, 0}, {0, 0}, ALG_LINEAR);
+    testPlanningFromTo({0, 0}, {1, 1}, ALG_LINEAR);
+    testPlanningFromTo({1, 2}, {3, -4}, ALG_LINEAR);
+    testPlanningFromTo({5, -3}, {-1, -3}, ALG_LINEAR);
 }
 
 TEST_CASE("A* planner on empty plane")
@@ -90,6 +85,7 @@ TEST_CASE("A* Search Tree")
     tree.addToOpen(n2);
     tree.addToOpen(n3);
     tree.addToOpen(n4);
+    REQUIRE(tree.size() == 4);
     astar::SearchNode* best = tree.extractBestNode();
     REQUIRE(best != nullptr);
     REQUIRE(best->f() == 1);

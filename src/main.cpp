@@ -5,12 +5,19 @@
 
 #include <mujoco/mujoco.h>
 #include <GLFW/glfw3.h>
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
 
-// path from bin/
-char filename[] = "model/2-dof/manipulator_with_target.xml";
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fstream>
+
+char filename[] = "model/2-dof/manipulator_4.xml";
+char resfile[] = "scenaries/runtime.log";
+
+FILE* logfile = nullptr;
+
+
+const int seed = 12345;
 
 // MuJoCo data structures
 mjModel* m = NULL;                  // MuJoCo model
@@ -102,20 +109,91 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
     mjv_moveCamera(m, mjMOUSE_ZOOM, 0, -0.05*yoffset, &scn, &cam);
 }
 
+void printLog(FILE* file, const Solution& solution)
+{
+    std::string yn[] = {"NO", "YES"};
+
+    fprintf(file, "path found: %s\nexpansions: %zu\nmax tree size: %zu\ncost of path: %d\nruntime: %.3fs\n",
+        yn[solution.stats.pathFound].c_str(),
+        solution.stats.expansions,
+        solution.stats.maxTreeSize,
+        solution.stats.pathCost,
+        solution.stats.runtime
+    );
+    fprintf(file, "---Planner Profile---\n");
+    for (const ProfileInfo& info : solution.plannerProfile)
+    {
+        fprintf(file, "%.1fms\t%zu\t%s\n",
+            info.runtime * 1000,
+            info.calls,
+            info.funcName.c_str()
+        );
+    }
+    fprintf(file, "---Search Tree Profile---\n");
+    for (const ProfileInfo& info : solution.searchTreeProfile)
+    {
+        fprintf(file, "%.1fms\t%zu\t%s\n",
+            info.runtime * 1000,
+            info.calls,
+            info.funcName.c_str()
+        );
+    }
+    fprintf(file, "\n");
+}
+
+void printRuntimeLogHeader(FILE* file, const Solution& solution)
+{
+    for (const ProfileInfo& info : solution.plannerProfile)
+    {
+        fprintf(file, "%s_time,", info.funcName.c_str());
+        fprintf(file, "%s_calls,", info.funcName.c_str());
+    }
+    for (const ProfileInfo& info : solution.searchTreeProfile)
+    {
+        fprintf(file, "%s_time,", info.funcName.c_str());
+        fprintf(file, "%s_calls,", info.funcName.c_str());
+    }
+    fprintf(file, "whole_runtime\n");
+}
+
+void printRuntimeLog(FILE* file, const Solution& solution)
+{
+    for (const ProfileInfo& info : solution.plannerProfile)
+    {
+        fprintf(file, "%f,", info.runtime * 1000);
+        fprintf(file, "%ld,", info.calls);
+    }
+    for (const ProfileInfo& info : solution.searchTreeProfile)
+    {
+        fprintf(file, "%f,", info.runtime * 1000);
+        fprintf(file, "%ld,", info.calls);
+    }
+    fprintf(file, "%f\n", solution.stats.runtime * 1000);
+}
+
+void printCSpace(FILE* file, const vector<string>& cSpace)
+{
+    for (size_t i = 0; i < cSpace.size(); ++i)
+    {
+        fprintf(file, "%s\n", cSpace[i].c_str());
+    }
+}
+
 void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
 {
     static int counter = 0;
-    static int slowDown = 0;
+    static int partOfMove = 0;
     static bool haveToPlan = false;
+    static int solved = 0;
+
+    static Solution solution;
     static JointState currentState;
     static JointState goal;
-    if (planner.goalAchieved() && !haveToPlan)
+    static JointState delta;
+
+    if (solution.goalAchieved() && !haveToPlan)
     {
-        printf("robot = (%f, %f) target = (%f, %f)\n",
-        d->qpos[0], d->qpos[1],
-        d->qpos[2], d->qpos[3]);
-        
-        goal = randomState(2, goal.units);
+        goal = randomState(2, g_units);
         d->qpos[2] = goal.rad(0);
         d->qpos[3] = goal.rad(1);
         haveToPlan = true;
@@ -126,21 +204,40 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
         if (counter > 8) // to first of all simulator can show picture
         {
             counter = 0;
-            planner.planSteps(currentState, goal, ALG_ASTAR);
+            solution = planner.planSteps(currentState, goal, ALG_ASTAR);
             haveToPlan = false;
+
+            printLog(stdout, solution);
+            if (solution.stats.pathFound)
+            {
+                if (solved == 0)
+                {
+                    printRuntimeLogHeader(logfile, solution);
+                }
+                printRuntimeLog(logfile, solution);
+                ++solved;
+                if (solved == 100)
+                {
+                    fclose(logfile);
+                    exit(0);
+                }
+            }
+            printf("solved %d/100\n", solved);
         }
     }
-    if (slowDown++ >= 1) // this slows down simulation in several times (TODO remove)
+    if (partOfMove == g_unitSize)
     {
-        printf("robot = (%f, %f) target = (%f, %f)\n",
-        d->qpos[0], d->qpos[1],
-        d->qpos[2], d->qpos[3]);
-
-        JointState delta = planner.nextStep();
         currentState += delta;
         d->qpos[0] = currentState.rad(0);
         d->qpos[1] = currentState.rad(1);
-        slowDown = 0;
+        delta = solution.nextStep();
+        partOfMove = 0;
+    }
+    else
+    {
+        ++partOfMove;
+        d->qpos[0] = currentState.rad(0) + delta[0] * g_worldEps * partOfMove;
+        d->qpos[1] = currentState.rad(1) + delta[1] * g_worldEps * partOfMove;
     }
 }
 
@@ -176,6 +273,7 @@ int main(int argc, const char** argv)
     mjModel* mCopy = mj_copyModel(NULL, m);
     mjData* dCopy = mj_makeData(mCopy);
 
+    logfile = fopen(resfile, "w+");
 
     // init GLFW
     if (!glfwInit())
@@ -209,7 +307,6 @@ int main(int argc, const char** argv)
     cam.lookat[1] = arr_view[4];
     cam.lookat[2] = arr_view[5];
 
-    const int seed = 12345;
     srand(seed);
 
     // make planner
@@ -219,7 +316,7 @@ int main(int argc, const char** argv)
     // use the first while condition if you want to simulate for a period.
     while (!glfwWindowShouldClose(window))
     {
-        // advance interactive simulation for 1/60 sec
+        //  advance interactive simulation for 1/60 sec
         //  Assuming MuJoCo can simulate faster than real-time, which it usually can,
         //  this loop will finish on time for the next frame to be rendered at 60 fps.
         //  Otherwise add a cpu timer and exit this loop when it is time to render.
@@ -228,6 +325,10 @@ int main(int argc, const char** argv)
         while (d->time - simstart < 1.0 / fps)
         {
             step(m, d, planner);
+            if (d->ncon)
+            {
+                printf("Collision detected! Acc = (%f, %f)\n", fabs(d->qacc[0]), fabs(d->qacc[1]));
+            }
         }
 
         // end go to target

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "joint_state.h"
+#include "utils.h"
 
 #include <set>
 
@@ -47,7 +48,7 @@ public:
 This is a container and data structure for A* algorithm.
 A* relies on this Tree in deletation nodes.
 */
-class SearchTree
+class SearchTree : public Profiler
 {
 public:
     SearchTree();
@@ -58,6 +59,8 @@ public:
 
     // returns best node and remove it from open
     SearchNode* extractBestNode();
+
+    size_t size() const;
 
 private:
     bool wasExpanded(SearchNode* node) const;
