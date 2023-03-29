@@ -19,8 +19,6 @@ clean:
 
 testing: tests/tests
 
-simulator: $(TARGET)
-
 $(TARGET): $(SOURCES) $(OBJ)/main.o
 	$(CXX) $(SOURCES) $(OBJ)/main.o $(LIBS) -o $(TARGET)
 

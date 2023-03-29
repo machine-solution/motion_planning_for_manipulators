@@ -47,11 +47,11 @@ bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Joi
     }
 
     int jump = 8;
-    for (size_t t = 0; t < g_unitSize; t += jump)
+    for (size_t t = jump; t <= g_unitSize; t += jump)
     {
         for (size_t i = 0; i < _dof; ++i)
         {
-            _data->qpos[i] += g_worldEps * delta[i] * jump; // temporary we use global constant here for speed
+            _data->qpos[i] = start.rad(i) + g_worldEps * delta[i] * t; // temporary we use global constant here for speed
         }
         if (mj_light_collision(_model, _data))
         {

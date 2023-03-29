@@ -16,20 +16,12 @@
         <body name="edge 0" pos="0.5 0 0.1" euler="0 90 0">
             <joint name="joint 0" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
             <geom name="geom edge 0" type="cylinder" size="0.05 0.5" material="red"/>
-            <body name="edge 1" pos="0 0 1" euler="0 0 0">
-                <joint name="joint 1" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
-                <geom name="geom edge 1" type="cylinder" size="0.05 0.5" material="red"/>
-                <site name="tip" size="0.1" pos="0 0 0.5"/>
-            </body>
+            <site name="tip" size="0.1" pos="0 0 0.5"/>
         </body>
 
         <body name="edge 2" pos="0.5 0 0.1" euler="0 90 0">
             <joint name="joint 2" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
-            <geom name="geom edge 2" type="cylinder" size="0.05 0.5" material="green"/>
-            <body name="edge 3" pos="0 0 1" euler="0 0 0">
-                <joint name="joint 3" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
-                <geom name="geom edge 3" type="cylinder" size="0.05 0.5" material="green"/>
-            </body>
+            <geom type="cylinder" size="0.05 0.5" material="green"/>
         </body>
 
         <body name="obstacle 0">
@@ -100,22 +92,6 @@
         <pair geom1="geom edge 0" geom2="geom obstacle 13"/>
         <pair geom1="geom edge 0" geom2="geom obstacle 14"/>
         <pair geom1="geom edge 0" geom2="geom obstacle 15"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 0"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 1"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 2"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 3"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 4"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 5"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 6"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 7"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 8"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 9"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 10"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 11"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 12"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 13"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 14"/>
-        <pair geom1="geom edge 1" geom2="geom obstacle 15"/>
     </contact>
 
     <sensor>

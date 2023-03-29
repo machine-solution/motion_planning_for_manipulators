@@ -7,3 +7,4 @@ simulator
 *.log
 venv/
 *.ipynb_checkpoints
+/tools

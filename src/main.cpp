@@ -11,7 +11,7 @@
 #include <string.h>
 #include <fstream>
 
-char filename[] = "model/2-dof/manipulator_4.xml";
+char filename[] = "model/3-dof/manipulator_4.xml";
 char resfile[] = "scenaries/runtime.log";
 
 FILE* logfile = nullptr;
@@ -186,62 +186,71 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
     static int solved = 0;
 
     static Solution solution;
-    static JointState currentState;
-    static JointState goal;
-    static JointState delta;
+    static JointState currentState(planner.dof(), 0);
+    static JointState goal(planner.dof(), 0);
+    static JointState delta(planner.dof(), 0);
 
-    if (solution.goalAchieved() && !haveToPlan)
+    if (solution.goalAchieved())
     {
-        goal = randomState(2, g_units);
-        for (size_t i = 0; i < planner.dof(); ++i)
+        delta = JointState(planner.dof(), 0);
+        if (!haveToPlan)
         {
-            d->qpos[i + planner.dof()] = goal.rad(i);
-        }
-        haveToPlan = true;
-    }
-    else if (haveToPlan)
-    {
-        ++counter;
-        if (counter > 8) // to first of all simulator can show picture
-        {
-            counter = 0;
-            solution = planner.planSteps(currentState, goal, ALG_ASTAR);
-            haveToPlan = false;
-
-            printLog(stdout, solution);
-            if (solution.stats.pathFound)
+            // generating new goal
+            goal = randomState(planner.dof(), g_units);
+            for (size_t i = 0; i < planner.dof(); ++i)
             {
-                if (solved == 0)
-                {
-                    printRuntimeLogHeader(logfile, solution);
-                }
-                printRuntimeLog(logfile, solution);
-                ++solved;
-                if (solved == 100)
-                {
-                    fclose(logfile);
-                    exit(0);
-                }
+                d->qpos[i + planner.dof()] = goal.rad(i);
             }
-            printf("solved %d/100\n", solved);
+            haveToPlan = true;
         }
-    }
-    if (partOfMove == g_unitSize)
-    {
-        currentState += delta;
-        for (size_t i = 0; i < planner.dof(); ++i)
+        else if (haveToPlan)
         {
-            d->qpos[i] = currentState.rad(i);
+            // planning path to goal
+            ++counter;
+            if (counter > 8) // to first of all simulator can show picture
+            {
+                counter = 0;
+                solution = planner.planSteps(currentState, goal, ALG_ASTAR);
+                haveToPlan = false;
+
+                printLog(stdout, solution);
+                if (solution.stats.pathFound)
+                {
+                    if (solved == 0)
+                    {
+                        printRuntimeLogHeader(logfile, solution);
+                    }
+                    printRuntimeLog(logfile, solution);
+                    ++solved;
+                    if (solved == 100)
+                    {
+                        fclose(logfile);
+                        exit(0);
+                    }
+                }
+                printf("solved %d/100\n", solved);
+            }
         }
-        delta = solution.nextStep();
-        partOfMove = 0;
     }
     else
     {
-        ++partOfMove;
-        for (size_t i = 0; i < planner.dof(); ++i)
+        if (partOfMove == g_unitSize - 1)
         {
-            d->qpos[i] = currentState.rad(i) + delta[i] * g_worldEps * partOfMove;
+            currentState += delta;
+            for (size_t i = 0; i < planner.dof(); ++i)
+            {
+                d->qpos[i] = currentState.rad(i);
+            }
+            delta = solution.nextStep();
+            partOfMove = 0;
+        }
+        else
+        {
+            ++partOfMove;
+            for (size_t i = 0; i < planner.dof(); ++i)
+            {
+                d->qpos[i] += delta[i] * g_worldEps;
+            }
         }
     }
 }
