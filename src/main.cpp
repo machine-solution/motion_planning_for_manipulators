@@ -206,7 +206,7 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
     static JointState goal(planner.dof(), 0);
     static JointState delta(planner.dof(), 0);
 
-    // if (solution.goalAchieved())
+    if (solution.goalAchieved())
     {
         delta = JointState(planner.dof(), 0);
         if (!haveToPlan)
@@ -250,27 +250,27 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
             }
         }
     }
-    // else
-    // {
-    //     if (partOfMove == g_unitSize - 1)
-    //     {
-    //         currentState += delta;
-    //         for (size_t i = 0; i < planner.dof(); ++i)
-    //         {
-    //             d->qpos[i] = currentState.rad(i);
-    //         }
-    //         delta = solution.nextStep();
-    //         partOfMove = 0;
-    //     }
-    //     else
-    //     {
-    //         ++partOfMove;
-    //         for (size_t i = 0; i < planner.dof(); ++i)
-    //         {
-    //             d->qpos[i] += delta[i] * g_worldEps;
-    //         }
-    //     }
-    // }
+    else
+    {
+        if (partOfMove == g_unitSize - 1)
+        {
+            currentState += delta;
+            for (size_t i = 0; i < planner.dof(); ++i)
+            {
+                d->qpos[i] = currentState.rad(i);
+            }
+            delta = solution.nextStep();
+            partOfMove = 0;
+        }
+        else
+        {
+            ++partOfMove;
+            for (size_t i = 0; i < planner.dof(); ++i)
+            {
+                d->qpos[i] += delta[i] * g_worldEps;
+            }
+        }
+    }
 }
 
 void step(mjModel* m, mjData* d, ManipulatorPlanner& planner) {

@@ -1,19 +1,18 @@
 This project uses [mujoco](https://github.com/deepmind/mujoco) as simulator and library.
 
 Content
-1. [Installation](#Installation)
-1. [Run](#Run)
-1. [Run tests](#Run-tests)
-1. [Installation](#Installation)
-1. [Project description](#Project-description)
-    1. [Problem description](#Problem-description)
-    1. [Planner](#Planner)
-        1. [General description](#General-description)
+1. [Installation](#installation)
+1. [Run](#run)
+1. [Run tests](#run-tests)
+1. [Project description](#project-description)
+    1. [Problem description](#problem-description)
+    1. [Planner](#planner)
+        1. [General description](#general-description)
         1. [A* algorithm](#a-algorithm)
-        1. [Collision checking](#Collision-checking)
-    1. [Task generation](#Task-generation)
-    1. [Model](#Model)
-    1. [Interaction with mujoco](#Interaction-with-mujoco)
+        1. [Collision checking](#collision-checking)
+    1. [Task generation](#task-generation)
+    1. [Model](#model)
+    1. [Interaction with mujoco](#interaction-with-mujoco)
 
 # Installation
 This instruction is written for linux. Before start make sure that you have g++ compiler installed on your machine.  
