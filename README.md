@@ -66,7 +66,10 @@ Now task generation is united with interactor and use only one function - [rando
 I'm planning to separate interaction and test generation in future.
 
 ## Model
-soon
+For this project we can do manipulator model in xml format. To learn how to do this please read [xml reference](https://mujoco.readthedocs.io/en/latest/XMLreference.html).\
+All models are located in 'model' directory.\
+Now the easiest way to change model is execute   ```./simulator <filename>```   where filename is path to your model from root of repository.\
+Another way to do this is change default filename [here](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/main.cpp#L14).
 
 ## Interaction with mujoco
 soon
