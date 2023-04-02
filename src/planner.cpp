@@ -90,7 +90,7 @@ Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointSt
     case ALG_LINEAR:
         return linearPlanning(startPos, goalPos);
     case ALG_ASTAR:
-        return astarPlanning(startPos, goalPos, manhattanDistance);
+        return astarPlanning(startPos, goalPos, manhattanHeuristic, 1.0);
     default:
         return Solution(_primitiveSteps, _zeroStep);
     }
@@ -141,14 +141,15 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
     return solution;
 }
 
-int ManipulatorPlanner::costMove(const JointState& state1, const JointState& state2)
+CostType ManipulatorPlanner::costMove(const JointState& state1, const JointState& state2)
 {
     return manhattanDistance(state1, state2);
 }
 vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
     astar::SearchNode* node,
     const JointState& goal,
-    int (*heuristicFunc)(const JointState& state1, const JointState& state2)
+    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
+    float weight
 )
 {
     startProfiling();
@@ -167,7 +168,7 @@ vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
         result.push_back(
             new astar::SearchNode(
                 node->g() + costMove(node->state(), newState),
-                heuristicFunc(newState, goal),
+                heuristicFunc(newState, goal) * weight,
                 newState,
                 i,
                 node
@@ -181,7 +182,8 @@ vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
 
 Solution ManipulatorPlanner::astarPlanning(
     const JointState& startPos, const JointState& goalPos,
-    int (*heuristicFunc)(const JointState& state1, const JointState& state2)
+    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
+    float weight
 )
 {
     Solution solution(_primitiveSteps, _zeroStep);
@@ -191,7 +193,7 @@ Solution ManipulatorPlanner::astarPlanning(
 
     // init search tree
     astar::SearchTree tree;
-    astar::SearchNode* startNode = new astar::SearchNode(0, heuristicFunc(startPos, goalPos), startPos);
+    astar::SearchNode* startNode = new astar::SearchNode(0, heuristicFunc(startPos, goalPos) * weight, startPos);
     tree.addToOpen(startNode);
     astar::SearchNode* currentNode = tree.extractBestNode();
 
@@ -205,7 +207,7 @@ Solution ManipulatorPlanner::astarPlanning(
         solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
         ++solution.stats.expansions;
         // expand current node
-        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, goalPos, heuristicFunc);
+        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, goalPos, heuristicFunc, weight);
         for (auto successor : successors)
         {
             tree.addToOpen(successor);

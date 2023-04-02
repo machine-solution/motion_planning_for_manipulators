@@ -150,6 +150,11 @@ int manhattanDistance(const JointState& state1, const JointState& state2)
     return dist;
 }
 
+CostType manhattanHeuristic(const JointState& state1, const JointState& state2)
+{
+    return manhattanDistance(state1, state2);
+}
+
 void JointState::normalize()
 {
     _joints[0] = trueMod(_joints[0], g_units);

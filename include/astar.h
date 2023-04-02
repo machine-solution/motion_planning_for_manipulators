@@ -14,11 +14,11 @@ namespace astar
 class SearchNode
 {
 public:
-    SearchNode(int g, int h, const JointState& state, int stepNum = -1, SearchNode* parent = nullptr);
+    SearchNode(CostType g, CostType h, const JointState& state, int stepNum = -1, SearchNode* parent = nullptr);
 
-    int g() const;
-    int h() const;
-    int f() const;
+    CostType g() const;
+    CostType h() const;
+    CostType f() const;
     int stepNum() const;
     const JointState& state() const;
     SearchNode* parent();
@@ -27,7 +27,7 @@ public:
     bool operator<(const SearchNode& sn);
 
 private:
-    int _g, _h, _f;
+    CostType _g, _h, _f;
     int _stepNum; // number of step, which change parent.state() -> this.state(). -1 if have not parent
     JointState _state;
     SearchNode* _parent;
