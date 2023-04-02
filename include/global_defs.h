@@ -8,4 +8,4 @@ const int g_unitSize = 8; // the number of world units in planner unit;
 const int g_worldUnits = g_units * g_unitSize;
 const double g_worldEps = (M_PI / g_worldUnits);
 
-using CostType = int;
+using CostType = float;
