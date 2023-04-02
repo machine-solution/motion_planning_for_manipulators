@@ -36,10 +36,11 @@ TEST_CASE("JointState comparation")
     REQUIRE(c == JointState({5}));
 }
 
-// test empty plane scenarioo
+// test empty plane scenario
 void testPlanningFromTo(JointState a, JointState b, int alg)
 {
-    ManipulatorPlanner planner(2);
+    REQUIRE(a.dof() == b.dof());
+    ManipulatorPlanner planner(a.dof());
     Solution solution = planner.planSteps(a, b, alg);
     while (!solution.goalAchieved())
     {
@@ -48,12 +49,38 @@ void testPlanningFromTo(JointState a, JointState b, int alg)
     REQUIRE(a == b);
 }
 
+// test row of empty plane scenarios
+void testStressPlanning(int dof, int alg)
+{
+    srand(57283);
+    ManipulatorPlanner planner(dof);
+    JointState a(dof, 0);
+    JointState b = randomState(dof);
+    for (size_t i = 0; i < 20; ++i)
+    {
+        Solution solution = planner.planSteps(a, b, alg);
+        while (!solution.goalAchieved())
+        {
+            a += solution.nextStep();
+        }
+        REQUIRE(a == b);
+        b = randomState(dof);
+    }
+}
+
 TEST_CASE("Linear planner on empty plane")
 {
     testPlanningFromTo({0, 0}, {0, 0}, ALG_LINEAR);
     testPlanningFromTo({0, 0}, {1, 1}, ALG_LINEAR);
     testPlanningFromTo({1, 2}, {3, -4}, ALG_LINEAR);
     testPlanningFromTo({5, -3}, {-1, -3}, ALG_LINEAR);
+    testPlanningFromTo({5}, {-1}, ALG_LINEAR);
+    testPlanningFromTo({5, 5, 5}, {-1, -1, -1}, ALG_LINEAR);
+    testPlanningFromTo({5, 5, 5, 5}, {-1, -1, -1, -1}, ALG_LINEAR);
+    testStressPlanning(1, ALG_LINEAR);
+    testStressPlanning(2, ALG_LINEAR);
+    testStressPlanning(3, ALG_LINEAR);
+    testStressPlanning(4, ALG_LINEAR);
 }
 
 TEST_CASE("A* planner on empty plane")
@@ -62,6 +89,13 @@ TEST_CASE("A* planner on empty plane")
     testPlanningFromTo({0, 0}, {1, 1}, ALG_ASTAR);
     testPlanningFromTo({1, 2}, {3, -4}, ALG_ASTAR);
     testPlanningFromTo({5, -3}, {-1, -3}, ALG_ASTAR);
+    testPlanningFromTo({5}, {-1}, ALG_ASTAR);
+    testPlanningFromTo({5, 5, 5}, {-1, -1, -1}, ALG_ASTAR);
+    testPlanningFromTo({5, 5, 5, 5}, {-1, -1, -1, -1}, ALG_ASTAR);
+    testStressPlanning(1, ALG_ASTAR);
+    testStressPlanning(2, ALG_ASTAR);
+    testStressPlanning(3, ALG_ASTAR);
+    testStressPlanning(4, ALG_ASTAR);
 }
 
 TEST_CASE("A* Nodes has operators")

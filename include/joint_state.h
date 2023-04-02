@@ -1,17 +1,13 @@
 #pragma once
 
+#include "global_defs.h"
+
 #include <vector>
 #include <stddef.h>
 #include <initializer_list>
 #include <cmath>
 
 using std::vector;
-
-const int g_units = 128; // the number of planner units from [0, pi]
-const double g_eps = (M_PI / g_units); // length of 1 planner unit
-const int g_unitSize = 8; // the number of world units in planner unit;
-const int g_worldUnits = g_units * g_unitSize;
-const double g_worldEps = (M_PI / g_worldUnits);
 
 class JointState
 {
@@ -55,5 +51,7 @@ private:
 };
 
 int manhattanDistance(const JointState& state1, const JointState& state2);
+
+CostType manhattanHeuristic(const JointState& state1, const JointState& state2);
 
 JointState randomState(size_t dof, int units = g_units);

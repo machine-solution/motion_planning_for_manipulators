@@ -1,6 +1,7 @@
 #include "joint_state.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 // return n % (2 * mod) in [-mod, mod)
 int trueMod(int n, int mod)
@@ -52,7 +53,8 @@ JointState JointState::operator+(const JointState& other) const
 
 JointState& JointState::operator=(const JointState& other)
 {
-    // TODO if (dof != other.dof)
+    _dof = other._dof;
+    _joints.resize(_dof);
     for (size_t i = 0; i < _dof; ++i)
     {
         _joints[i] = other._joints[i];
@@ -62,7 +64,10 @@ JointState& JointState::operator=(const JointState& other)
 }
 JointState& JointState::operator+=(const JointState& other)
 {
-    // TODO if (dof != other.dof)
+    if (_dof != other._dof)
+    {
+        throw std::runtime_error("JointState::operator+=: dofs of operands are not equal");
+    }
     for (size_t i = 0; i < _dof; ++i)
     {
         _joints[i] += other._joints[i];
@@ -143,6 +148,11 @@ int manhattanDistance(const JointState& state1, const JointState& state2)
         }
     }
     return dist;
+}
+
+CostType manhattanHeuristic(const JointState& state1, const JointState& state2)
+{
+    return manhattanDistance(state1, state2);
 }
 
 void JointState::normalize()

@@ -5,7 +5,7 @@
 
 namespace astar {
 
-SearchNode::SearchNode(int g, int h, const JointState& state, int stepNum, SearchNode* parent)
+SearchNode::SearchNode(CostType g, CostType h, const JointState& state, int stepNum, SearchNode* parent)
 {
     _g = g;
     _h = h;
@@ -15,15 +15,15 @@ SearchNode::SearchNode(int g, int h, const JointState& state, int stepNum, Searc
     _parent = parent;
 }
 
-int SearchNode::g() const
+CostType SearchNode::g() const
 {
     return _g;
 }
-int SearchNode::h() const
+CostType SearchNode::h() const
 {
     return _h;
 }
-int SearchNode::f() const
+CostType SearchNode::f() const
 {
     return _f;
 }

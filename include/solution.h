@@ -6,7 +6,7 @@
 struct Stats
 {
     size_t expansions = 0;
-    int pathCost = 0;
+    CostType pathCost = 0;
     size_t maxTreeSize = 0;
     bool pathFound = false;
 
