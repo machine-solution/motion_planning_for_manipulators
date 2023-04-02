@@ -62,7 +62,8 @@ soon
 soon
 
 ## Task generation
-soon
+Now task generation is united with interactor and use only one function - [randomState](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/main.cpp#L215). This process very simple: manipulator strts with zero state and gets random finish. If it finds solution, it will get new random finish and start will be previous finish. If no, it gets new random finish without changing start.\
+I'm planning to separate interaction and test generation in future.
 
 ## Model
 soon
