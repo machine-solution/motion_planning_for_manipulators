@@ -37,14 +37,14 @@ private:
 
     Solution linearPlanning(const JointState& startPos, const JointState& goalPos);
 
-    CostType costMove(const JointState& state1, const JointState& state2);
+    CostType costMove(const JointState& state1, const JointState& state2) const;
     // allocates on heap and returns successors
     vector<astar::SearchNode*> generateSuccessors(
         astar::SearchNode* node,
         const JointState& goal,
         CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
         float weight
-    );
+    ) const;
 
     Solution astarPlanning(
         const JointState& startPos, const JointState& goalPos,

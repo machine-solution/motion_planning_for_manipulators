@@ -141,7 +141,7 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
     return solution;
 }
 
-CostType ManipulatorPlanner::costMove(const JointState& state1, const JointState& state2)
+CostType ManipulatorPlanner::costMove(const JointState& state1, const JointState& state2) const
 {
     return manhattanDistance(state1, state2);
 }
@@ -150,7 +150,7 @@ vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
     const JointState& goal,
     CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
     float weight
-)
+) const
 {
     startProfiling();
     vector<astar::SearchNode*> result;
