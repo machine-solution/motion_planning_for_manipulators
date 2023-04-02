@@ -9,7 +9,7 @@ Content
     1. [Problem description](#Problem-description)
     1. [Planner](#Planner)
         1. [General description](#General-description)
-        1. [A* algorithm](#A*-algorithm)
+        1. [A* algorithm](#A*%20algorithm)
         1. [Collision checking](#Collision-checking)
     1. [Task generation](#Task-generation)
     1. [Model](#Model)
