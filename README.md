@@ -9,7 +9,7 @@ sudo apt update
 sudo apt install libglfw3-dev
 ```
 
-Then copy-paste two files from 'lib' folder libmujoco.so and libmujoco.so.2.3.2 to '/usr/lib'.
+Then copy-paste two files from 'lib' folder libmujoco.so and libmujoco.so.2.3.2 to '/usr/lib' to install mujoco libraries
 
 ```
 sudo cp lib/libmujoco.so /usr/lib/libmujoco.so
@@ -44,3 +44,28 @@ For run tests you just need to execute this file.
 ./run_tests
 ```
 First run may be slow.
+
+# Project description
+
+## Problem description
+We have a manipulator in space with obstacles and two positions of this manipulator: start and finish. It is required to plan the actions using which the manipulator will come from the start position to the finish.
+
+## Planner
+
+### General description
+The most important class in this project is [ManipulatorPlanner](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/planner.h#L16). It solves problem in method [planSteps](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/planner.h#L30). This method must return solution with statistics and sequence of actions needed to reach finish from start.
+
+### A* algorithm
+soon
+
+### Collision checking
+soon
+
+## Task generation
+soon
+
+## Model
+soon
+
+## Interaction with mujoco
+soon
