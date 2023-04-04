@@ -154,27 +154,11 @@ vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
 {
     startProfiling();
     vector<astar::SearchNode*> result;
-    for (size_t i = 0; i < _primitiveSteps.size(); ++i)
-    {
-        JointState newState = node->state() + _primitiveSteps[i];
-        if (checkCollisionAction(node->state(), _primitiveSteps[i]))
-        {
-            continue;
-        }
-        if (!newState.isCorrect())
-        {
-            continue;
-        }
-        result.push_back(
-            new astar::SearchNode(
-                node->g() + costMove(node->state(), newState),
-                heuristicFunc(newState, goal) * weight,
-                newState,
-                i,
-                node
-            )
-        );
-    }
+    
+    /*
+    TODO: CODE HERE
+    Tip: use _primitiveSteps
+    */
 
     stopProfiling();
     return result;
@@ -199,22 +183,13 @@ Solution ManipulatorPlanner::astarPlanning(
 
     while (currentNode != nullptr)
     {
-        if (currentNode->state() == goalPos)
-        {
-            break;
-        }
+        /*
+        TODO: CODE HERE
+        */
+
         // count statistic
         solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
         ++solution.stats.expansions;
-        // expand current node
-        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, goalPos, heuristicFunc, weight);
-        for (auto successor : successors)
-        {
-            tree.addToOpen(successor);
-        }
-        // retake node from tree
-        tree.addToClosed(currentNode);
-        currentNode = tree.extractBestNode();
     }
 
     // end timer
