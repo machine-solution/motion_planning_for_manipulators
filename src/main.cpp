@@ -226,7 +226,7 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
             if (counter > 8) // to first of all simulator can show picture
             {
                 counter = 0;
-                solution = planner.planSteps(currentState, goal, 600.0, ALG_ASTAR);
+                solution = planner.planSteps(currentState, goal, ALG_ASTAR, 600.0);
                 haveToPlan = false;
 
                 printLog(stdout, solution);

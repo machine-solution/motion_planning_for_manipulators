@@ -77,7 +77,7 @@ vector<string> ManipulatorPlanner::configurationSpace() const
     return cSpace;
 }
 
-Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, double timeLimit, int alg)
+Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg, double timeLimit)
 {
     clearAllProfiling(); // reset profiling
 
