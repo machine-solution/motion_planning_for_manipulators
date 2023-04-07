@@ -11,7 +11,7 @@
 #include <string.h>
 #include <fstream>
 
-char filename[] = "model/3-dof/manipulator_4.xml";
+char filename[] = "model/2-dof/manipulator_4.xml";
 char resfile[] = "pyplot/stats.log";
 
 FILE* logfile = nullptr;
