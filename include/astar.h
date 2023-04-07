@@ -62,6 +62,7 @@ public:
     SearchNode* extractBestNode();
 
     size_t size() const;
+    size_t sizeOpen() const;
 
 private:
     bool wasExpanded(SearchNode* node) const;
@@ -86,14 +87,15 @@ vector<SearchNode*> generateSuccessors(
     IAstarChecker& checker,
     const JointState& goal,
     CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
-    float weight
+    double weight
 );
 
 Solution astar(
     const JointState& startPos, const JointState& goalPos,
     IAstarChecker& checker,
     CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
-    float weight = 1
+    double weight = 1.0,
+    double timeLimit = 1.0
 );
 
 } // namespace astar
