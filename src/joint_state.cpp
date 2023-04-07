@@ -128,6 +128,16 @@ int JointState::minJoint() const
     return *std::min_element(_joints.begin(), _joints.end());
 }
 
+int JointState::abs() const
+{
+    int len = 0;
+    for (size_t i = 0; i < dof(); ++i)
+    {
+        len += std::abs(_joints[i]); // It is integer abs
+    }
+    return len;
+}
+
 bool JointState::isCorrect() const
 {
     return minJoint() >= -g_units && maxJoint() < g_units;

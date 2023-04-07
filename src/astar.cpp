@@ -121,4 +121,107 @@ bool SearchTree::wasExpanded(SearchNode* node) const
     return res;
 }
 
+vector<SearchNode*> generateSuccessors(
+    SearchNode* node,
+    IAstarChecker& checker,
+    const JointState& goal,
+    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
+    float weight
+)
+{
+    vector<SearchNode*> result;
+    for (size_t i = 0; i < checker.getActions().size(); ++i)
+    {
+        JointState action = checker.getActions()[i];
+        JointState newState = node->state() + action;
+        if (!checker.isCorrect(node->state(), action))
+        {
+            continue;
+        }
+        result.push_back(
+            new SearchNode(
+                node->g() + checker.costAction(action),
+                heuristicFunc(newState, goal) * weight,
+                newState,
+                i,
+                node
+            )
+        );
+    }
+
+    return result;
+}
+
+Solution astar(
+    const JointState& startPos, const JointState& goalPos,
+    IAstarChecker& checker,
+    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
+    float weight
+)
+{
+    Solution solution(checker.getActions(), checker.getZeroAction());
+
+    // start timer
+    clock_t start = clock();
+
+    // init search tree
+    SearchTree tree;
+    SearchNode* startNode = new astar::SearchNode(0, heuristicFunc(startPos, goalPos) * weight, startPos);
+    tree.addToOpen(startNode);
+    SearchNode* currentNode = tree.extractBestNode();
+
+    while (currentNode != nullptr)
+    {
+        if (currentNode->state() == goalPos)
+        {
+            break;
+        }
+        // count statistic
+        solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
+        ++solution.stats.expansions;
+        // expand current node
+        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, checker, goalPos, heuristicFunc, weight);
+        for (auto successor : successors)
+        {
+            tree.addToOpen(successor);
+        }
+        // retake node from tree
+        tree.addToClosed(currentNode);
+        currentNode = tree.extractBestNode();
+    }
+
+    // end timer
+    clock_t end = clock();
+    solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+
+    if (currentNode != nullptr)
+    {
+        solution.stats.pathFound = true;
+        solution.searchTreeProfile = tree.getNamedProfileInfo();
+        
+        vector<size_t> steps;
+        while (currentNode->parent() != nullptr)
+        {
+            // count stats
+            solution.stats.pathCost += checker.costAction(checker.getActions()[currentNode->stepNum()]);
+            //
+            steps.push_back(currentNode->stepNum());
+            currentNode = currentNode->parent();
+        }
+
+        // push steps
+        for (int i = steps.size() - 1; i >= 0; --i)
+        {
+            solution.addStep(steps[i]);
+        }
+    }
+    else
+    {
+        solution.stats.pathFound = false;
+        solution.searchTreeProfile = tree.getNamedProfileInfo();
+    }
+
+    return solution;
+}
+
 } // namespace astar

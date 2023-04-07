@@ -141,108 +141,38 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
     return solution;
 }
 
-CostType ManipulatorPlanner::costMove(const JointState& state1, const JointState& state2)
-{
-    return manhattanDistance(state1, state2);
-}
-vector<astar::SearchNode*> ManipulatorPlanner::generateSuccessors(
-    astar::SearchNode* node,
-    const JointState& goal,
-    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
-    float weight
-)
-{
-    startProfiling();
-    vector<astar::SearchNode*> result;
-    for (size_t i = 0; i < _primitiveSteps.size(); ++i)
-    {
-        JointState newState = node->state() + _primitiveSteps[i];
-        if (checkCollisionAction(node->state(), _primitiveSteps[i]))
-        {
-            continue;
-        }
-        if (!newState.isCorrect())
-        {
-            continue;
-        }
-        result.push_back(
-            new astar::SearchNode(
-                node->g() + costMove(node->state(), newState),
-                heuristicFunc(newState, goal) * weight,
-                newState,
-                i,
-                node
-            )
-        );
-    }
-
-    stopProfiling();
-    return result;
-}
-
 Solution ManipulatorPlanner::astarPlanning(
     const JointState& startPos, const JointState& goalPos,
     CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
     float weight
 )
 {
-    Solution solution(_primitiveSteps, _zeroStep);
-
-    // start timer
-    clock_t start = clock();
-
-    // init search tree
-    astar::SearchTree tree;
-    astar::SearchNode* startNode = new astar::SearchNode(0, heuristicFunc(startPos, goalPos) * weight, startPos);
-    tree.addToOpen(startNode);
-    astar::SearchNode* currentNode = tree.extractBestNode();
-
-    while (currentNode != nullptr)
-    {
-        if (currentNode->state() == goalPos)
-        {
-            break;
-        }
-        // count statistic
-        solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
-        ++solution.stats.expansions;
-        // expand current node
-        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, goalPos, heuristicFunc, weight);
-        for (auto successor : successors)
-        {
-            tree.addToOpen(successor);
-        }
-        // retake node from tree
-        tree.addToClosed(currentNode);
-        currentNode = tree.extractBestNode();
-    }
-
-    // end timer
-    clock_t end = clock();
-    solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
-
-    if (currentNode != nullptr)
-    {
-        solution.stats.pathFound = true;
-        solution.plannerProfile = getNamedProfileInfo();
-        solution.searchTreeProfile = tree.getNamedProfileInfo();
-        
-        vector<size_t> steps;
-        while (currentNode->parent() != nullptr)
-        {
-            // count stats
-            solution.stats.pathCost += costMove(currentNode->state(), currentNode->parent()->state());
-            //
-            steps.push_back(currentNode->stepNum());
-            currentNode = currentNode->parent();
-        }
-
-        // push steps
-        for (int i = steps.size() - 1; i >= 0; --i)
-        {
-            solution.addStep(steps[i]);
-        }
-    }
-
+    AstarChecker checker(this);
+    Solution solution = astar::astar(startPos, goalPos, checker, heuristicFunc, weight);
+    solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }
+
+
+ManipulatorPlanner::AstarChecker::AstarChecker(ManipulatorPlanner* planner)
+{
+    _planner = planner;
+}
+
+bool ManipulatorPlanner::AstarChecker::isCorrect(const JointState& state, const JointState& action)
+{
+    return (state + action).isCorrect() && (!_planner->checkCollisionAction(state, action));
+}
+CostType ManipulatorPlanner::AstarChecker::costAction(const JointState& action)
+{
+    return action.abs();
+}
+const std::vector<JointState>& ManipulatorPlanner::AstarChecker::getActions()
+{
+    return _planner->_primitiveSteps;
+}
+const JointState& ManipulatorPlanner::AstarChecker::getZeroAction()
+{
+    return _planner->_zeroStep;
+}
+

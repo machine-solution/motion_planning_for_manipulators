@@ -112,7 +112,7 @@ void printLog(FILE* file, const Solution& solution)
 {
     std::string yn[] = {"NO", "YES"};
 
-    fprintf(file, "path found: %s\nexpansions: %zu\nmax tree size: %zu\ncost of path: %d\nruntime: %.3fs\n",
+    fprintf(file, "path found: %s\nexpansions: %zu\nmax tree size: %zu\ncost of path: %f\nruntime: %.3fs\n",
         yn[solution.stats.pathFound].c_str(),
         solution.stats.expansions,
         solution.stats.maxTreeSize,
@@ -178,7 +178,7 @@ void printStatsLogHeader(FILE* file, const Solution& solution)
 
 void printStatsLog(FILE* file, const Solution& solution)
 {
-    fprintf(file, "%zu,%f,%zu,%d,%d\n",
+    fprintf(file, "%zu,%f,%zu,%f,%d\n",
         solution.stats.expansions,
         solution.stats.runtime,
         solution.stats.maxTreeSize,
