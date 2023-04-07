@@ -76,8 +76,8 @@ class IAstarChecker
 public:
     virtual bool isCorrect(const JointState& state, const JointState& action) = 0;
     virtual CostType costAction(const JointState& action) = 0;
-    virtual std::vector<JointState>& getActions() = 0;
-    virtual JointState& getZeroAction() = 0;
+    virtual const std::vector<JointState>& getActions() = 0;
+    virtual const JointState& getZeroAction() = 0;
 };
 
 // allocates on heap and returns successors

@@ -57,8 +57,8 @@ private:
 
         bool isCorrect(const JointState& state, const JointState& action) override;
         CostType costAction(const JointState& action) override;
-        std::vector<JointState>& getActions() override;
-        JointState& getZeroAction() override;
+        const std::vector<JointState>& getActions() override;
+        const JointState& getZeroAction() override;
     private:
         ManipulatorPlanner* _planner;
     };

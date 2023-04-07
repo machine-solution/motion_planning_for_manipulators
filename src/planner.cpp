@@ -167,11 +167,11 @@ CostType ManipulatorPlanner::AstarChecker::costAction(const JointState& action)
 {
     return action.abs();
 }
-std::vector<JointState>& ManipulatorPlanner::AstarChecker::getActions()
+const std::vector<JointState>& ManipulatorPlanner::AstarChecker::getActions()
 {
     return _planner->_primitiveSteps;
 }
-JointState& ManipulatorPlanner::AstarChecker::getZeroAction()
+const JointState& ManipulatorPlanner::AstarChecker::getZeroAction()
 {
     return _planner->_zeroStep;
 }
