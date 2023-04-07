@@ -9,3 +9,4 @@ venv/
 *.ipynb_checkpoints
 /tools
 pyplot/run
+*.ipynb
