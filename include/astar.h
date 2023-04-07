@@ -2,6 +2,7 @@
 
 #include "joint_state.h"
 #include "utils.h"
+#include "solution.h"
 
 #include <set>
 
@@ -69,5 +70,30 @@ private:
     // sort by state
     set<SearchNode*, CmpByState> _closed;
 };
+
+class IAstarChecker
+{
+public:
+    virtual bool isCorrect(const JointState& state, const JointState& action) = 0;
+    virtual CostType costAction(const JointState& action) = 0;
+    virtual std::vector<JointState>& getActions() = 0;
+    virtual JointState& getZeroAction() = 0;
+};
+
+// allocates on heap and returns successors
+vector<SearchNode*> generateSuccessors(
+    SearchNode* node,
+    IAstarChecker& checker,
+    const JointState& goal,
+    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
+    float weight
+);
+
+Solution astar(
+    const JointState& startPos, const JointState& goalPos,
+    IAstarChecker& checker,
+    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
+    float weight = 1
+);
 
 } // namespace astar

@@ -37,15 +37,6 @@ private:
 
     Solution linearPlanning(const JointState& startPos, const JointState& goalPos);
 
-    CostType costMove(const JointState& state1, const JointState& state2) const;
-    // allocates on heap and returns successors
-    vector<astar::SearchNode*> generateSuccessors(
-        astar::SearchNode* node,
-        const JointState& goal,
-        CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
-        float weight
-    ) const;
-
     Solution astarPlanning(
         const JointState& startPos, const JointState& goalPos,
         CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
@@ -58,4 +49,17 @@ private:
 
     mutable mjModel* _model; // model for collision checks
     mutable mjData* _data; // data for collision checks
+
+    class AstarChecker : public astar::IAstarChecker
+    {
+    public:
+        AstarChecker(ManipulatorPlanner& planner);
+
+        bool isCorrect(const JointState& state, const JointState& action) override;
+        CostType costAction(const JointState& action) override;
+        std::vector<JointState>& getActions() override;
+        JointState& getZeroAction() override;
+    private:
+        ManipulatorPlanner* _planner;
+    };
 };

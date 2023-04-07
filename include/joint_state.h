@@ -38,6 +38,8 @@ public:
     int maxJoint() const;
     int minJoint() const;
 
+    int abs() const;
+
     bool isCorrect() const;
 
     // const int units = g_units;
