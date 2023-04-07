@@ -3,12 +3,19 @@
 #include "joint_state.h"
 #include "utils.h"
 
+enum PathVerdict
+{
+    PATH_FOUND,
+    PATH_NOT_FOUND,
+    PATH_NOT_EXISTS,
+};
+
 struct Stats
 {
     size_t expansions = 0;
     CostType pathCost = 0;
     size_t maxTreeSize = 0;
-    bool pathFound = false;
+    int pathVerdict = PATH_NOT_FOUND;
 
     double runtime = 0.0;
 };

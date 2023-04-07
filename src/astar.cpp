@@ -112,6 +112,10 @@ size_t SearchTree::size() const
 {
     return _open.size() + _closed.size();
 }
+size_t SearchTree::sizeOpen() const
+{
+    return _open.size();
+}
 
 bool SearchTree::wasExpanded(SearchNode* node) const
 {
@@ -126,7 +130,7 @@ vector<SearchNode*> generateSuccessors(
     IAstarChecker& checker,
     const JointState& goal,
     CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
-    float weight
+    double weight
 )
 {
     vector<SearchNode*> result;
@@ -156,10 +160,12 @@ Solution astar(
     const JointState& startPos, const JointState& goalPos,
     IAstarChecker& checker,
     CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
-    float weight
+    double weight,
+    double timeLimit
 )
 {
     Solution solution(checker.getActions(), checker.getZeroAction());
+    clock_t clockTimeLimit = timeLimit * CLOCKS_PER_SEC;
 
     // start timer
     clock_t start = clock();
@@ -174,11 +180,15 @@ Solution astar(
     {
         if (currentNode->state() == goalPos)
         {
+            solution.stats.pathVerdict = PATH_FOUND;
             break;
         }
-        // count statistic
-        solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
-        ++solution.stats.expansions;
+        // give up if time limit is exhausted
+        if (clock() - start > clockTimeLimit)
+        {
+            solution.stats.pathVerdict = PATH_NOT_FOUND;
+            break;
+        }
         // expand current node
         vector<astar::SearchNode*> successors = generateSuccessors(currentNode, checker, goalPos, heuristicFunc, weight);
         for (auto successor : successors)
@@ -188,17 +198,21 @@ Solution astar(
         // retake node from tree
         tree.addToClosed(currentNode);
         currentNode = tree.extractBestNode();
+        // count statistic
+        solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
+        ++solution.stats.expansions;
     }
 
     // end timer
     clock_t end = clock();
     solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
 
-    if (currentNode != nullptr)
+    if (currentNode == nullptr)
     {
-        solution.stats.pathFound = true;
-        solution.searchTreeProfile = tree.getNamedProfileInfo();
-        
+        solution.stats.pathVerdict = PATH_NOT_EXISTS;
+    }
+    else if (solution.stats.pathVerdict == PATH_FOUND)
+    {
         vector<size_t> steps;
         while (currentNode->parent() != nullptr)
         {
@@ -215,12 +229,8 @@ Solution astar(
             solution.addStep(steps[i]);
         }
     }
-    else
-    {
-        solution.stats.pathFound = false;
-        solution.searchTreeProfile = tree.getNamedProfileInfo();
-    }
 
+    solution.searchTreeProfile = tree.getNamedProfileInfo();
     return solution;
 }
 

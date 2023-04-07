@@ -10,7 +10,7 @@ enum Algorithm
 {
     ALG_LINEAR,
     ALG_ASTAR,
-    ALG_MAX
+    ALG_MAX,
 };
 
 class ManipulatorPlanner : public Profiler
@@ -27,7 +27,8 @@ public:
     // only for _dof = 2 now
     vector<string> configurationSpace() const;
 
-    Solution planSteps(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1);
+    // timeLimit - is a maximum time in *seconds*, after that planner will give up
+    Solution planSteps(const JointState& startPos, const JointState& goalPos, double timeLimit = 1.0, int alg = ALG_MAX - 1);
 
     const int units = g_units;
     const double eps = g_eps;
@@ -40,7 +41,7 @@ private:
     Solution astarPlanning(
         const JointState& startPos, const JointState& goalPos,
         CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
-        float weight = 1
+        float weight, double timeLimit
     );
 
     vector<JointState> _primitiveSteps;

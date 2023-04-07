@@ -11,7 +11,7 @@
 #include <string.h>
 #include <fstream>
 
-char filename[] = "model/2-dof/manipulator_4.xml";
+char filename[] = "model/3-dof/manipulator_4.xml";
 char resfile[] = "pyplot/stats.log";
 
 FILE* logfile = nullptr;
@@ -110,10 +110,10 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
 
 void printLog(FILE* file, const Solution& solution)
 {
-    std::string yn[] = {"NO", "YES"};
+    std::string yn[] = {"FOUND", "NOT FOUND", "NOT EXISTS"};
 
-    fprintf(file, "path found: %s\nexpansions: %zu\nmax tree size: %zu\ncost of path: %f\nruntime: %.3fs\n",
-        yn[solution.stats.pathFound].c_str(),
+    fprintf(file, "path verdict: %s\nexpansions: %zu\nmax tree size: %zu\ncost of path: %f\nruntime: %.3fs\n",
+        yn[solution.stats.pathVerdict].c_str(),
         solution.stats.expansions,
         solution.stats.maxTreeSize,
         solution.stats.pathCost,
@@ -183,7 +183,7 @@ void printStatsLog(FILE* file, const Solution& solution)
         solution.stats.runtime,
         solution.stats.maxTreeSize,
         solution.stats.pathCost,
-        solution.stats.pathFound);
+        solution.stats.pathVerdict);
 }
 
 void printCSpace(FILE* file, const vector<string>& cSpace)
@@ -226,26 +226,25 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
             if (counter > 8) // to first of all simulator can show picture
             {
                 counter = 0;
-                solution = planner.planSteps(currentState, goal, ALG_ASTAR);
+                solution = planner.planSteps(currentState, goal, 600.0, ALG_ASTAR);
                 haveToPlan = false;
 
                 printLog(stdout, solution);
-                if (solution.stats.pathFound)
+                
+                if (solved == 0)
                 {
-                    if (solved == 0)
-                    {
-                        // printRuntimeLogHeader(logfile, solution);
-                        printStatsLogHeader(logfile, solution);
-                    }
-                    // printRuntimeLog(logfile, solution);
-                    printStatsLog(logfile, solution);
-                    ++solved;
-                    if (solved == 100)
-                    {
-                        fclose(logfile);
-                        exit(0);
-                    }
+                    // printRuntimeLogHeader(logfile, solution);
+                    printStatsLogHeader(logfile, solution);
                 }
+                // printRuntimeLog(logfile, solution);
+                printStatsLog(logfile, solution);
+                ++solved;
+                if (solved == 100)
+                {
+                    fclose(logfile);
+                    exit(0);
+                }
+                
                 printf("solved %d/100\n", solved);
             }
         }

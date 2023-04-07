@@ -77,20 +77,22 @@ vector<string> ManipulatorPlanner::configurationSpace() const
     return cSpace;
 }
 
-Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg)
+Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, double timeLimit, int alg)
 {
     clearAllProfiling(); // reset profiling
 
     if (checkCollision(goalPos))
     {
-        return Solution(_primitiveSteps, _zeroStep); // incorrect aim
+        Solution solution(_primitiveSteps, _zeroStep);
+        solution.stats.pathVerdict = PATH_NOT_EXISTS; // incorrect aim
+        return  solution;
     }
     switch (alg)
     {
     case ALG_LINEAR:
         return linearPlanning(startPos, goalPos);
     case ALG_ASTAR:
-        return astarPlanning(startPos, goalPos, manhattanHeuristic, 1.0);
+        return astarPlanning(startPos, goalPos, manhattanHeuristic, 1.0, timeLimit);
     default:
         return Solution(_primitiveSteps, _zeroStep);
     }
@@ -130,6 +132,7 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
 
             if (checkCollisionAction(currentPos, _primitiveSteps[t]))
             {
+                solution.stats.pathVerdict = PATH_NOT_FOUND;
                 return solution; // we temporary need to give up : TODO
             }
             currentPos += _primitiveSteps[t];
@@ -137,18 +140,18 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
         }
     }
 
-    solution.stats.pathFound = true;
+    solution.stats.pathVerdict = PATH_FOUND;
     return solution;
 }
 
 Solution ManipulatorPlanner::astarPlanning(
     const JointState& startPos, const JointState& goalPos,
     CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
-    float weight
+    float weight, double timeLimit
 )
 {
     AstarChecker checker(this);
-    Solution solution = astar::astar(startPos, goalPos, checker, heuristicFunc, weight);
+    Solution solution = astar::astar(startPos, goalPos, checker, heuristicFunc, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }
