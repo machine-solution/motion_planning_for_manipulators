@@ -147,16 +147,16 @@ Solution ManipulatorPlanner::astarPlanning(
     float weight
 )
 {
-    AstarChecker checker(*this);
+    AstarChecker checker(this);
     Solution solution = astar::astar(startPos, goalPos, checker, heuristicFunc, weight);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }
 
 
-ManipulatorPlanner::AstarChecker::AstarChecker(ManipulatorPlanner& planner)
+ManipulatorPlanner::AstarChecker::AstarChecker(ManipulatorPlanner* planner)
 {
-    _planner = &planner;
+    _planner = planner;
 }
 
 bool ManipulatorPlanner::AstarChecker::isCorrect(const JointState& state, const JointState& action)

@@ -53,7 +53,7 @@ private:
     class AstarChecker : public astar::IAstarChecker
     {
     public:
-        AstarChecker(ManipulatorPlanner& planner);
+        AstarChecker(ManipulatorPlanner* planner);
 
         bool isCorrect(const JointState& state, const JointState& action) override;
         CostType costAction(const JointState& action) override;
