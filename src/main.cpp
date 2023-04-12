@@ -11,12 +11,16 @@
 #include <string.h>
 #include <fstream>
 
-char filename[] = "model/2-dof/manipulator_4.xml";
-char resfilename[] = "pyplot/stats.log";
-char scenfilename[] = "scenaries/4_scen.log";
+char modelFilename[] = "model/4-dof/manipulator_4.xml";
+char testsFilename[] = "scenaries/4_hard.scen";
+char resFilename[] = "pyplot/stats.log";
+char scenFilename[] = "scenaries/scen.log";
 
-FILE* logfile = nullptr;
-FILE* scenfile = nullptr;
+FILE* logFile = nullptr;
+FILE* scenFile = nullptr;
+FILE* testsFile = nullptr;
+
+vector<std::pair<JointState, JointState>> g_tests;
 
 const int seed = 12345;
 
@@ -223,12 +227,119 @@ void printCSpace(FILE* file, const vector<string>& cSpace)
     }
 }
 
+vector<std::pair<JointState, JointState>> loadTests(FILE* file)
+{
+    int n;
+    fscanf(file, "%d", &n);
+    vector<std::pair<JointState, JointState>> tests;
+    while (!feof(file))
+    {
+        JointState start(n);
+        JointState goal(n);
+        for (size_t i = 0; i < n; ++i)
+        {
+            fscanf(file, "%d", &start[i]);
+        }
+        for (size_t i = 0; i < n; ++i)
+        {
+            fscanf(file, "%d", &goal[i]);
+        }
+        float optimal;
+        fscanf(file, "%f", &optimal); // it is really unused now
+        tests.push_back({start, goal});
+    }
+    return tests;
+}
+
+void planner_step_tests(mjModel* m, mjData* d, ManipulatorPlanner& planner)
+{
+    static int counter = 0;
+    static int partOfMove = 0;
+    static bool haveToPlan = false;
+    static int solved = 0;
+
+    static Solution solution;
+    static JointState currentState(planner.dof(), 0);
+    static JointState goal(planner.dof(), 0);
+    static JointState delta(planner.dof(), 0);
+
+    if (solution.goalAchieved())
+    {
+        if (solved == g_tests.size() - 1)
+        {
+            fclose(logFile);
+            fclose(scenFile);
+            fclose(testsFile);
+            exit(0);
+        }
+        delta = JointState(planner.dof(), 0);
+        if (!haveToPlan)
+        {
+            // generating new goal
+            currentState = g_tests[solved + 1].first;
+            goal = g_tests[solved + 1].second;
+            for (size_t i = 0; i < planner.dof(); ++i)
+            {
+                d->qpos[i + planner.dof()] = goal.rad(i);
+                d->qpos[i] = currentState.rad(i);
+            }
+            haveToPlan = true;
+        }
+        else if (haveToPlan)
+        {
+            // planning path to goal
+            ++counter;
+            if (counter > 8) // to first of all simulator can show picture
+            {
+                counter = 0;
+                solution = planner.planSteps(currentState, goal, ALG_ASTAR, 600.0);
+                haveToPlan = false;
+
+                printLog(stdout, solution);
+                
+                if (solved == 0)
+                {
+                    printStatsLogHeader(logFile, solution);
+                    printSceneLogHeader(scenFile, solution, currentState, goal);
+                }
+                printStatsLog(logFile, solution);
+                printSceneLog(scenFile, solution, currentState, goal);
+                ++solved;
+                
+                printf("solved %d/%zu\n", solved, g_tests.size());
+            }
+        }
+    }
+    else
+    {
+        if (partOfMove == g_unitSize - 1)
+        {
+            currentState += delta;
+            for (size_t i = 0; i < planner.dof(); ++i)
+            {
+                d->qpos[i] = currentState.rad(i);
+            }
+            delta = solution.nextStep();
+            partOfMove = 0;
+        }
+        else
+        {
+            ++partOfMove;
+            for (size_t i = 0; i < planner.dof(); ++i)
+            {
+                d->qpos[i] += delta[i] * g_worldEps;
+            }
+        }
+    }
+}
+
 void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
 {
     static int counter = 0;
     static int partOfMove = 0;
     static bool haveToPlan = false;
     static int solved = 0;
+    static int notSolved = 0;
 
     static Solution solution;
     static JointState currentState(planner.dof(), 0);
@@ -255,7 +366,7 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
             if (counter > 8) // to first of all simulator can show picture
             {
                 counter = 0;
-                solution = planner.planSteps(currentState, goal, ALG_ASTAR, 600.0);
+                solution = planner.planSteps(currentState, goal, ALG_ASTAR, 1.0);
                 haveToPlan = false;
 
                 printLog(stdout, solution);
@@ -264,28 +375,35 @@ void planner_step(mjModel* m, mjData* d, ManipulatorPlanner& planner)
                 {
                     if (solved == 0)
                     {
-                        printStatsLogHeader(logfile, solution);
-                        printSceneLogHeader(scenfile, solution, currentState, goal);
+                        printStatsLogHeader(logFile, solution);
+                        printSceneLogHeader(scenFile, solution, currentState, goal);
                     }
-                    printStatsLog(logfile, solution);
-                    printSceneLog(scenfile, solution, currentState, goal);
+                    printStatsLog(logFile, solution);
+                    printSceneLog(scenFile, solution, currentState, goal);
                     ++solved;
-                    if (solved == 5000)
-                    {
-                        fclose(logfile);
-                        fclose(scenfile);
-                        exit(0);
-                    }
 
                     // TODO remove
+                    // works if no visual
                     currentState = goal;
                     for (size_t i = 0; i < planner.dof(); ++i)
                     {
                         d->qpos[i] = currentState.rad(i);
                     }
                 }
+                if (solution.stats.pathVerdict == PATH_NOT_FOUND)
+                {
+                    ++notSolved;
+                }
                 
-                printf("solved %d/5000\n", solved);
+                printf("solved %d, not solved %d, time limit %.1fs\n\n", solved, notSolved, 1.0);
+
+                if (solved + notSolved == 100)
+                {
+                    fclose(logFile);
+                    fclose(scenFile);
+                    fclose(testsFile);
+                    exit(0);
+                }
             }
         }
     }
@@ -325,7 +443,7 @@ int main(int argc, const char** argv)
 
     // check command-line arguments
     if (argc < 2)
-        m = mj_loadXML(filename, 0, error, 1000);
+        m = mj_loadXML(modelFilename, 0, error, 1000);
     else
         if (strlen(argv[1])>4 && !strcmp(argv[1]+strlen(argv[1])-4, ".mjb"))
             m = mj_loadModel(argv[1], 0);
@@ -344,8 +462,11 @@ int main(int argc, const char** argv)
     mjModel* mCopy = mj_copyModel(NULL, m);
     mjData* dCopy = mj_makeData(mCopy);
 
-    logfile = fopen(resfilename, "w+");
-    scenfile = fopen(scenfilename, "w+");
+    logFile = fopen(resFilename, "w+");
+    scenFile = fopen(scenFilename, "w+");
+    testsFile = fopen(testsFilename, "r");
+
+    g_tests = loadTests(testsFile);
 
     // init GLFW
     if (!glfwInit())
