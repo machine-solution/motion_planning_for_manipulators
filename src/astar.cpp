@@ -223,6 +223,8 @@ Solution astar(
             currentNode = currentNode->parent();
         }
 
+        solution.stats.pathPotentialCost = heuristicFunc(startPos, goalPos);
+
         // push steps
         for (int i = steps.size() - 1; i >= 0; --i)
         {
