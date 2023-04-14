@@ -101,13 +101,12 @@ Interactor::Interactor(const std::string& modelFilename)
     _planner = new ManipulatorPlanner(_dof, mCopy, dCopy);
     _logger = new Logger(_dof);
     _testset = new TestSet(_dof);
-    _view = new View();
 }
 Interactor::~Interactor()
 {
     // free MuJoCo model and data, deactivate
-    _view->close();
-    delete _view;
+    mjv_freeScene(&_scn);
+    mjr_freeContext(&_con);
     mj_deleteData(_data);
     mj_deleteModel(_model);
     delete _planner;
@@ -123,6 +122,32 @@ Interactor::~Interactor()
 
 void Interactor::setUp()
 {
+    // init GLFW
+    if (!glfwInit())
+        mju_error("Could not initialize GLFW");
+
+    // create window, make OpenGL context current, request v-sync
+    _window = glfwCreateWindow(1244, 700, "Manipulator", NULL, NULL);
+    glfwMakeContextCurrent(_window);
+    glfwSwapInterval(1);
+
+    // initialize visualization data structures
+    mjv_defaultCamera(&_cam);
+    mjv_defaultOption(&_opt);
+    mjv_defaultScene(&_scn);
+    mjr_defaultContext(&_con);
+    mjv_makeScene(_model, &_scn, 2000);                // space for 2000 objects
+    mjr_makeContext(_model, &_con, mjFONTSCALE_150);   // model-specific context
+
+    // init camera
+    double arr_view[] = {90, -90, 5.5, 0.000000, 0.000000, 0.000000};
+    _cam.azimuth = arr_view[0];
+    _cam.elevation = arr_view[1];
+    _cam.distance = arr_view[2];
+    _cam.lookat[0] = arr_view[3];
+    _cam.lookat[1] = arr_view[4];
+    _cam.lookat[2] = arr_view[5];
+
     _logger->prepareMainFile("");
     // _logger->prepareRuntimeFile("pyplot/4/runtime.log");
     _logger->prepareScenFile("scenaries/scen.log");
@@ -131,7 +156,7 @@ void Interactor::setUp()
     // _testset->generateRandomTests(1000);
     _testset->loadTests("scenaries/4_hard.scen");
 
-    _view->setUp(_model, _data);
+    printf("Simulation is started!\n");
 }
 
 void Interactor::step()
@@ -223,12 +248,29 @@ void Interactor::stepLoop(double duration)
     }
 }
 
+void Interactor::show()
+{
+    // get framebuffer viewport
+    mjrRect viewport = {0, 0, 0, 0};
+    glfwGetFramebufferSize(_window, &viewport.width, &viewport.height);
+
+    // update scene and render
+    mjv_updateScene(_model, _data, &_opt, NULL, &_cam, mjCAT_ALL, &_scn);
+    mjr_render(viewport, &_scn, &_con);
+
+    // swap OpenGL buffers (blocking call due to v-sync)
+    glfwSwapBuffers(_window);
+
+    // process pending GUI events, call GLFW callbacks
+    glfwPollEvents();
+}
+
 void Interactor::doMainLoop()
 {
     const double fps = 60.0;
-    while (!_view->shouldClose())
+    while (!glfwWindowShouldClose(_window))
     {
         stepLoop(1 / fps);
-        _view->step();
+        show();
     }
 }

@@ -3,9 +3,9 @@
 #include "joint_state.h"
 #include "planner.h"
 #include "logger.h"
-#include "view.h"
 
 #include <mujoco/mujoco.h>
+#include <GLFW/glfw3.h>
 
 #include <stdio.h>
 
@@ -45,16 +45,24 @@ public:
 
     void stepLoop(double duration);
 
+    void show();
+
     void doMainLoop();
 
 private:
     mjData* _data;
     mjModel* _model;
 
+    mjvCamera _cam;
+    mjvOption _opt;
+    mjvScene _scn;
+    mjrContext _con;
+    GLFWwindow* _window;
+
     ManipulatorPlanner* _planner;
     Logger* _logger;
     TestSet* _testset;
-    View* _view;
+
     size_t _dof;
 };
 
