@@ -154,7 +154,7 @@ void Interactor::setUp()
     _logger->prepareStatsFile("pyplot/4/stats.log");
 
     // _testset->generateRandomTests(1000);
-    _testset->loadTests("scenaries/4_hard.scen");
+    _testset->loadTests("scenaries/test.scen");
 
     printf("Simulation is started!\n");
 }
@@ -175,7 +175,8 @@ void Interactor::step()
     {
         if (!_testset->haveNextTest())
         {
-            exit(0);
+            _shouldClose = true;
+            return;
         }
         delta = JointState(_dof, 0);
         if (!haveToPlan)
@@ -238,7 +239,7 @@ void Interactor::step()
 void Interactor::stepLoop(double duration)
 {
     mjtNum simstart = _data->time;
-    while (_data->time - simstart < duration)
+    while (_data->time - simstart < duration && !shouldClose())
     {
         step();
         if (_data->ncon)
@@ -265,10 +266,15 @@ void Interactor::show()
     glfwPollEvents();
 }
 
+bool Interactor::shouldClose()
+{
+    return glfwWindowShouldClose(_window) || _shouldClose;
+}
+
 void Interactor::doMainLoop()
 {
     const double fps = 60.0;
-    while (!glfwWindowShouldClose(_window))
+    while (!shouldClose())
     {
         stepLoop(1 / fps);
         show();

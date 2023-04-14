@@ -47,6 +47,8 @@ public:
 
     void show();
 
+    bool shouldClose();
+
     void doMainLoop();
 
 private:
@@ -64,5 +66,7 @@ private:
     TestSet* _testset;
 
     size_t _dof;
+
+    bool _shouldClose = false;
 };
 
