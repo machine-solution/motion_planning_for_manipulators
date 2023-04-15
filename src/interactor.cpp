@@ -120,7 +120,7 @@ Interactor::~Interactor()
     #endif
 }
 
-void Interactor::setUp()
+void Interactor::setUp(Config config)
 {
     // init GLFW
     if (!glfwInit())
@@ -148,15 +148,53 @@ void Interactor::setUp()
     _cam.lookat[1] = arr_view[4];
     _cam.lookat[2] = arr_view[5];
 
-    _logger->prepareMainFile("");
-    // _logger->prepareRuntimeFile("pyplot/4/runtime.log");
-    _logger->prepareScenFile("scenaries/scen.log");
-    _logger->prepareStatsFile("pyplot/4/stats.log");
+    _config = config;
 
-    // _testset->generateRandomTests(1000);
-    _testset->loadTests("scenaries/test.scen");
+    _logger->prepareMainFile("");
+    _logger->prepareScenFile(_config.scenFilename);
+    _logger->prepareStatsFile(_config.statsFilename);
+
+    if (_config.randomTests)
+    {
+        _testset->generateRandomTests(_config.testNum);
+    }
+    {
+        _testset->loadTests(_config.testsFilename);
+    }
 
     printf("Simulation is started!\n");
+}
+
+void Interactor::setManipulatorState(const JointState& state)
+{
+    for (size_t i = 0; i < _dof; ++i)
+    {
+        _data->qpos[i] = state.rad(i);
+    }
+}
+void Interactor::setGoalState(const JointState& state)
+{
+    for (size_t i = 0; i < _dof; ++i)
+    {
+        _data->qpos[i + _dof] = state.rad(i);
+    }
+}
+size_t Interactor::simulateAction(JointState& currentState, const JointState& action, size_t stage)
+{
+    if (stage == g_unitSize - 1)
+    {
+        currentState += action;
+        setManipulatorState(currentState);
+        return 0;
+    }
+    else
+    {
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            _data->qpos[i] += action[i] * g_worldEps;
+        }
+        return stage + 1;
+    }
 }
 
 void Interactor::step()
@@ -169,7 +207,7 @@ void Interactor::step()
     static Solution solution;
     static JointState currentState(_dof, 0);
     static JointState goal(_dof, 0);
-    static JointState delta(_dof, 0);
+    static JointState action(_dof, 0);
 
     if (solution.goalAchieved())
     {
@@ -178,18 +216,15 @@ void Interactor::step()
             _shouldClose = true;
             return;
         }
-        delta = JointState(_dof, 0);
+        action = JointState(_dof, 0);
         if (!haveToPlan)
         {
             // generating new test
             std::pair<JointState, JointState> test = _testset->getNextTest();
             currentState = test.first;
             goal = test.second;
-            for (size_t i = 0; i < _dof; ++i)
-            {
-                _data->qpos[i + _dof] = goal.rad(i);
-                _data->qpos[i] = currentState.rad(i);
-            }
+            setManipulatorState(currentState);
+            setGoalState(goal);
             haveToPlan = true;
         }
         else if (haveToPlan)
@@ -199,7 +234,7 @@ void Interactor::step()
             if (counter > 8) // to first of all simulator can show picture
             {
                 counter = 0;
-                solution = _planner->planSteps(currentState, goal, ALG_ASTAR, 600.0);
+                solution = _planner->planSteps(currentState, goal, ALG_ASTAR, _config.timeLimit, _config.w);
                 haveToPlan = false;
 
                 _logger->printMainLog(solution);
@@ -207,29 +242,16 @@ void Interactor::step()
                 _logger->printStatsLog(solution);
                 _logger->printScenLog(solution, currentState, goal);
                 
-                printf("solved %d/%zu\n", ++solved, _testset->size());
+                printf("solved %d/%zu\n\n", ++solved, _testset->size());
             }
         }
     }
     else
     {
-        if (partOfMove == g_unitSize - 1)
+        partOfMove = simulateAction(currentState, action, partOfMove);
+        if (partOfMove == 0)
         {
-            currentState += delta;
-            for (size_t i = 0; i < _dof; ++i)
-            {
-                _data->qpos[i] = currentState.rad(i);
-            }
-            delta = solution.nextStep();
-            partOfMove = 0;
-        }
-        else
-        {
-            ++partOfMove;
-            for (size_t i = 0; i < _dof; ++i)
-            {
-                _data->qpos[i] += delta[i] * g_worldEps;
-            }
+            action = solution.nextStep();
         }
     }
 

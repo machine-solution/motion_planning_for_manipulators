@@ -33,13 +33,31 @@ private:
     size_t _dof;
 };
 
+struct Config
+{
+    double timeLimit;
+    double w;
+    int testNum;
+    bool randomTests;
+    std::string scenFilename;
+    std::string statsFilename;
+    std::string testsFilename;
+};
+
 class Interactor
 {
 public:
     Interactor(const std::string& modelFilename);
     ~Interactor();
 
-    void setUp();
+    void setUp(Config config);
+
+    void setManipulatorState(const JointState& state);
+    void setGoalState(const JointState& state);
+    // simulate action in currentState
+    // at end stage aplies action to currentState
+    // return next stage
+    size_t simulateAction(JointState& currentState, const JointState& action, size_t stage);
 
     void step();
 
@@ -68,5 +86,7 @@ private:
     size_t _dof;
 
     bool _shouldClose = false;
+
+    Config _config;
 };
 
