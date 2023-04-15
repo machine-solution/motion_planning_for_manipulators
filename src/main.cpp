@@ -16,10 +16,10 @@ int main(int argc, const char** argv)
 {
     Interactor interactor("model/2-dof/manipulator_4.xml");
     interactor.setUp({
-        0.4, // time
+        10.0, // time
         10.0, // w
         100,
-        false,
+        true,
         "scenaries/scen.log",
         "pyplot/4/stats.log",
         "scenaries/4_hard.scen"

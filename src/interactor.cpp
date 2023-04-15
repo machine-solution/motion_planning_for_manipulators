@@ -158,6 +158,7 @@ void Interactor::setUp(Config config)
     {
         _testset->generateRandomTests(_config.testNum);
     }
+    else
     {
         _testset->loadTests(_config.testsFilename);
     }
@@ -223,9 +224,13 @@ void Interactor::step()
             std::pair<JointState, JointState> test = _testset->getNextTest();
             currentState = test.first;
             goal = test.second;
-            setManipulatorState(currentState);
-            setGoalState(goal);
-            haveToPlan = true;
+            // if correct test TODO remove
+            if (!_planner->checkCollision(currentState) && !_planner->checkCollision(goal))
+            {
+                setManipulatorState(currentState);
+                setGoalState(goal);
+                haveToPlan = true;
+            }
         }
         else if (haveToPlan)
         {
