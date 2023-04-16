@@ -25,6 +25,7 @@ public:
     const std::pair<JointState, JointState>& getNextTest();
     bool haveNextTest() const;
 
+    size_t progress() const;
     size_t size() const;
 
 private:
@@ -42,6 +43,19 @@ struct Config
     std::string scenFilename;
     std::string statsFilename;
     std::string testsFilename;
+};
+
+struct ModelState
+{
+    int counter = 0;
+    int partOfMove = 0;
+    bool haveToPlan = false;
+    int solved = 0;
+    Solution solution;
+
+    JointState currentState;
+    JointState goal;
+    JointState action;
 };
 
 class Interactor
@@ -88,5 +102,6 @@ private:
     bool _shouldClose = false;
 
     Config _config;
+    ModelState _modelState;
 };
 

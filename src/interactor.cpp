@@ -6,6 +6,7 @@
 TestSet::TestSet(size_t dof)
 {
     _dof = dof;
+    _nextTestId = 0;
 }
 TestSet::TestSet(size_t dof, const std::string& filename) : TestSet(dof)
 {
@@ -67,11 +68,6 @@ void TestSet::restartTests()
     _nextTestId = 0;
 }
 
-size_t TestSet::size() const
-{
-    return _tests.size();
-}
-
 const std::pair<JointState, JointState>& TestSet::getTest(size_t i) const
 {
     return _tests[i];
@@ -83,6 +79,15 @@ const std::pair<JointState, JointState>& TestSet::getNextTest()
 bool TestSet::haveNextTest() const
 {
     return _nextTestId < _tests.size();
+}
+
+size_t TestSet::progress() const
+{
+    return _nextTestId;
+}
+size_t TestSet::size() const
+{
+    return _tests.size();
 }
 
 
@@ -113,6 +118,9 @@ Interactor::~Interactor()
     delete _logger;
     delete _testset;
     mj_deactivate();
+
+    // close glfw window
+    glfwDestroyWindow(_window);
 
     // terminate GLFW (crashes with Linux NVidia drivers)
     #if defined(__APPLE__) || defined(_WIN32)
@@ -150,6 +158,10 @@ void Interactor::setUp(Config config)
 
     _config = config;
 
+    _modelState.currentState = JointState(_dof, 0);
+    _modelState.goal = JointState(_dof, 0);
+    _modelState.action = JointState(_dof, 0);
+
     _logger->prepareMainFile("");
     _logger->prepareScenFile(_config.scenFilename);
     _logger->prepareStatsFile(_config.statsFilename);
@@ -163,7 +175,8 @@ void Interactor::setUp(Config config)
         _testset->loadTests(_config.testsFilename);
     }
 
-    printf("Simulation is started!\n");
+    printf("Test count = %zu.\n", _testset->size());
+    printf("Simulation is started!\n\n");
 }
 
 void Interactor::setManipulatorState(const JointState& state)
@@ -200,65 +213,56 @@ size_t Interactor::simulateAction(JointState& currentState, const JointState& ac
 
 void Interactor::step()
 {
-    static int counter = 0;
-    static int partOfMove = 0;
-    static bool haveToPlan = false;
-    static int solved = 0;
-
-    static Solution solution;
-    static JointState currentState(_dof, 0);
-    static JointState goal(_dof, 0);
-    static JointState action(_dof, 0);
-
-    if (solution.goalAchieved())
+    // if (solution.goalAchieved())
     {
-        if (!_testset->haveNextTest())
-        {
-            _shouldClose = true;
-            return;
-        }
-        action = JointState(_dof, 0);
-        if (!haveToPlan)
+        _modelState.action = JointState(_dof, 0);
+        if (!_modelState.haveToPlan)
         {
             // generating new test
-            std::pair<JointState, JointState> test = _testset->getNextTest();
-            currentState = test.first;
-            goal = test.second;
-            // if correct test TODO remove
-            if (!_planner->checkCollision(currentState) && !_planner->checkCollision(goal))
+            if (!_testset->haveNextTest())
             {
-                setManipulatorState(currentState);
-                setGoalState(goal);
-                haveToPlan = true;
+                _shouldClose = true;
+                return;
+            }
+            std::pair<JointState, JointState> test = _testset->getNextTest();
+            _modelState.currentState = test.first;
+            _modelState.goal = test.second;
+            // if correct test TODO remove
+            if (!_planner->checkCollision(_modelState.currentState) && !_planner->checkCollision(_modelState.goal))
+            {
+                setManipulatorState(_modelState.currentState);
+                setGoalState(_modelState.goal);
+                _modelState.haveToPlan = true;
             }
         }
-        else if (haveToPlan)
+        else if (_modelState.haveToPlan)
         {
             // planning path to goal
-            ++counter;
-            if (counter > 8) // to first of all simulator can show picture
+            ++_modelState.counter;
+            if (_modelState.counter > 8) // to first of all simulator can show picture
             {
-                counter = 0;
-                solution = _planner->planSteps(currentState, goal, ALG_ASTAR, _config.timeLimit, _config.w);
-                haveToPlan = false;
+                _modelState.counter = 0;
+                _modelState.solution = _planner->planSteps(_modelState.currentState, _modelState.goal,
+                    ALG_ASTAR, _config.timeLimit, _config.w);
+                _modelState.haveToPlan = false;
 
-                _logger->printMainLog(solution);
+                _logger->printMainLog(_modelState.solution);
                 
-                _logger->printStatsLog(solution);
-                _logger->printScenLog(solution, currentState, goal);
+                _logger->printStatsLog(_modelState.solution);
+                _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
                 
-                printf("solved %d/%zu\n\n", ++solved, _testset->size());
+                printf("solved %d/%zu\n\n", ++_modelState.solved, _testset->size());
             }
         }
     }
-    else
-    {
-        partOfMove = simulateAction(currentState, action, partOfMove);
-        if (partOfMove == 0)
-        {
-            action = solution.nextStep();
-        }
-    }
+    // else
+    // {
+    //     partOfMove = simulateAction(currentState, action, partOfMove);
+    //     if (partOfMove == 0)
+    //     {
+    //         action = solution.nextStep();
+    //     }
+    // }
 
     mj_step(_model, _data);
 }
