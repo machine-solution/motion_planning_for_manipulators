@@ -2,7 +2,7 @@
 
 ## Lazy collision checking
 
-![](pictures/1_8-checks.png)\
+![](pictures/1/8-checks.png)\
 This is a boxplot with runtime distribution. Names in bottom is abbriviations of method names: CCA - checkCollisionAction, GS - generateSuccessors, ATC - addToclosed, ATO - addToOpen, EBN - extractBestNode, WE - was expanded. Runtime values is normed by whole runtime of algorithm. Box "1" shown to fixed scale.\
 Chart shows whole runtime of function during all calls in every test case.\
 In this boxplot we can see that collision checking function is extrimely slow. generateSuccessors is slow because it calls CCA.\
@@ -12,8 +12,8 @@ Collision checking worked this way: for every action it checks manipulator colli
 Results: for 4 checks manipulator has encountered no obstacles in 100 tests and sped up.\
 For 2 and 1 checks manipulator has encountered obstacles in 23 same tests. But with 1 check CCA runtime became much smaller.
 
-![](pictures/1_4-checks.png)\
-![](pictures/1_1-checks.png)\
+![](pictures/1/4-checks.png)\
+![](pictures/1/1-checks.png)\
 
 ## Light collision in mujoco
 
@@ -22,14 +22,14 @@ Two remarks:\
 1. There is no public collision function in mujoco, only in source code and it is not recommended to use this functions, but it is used not for main simulation. I think it's ok to use it in copy of scene.
 2. (If you have read descriptions about xml files). Function was refactored to be used only in predefined collision pairs because main algorithm in source code too hard to refactor it. It isn't matter as long as I use predefined format of collisions.
 
-![](pictures/1_4-checks_light-collision.png)\
-![](pictures/1_1-checks_light-collision.png)\
+![](pictures/1/4-checks_light-collision.png)\
+![](pictures/1/1-checks_light-collision.png)\
 
 According to plots it has decreased runtime of collision checking.\
 
 And plot of whole runtime quantiles to evaluate the impact of this changes in whole runtime, not only in CCA.\
 
-![](pictures/1_full.png)\
+![](pictures/1/full.png)\
 
 Mean runtime statistics:\
 4-checks mean: 269.3 ms\
