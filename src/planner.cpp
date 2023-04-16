@@ -77,7 +77,7 @@ vector<string> ManipulatorPlanner::configurationSpace() const
     return cSpace;
 }
 
-Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg, double timeLimit)
+Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
 
@@ -92,7 +92,7 @@ Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointSt
     case ALG_LINEAR:
         return linearPlanning(startPos, goalPos);
     case ALG_ASTAR:
-        return astarPlanning(startPos, goalPos, manhattanHeuristic, 1.0, timeLimit);
+        return astarPlanning(startPos, goalPos, manhattanHeuristic, w, timeLimit);
     default:
         return Solution(_primitiveSteps, _zeroStep);
     }

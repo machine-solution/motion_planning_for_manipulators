@@ -140,6 +140,7 @@
         <pair geom1="geom edge 2" geom2="geom obstacle 13"/>
         <pair geom1="geom edge 2" geom2="geom obstacle 14"/>
         <pair geom1="geom edge 2" geom2="geom obstacle 15"/>
+        <pair geom1="geom edge 0" geom2="geom edge 2"/>
     </contact>
 
     <sensor>

@@ -28,7 +28,8 @@ public:
     vector<string> configurationSpace() const;
 
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
-    Solution planSteps(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1, double timeLimit = 1.0);
+    Solution planSteps(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1,
+        double timeLimit = 1.0, double w = 1.0);
 
     const int units = g_units;
     const double eps = g_eps;
