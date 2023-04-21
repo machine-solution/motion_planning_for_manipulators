@@ -26,7 +26,7 @@ int main(int argc, const char** argv)
             1000,
             false,
             "scenaries/scen.log",
-            "pyplot/4/stats_dof=3_w=" + names[i] + ".log",
+            "pyplot/5/stats_dof=3_w=" + names[i] + ".log",
             "scenaries/4_3-dof_hard.scen"
         });
         interactor.doMainLoop();
@@ -41,7 +41,7 @@ int main(int argc, const char** argv)
             1000,
             false,
             "scenaries/4_4-dof_scen.log",
-            "pyplot/4/stats_dof=4_w=" + names[i] + ".log",
+            "pyplot/5/stats_dof=4_w=" + names[i] + ".log",
             "scenaries/4_4-dof_hard.scen"
         });
         interactor.doMainLoop();
