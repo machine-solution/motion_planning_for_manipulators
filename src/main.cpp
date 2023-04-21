@@ -19,15 +19,15 @@ int main(int argc, const char** argv)
 
     for (size_t i = 0; i < ws.size(); ++i)
     {
-        Interactor interactor("model/3-dof/manipulator_4.xml");
+        Interactor interactor("model/2-dof/manipulator_4.xml");
         interactor.setUp({
-            1.0, // time
+            10.0, // time
             ws[i], // w
             1000,
             false,
             "scenaries/scen.log",
-            "pyplot/5/stats_dof=3_w=" + names[i] + ".log",
-            "scenaries/4_3-dof_hard.scen"
+            "pyplot/5/stats_dof=2_w=" + names[i] + ".log",
+            "scenaries/4_hard.scen"
         });
         interactor.doMainLoop();
     }

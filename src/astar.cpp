@@ -129,7 +129,6 @@ vector<SearchNode*> generateSuccessors(
     SearchNode* node,
     IAstarChecker& checker,
     const JointState& goal,
-    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
     double weight
 )
 {
@@ -145,7 +144,7 @@ vector<SearchNode*> generateSuccessors(
         result.push_back(
             new SearchNode(
                 node->g() + checker.costAction(action),
-                heuristicFunc(newState, goal) * weight,
+                checker.heuristic(newState) * weight,
                 newState,
                 i,
                 node
@@ -159,7 +158,6 @@ vector<SearchNode*> generateSuccessors(
 Solution astar(
     const JointState& startPos, const JointState& goalPos,
     IAstarChecker& checker,
-    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
     double weight,
     double timeLimit
 )
@@ -172,7 +170,7 @@ Solution astar(
 
     // init search tree
     SearchTree tree;
-    SearchNode* startNode = new astar::SearchNode(0, heuristicFunc(startPos, goalPos) * weight, startPos);
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos) * weight, startPos);
     tree.addToOpen(startNode);
     SearchNode* currentNode = tree.extractBestNode();
 
@@ -190,7 +188,7 @@ Solution astar(
             break;
         }
         // expand current node
-        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, checker, goalPos, heuristicFunc, weight);
+        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, checker, goalPos, weight);
         for (auto successor : successors)
         {
             tree.addToOpen(successor);
@@ -223,7 +221,7 @@ Solution astar(
             currentNode = currentNode->parent();
         }
 
-        solution.stats.pathPotentialCost = heuristicFunc(startPos, goalPos);
+        solution.stats.pathPotentialCost = checker.heuristic(startPos);
 
         // push steps
         for (int i = steps.size() - 1; i >= 0; --i)

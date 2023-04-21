@@ -125,7 +125,6 @@ size_t Interactor::simulateAction(JointState& currentState, const JointState& ac
 
 void Interactor::step()
 {
-    printf("site =(%.3f, %.3f)\n", _data->site_xpos[0], _data->site_xpos[1]); // TODO log remove
     if (_modelState.solution.goalAchieved())
     {
         _modelState.action = JointState(_dof, 0);

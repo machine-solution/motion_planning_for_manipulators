@@ -80,6 +80,7 @@ public:
     virtual CostType costAction(const JointState& action) = 0;
     virtual const std::vector<JointState>& getActions() = 0;
     virtual const JointState& getZeroAction() = 0;
+    virtual CostType heuristic(const JointState& state) = 0;
 };
 
 // allocates on heap and returns successors
@@ -87,14 +88,12 @@ vector<SearchNode*> generateSuccessors(
     SearchNode* node,
     IAstarChecker& checker,
     const JointState& goal,
-    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
     double weight
 );
 
 Solution astar(
     const JointState& startPos, const JointState& goalPos,
     IAstarChecker& checker,
-    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
     double weight = 1.0,
     double timeLimit = 1.0
 );

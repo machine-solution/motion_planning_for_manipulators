@@ -92,10 +92,27 @@ Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointSt
     case ALG_LINEAR:
         return linearPlanning(startPos, goalPos);
     case ALG_ASTAR:
-        return astarPlanning(startPos, goalPos, manhattanHeuristic, w, timeLimit);
+        return astarPlanning(startPos, goalPos, w, timeLimit);
     default:
         return Solution(_primitiveSteps, _zeroStep);
     }
+}
+
+double ManipulatorPlanner::modelLength() const
+{
+    double len = 0;
+    for (size_t i = 1; i <= _dof; ++i)
+    {
+        len += _model->geom_size[i * 3 + 1] * 2;
+    }
+    return len;
+}
+double ManipulatorPlanner::maxStepLen() const
+{
+    // sin(g_eps / 2) * modelLength() * 2
+    // formula above correct, but more difficult to compute
+    // formula below more than above, but easier to compute
+    return g_eps * modelLength();
 }
 
 void ManipulatorPlanner::initPrimitiveSteps()
@@ -146,12 +163,11 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
 
 Solution ManipulatorPlanner::astarPlanning(
     const JointState& startPos, const JointState& goalPos,
-    CostType (*heuristicFunc)(const JointState& state1, const JointState& state2),
     float weight, double timeLimit
 )
 {
     AstarCheckerSite checker(this, goalPos);
-    Solution solution = astar::astar(startPos, goalPos, checker, heuristicFunc, weight, timeLimit);
+    Solution solution = astar::astar(startPos, goalPos, checker, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }
@@ -182,6 +198,10 @@ const JointState& ManipulatorPlanner::AstarChecker::getZeroAction()
 {
     return _planner->_zeroStep;
 }
+CostType ManipulatorPlanner::AstarChecker::heuristic(const JointState& state)
+{
+    return manhattanHeuristic(state, _goal);
+}
 
 // checker for site goal
 
@@ -207,4 +227,24 @@ bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
 
 ManipulatorPlanner::AstarCheckerSite::AstarCheckerSite(ManipulatorPlanner* planner, const JointState& goal)
     : AstarChecker(planner, goal) {}
+
+CostType ManipulatorPlanner::AstarCheckerSite::heuristic(const JointState& state)
+{
+    // TODO remove copy-paste
+    for (size_t i = 0; i < _planner->_dof; ++i)
+    {
+        _planner->_data->qpos[i] = state.rad(i);
+    }
+    mj_forward(_planner->_model, _planner->_data); // Use in planner in method
+    double dx = _planner->_data->site_xpos[0];
+    double dy = _planner->_data->site_xpos[1];
+    for (size_t i = 0; i < _planner->_dof; ++i)
+    {
+        _planner->_data->qpos[i] = _goal.rad(i);
+    }
+    mj_forward(_planner->_model, _planner->_data); // Use in planner in method
+    dx -= _planner->_data->site_xpos[0];
+    dy -= _planner->_data->site_xpos[1];
+    return sqrt(dx * dx + dy * dy) / _planner->maxStepLen();
+}
 
