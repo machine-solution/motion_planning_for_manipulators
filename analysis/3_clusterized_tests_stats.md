@@ -2,7 +2,7 @@
 
 ## What are hard tests
 
-I has clusterized 2-dof tests by runtime WA* with weight = 1.0. Hard tests are tests with runtime more than 0.4s. There are 200 hard tests in 5'000 random tests.
+I have clusterized 2-dof tests by runtime WA* with weight = 1.0. Hard tests are tests with runtime more than 0.4s. There are 200 hard tests in 5'000 random tests.
 
 ## Results
 ![](pictures/3/runtime_hard.png)\
