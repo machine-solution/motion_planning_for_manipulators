@@ -150,14 +150,14 @@ Solution ManipulatorPlanner::astarPlanning(
     float weight, double timeLimit
 )
 {
-    AstarChecker checker(this);
+    AstarChecker checker(this, goalPos);
     Solution solution = astar::astar(startPos, goalPos, checker, heuristicFunc, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }
 
 
-ManipulatorPlanner::AstarChecker::AstarChecker(ManipulatorPlanner* planner)
+ManipulatorPlanner::AstarChecker::AstarChecker(ManipulatorPlanner* planner, const JointState& goal) : _goal(goal)
 {
     _planner = planner;
 }
@@ -165,6 +165,10 @@ ManipulatorPlanner::AstarChecker::AstarChecker(ManipulatorPlanner* planner)
 bool ManipulatorPlanner::AstarChecker::isCorrect(const JointState& state, const JointState& action)
 {
     return (state + action).isCorrect() && (!_planner->checkCollisionAction(state, action));
+}
+bool ManipulatorPlanner::AstarChecker::isGoal(const JointState& state)
+{
+    return state == _goal;
 }
 CostType ManipulatorPlanner::AstarChecker::costAction(const JointState& action)
 {

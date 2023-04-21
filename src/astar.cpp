@@ -178,7 +178,7 @@ Solution astar(
 
     while (currentNode != nullptr)
     {
-        if (currentNode->state() == goalPos)
+        if (checker.isGoal(currentNode->state()))
         {
             solution.stats.pathVerdict = PATH_FOUND;
             break;

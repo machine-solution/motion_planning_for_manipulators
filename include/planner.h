@@ -55,13 +55,15 @@ private:
     class AstarChecker : public astar::IAstarChecker
     {
     public:
-        AstarChecker(ManipulatorPlanner* planner);
+        AstarChecker(ManipulatorPlanner* planner, const JointState& goal);
 
         bool isCorrect(const JointState& state, const JointState& action) override;
+        bool isGoal(const JointState& state) override;
         CostType costAction(const JointState& action) override;
         const std::vector<JointState>& getActions() override;
         const JointState& getZeroAction() override;
     private:
         ManipulatorPlanner* _planner;
+        const JointState& _goal;
     };
 };
