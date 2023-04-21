@@ -50,7 +50,7 @@ private:
     size_t _dof;
 
     mutable mjModel* _model; // model for collision checks
-    mutable mjData* _data; // data for collision checks
+    mutable mjData* _data; // data for collision checks and calculations
 
     class AstarChecker : public astar::IAstarChecker
     {
@@ -62,8 +62,15 @@ private:
         CostType costAction(const JointState& action) override;
         const std::vector<JointState>& getActions() override;
         const JointState& getZeroAction() override;
-    private:
+    protected:
         ManipulatorPlanner* _planner;
         const JointState& _goal;
+    };
+
+    class AstarCheckerSite : public AstarChecker
+    {
+    public:
+        AstarCheckerSite(ManipulatorPlanner* planner, const JointState& goal);
+        bool isGoal(const JointState& state) override;
     };
 };

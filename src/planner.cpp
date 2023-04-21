@@ -150,7 +150,7 @@ Solution ManipulatorPlanner::astarPlanning(
     float weight, double timeLimit
 )
 {
-    AstarChecker checker(this, goalPos);
+    AstarCheckerSite checker(this, goalPos);
     Solution solution = astar::astar(startPos, goalPos, checker, heuristicFunc, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
@@ -182,4 +182,29 @@ const JointState& ManipulatorPlanner::AstarChecker::getZeroAction()
 {
     return _planner->_zeroStep;
 }
+
+// checker for site goal
+
+bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
+{
+    const double r = 1e-6; // minimum dist from pos
+    for (size_t i = 0; i < _planner->_dof; ++i)
+    {
+        _planner->_data->qpos[i] = state.rad(i);
+    }
+    mj_forward(_planner->_model, _planner->_data); // Use in planner in method
+    double dx = _planner->_data->site_xpos[0];
+    double dy = _planner->_data->site_xpos[1];
+    for (size_t i = 0; i < _planner->_dof; ++i)
+    {
+        _planner->_data->qpos[i] = _goal.rad(i);
+    }
+    mj_forward(_planner->_model, _planner->_data); // Use in planner in method
+    dx -= _planner->_data->site_xpos[0];
+    dy -= _planner->_data->site_xpos[1];
+    return dx * dx + dy * dy <= r * r;
+}
+
+ManipulatorPlanner::AstarCheckerSite::AstarCheckerSite(ManipulatorPlanner* planner, const JointState& goal)
+    : AstarChecker(planner, goal) {}
 
