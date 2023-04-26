@@ -125,7 +125,7 @@ size_t Interactor::simulateAction(JointState& currentState, const JointState& ac
 
 void Interactor::step()
 {
-    if (_modelState.solution.goalAchieved())
+    if (!_config.displayMotion || _modelState.solution.goalAchieved())
     {
         _modelState.action = JointState(_dof, 0);
         if (!_modelState.haveToPlan)

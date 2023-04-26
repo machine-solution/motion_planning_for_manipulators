@@ -18,6 +18,7 @@ struct Config
     std::string scenFilename;
     std::string statsFilename;
     std::string testsFilename;
+    bool displayMotion = false;
 };
 
 struct ModelState
