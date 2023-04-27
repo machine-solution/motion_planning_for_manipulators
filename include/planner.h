@@ -33,7 +33,9 @@ public:
 
     // this method used that edges of model are cylinders
     // and that manipulator has geom numbers 1 .. _dof inclusively
+    // calculate length only 1 time
     double modelLength() const;
+    // calculate answer only 1 time
     double maxStepLen() const;
 
     const int units = g_units;

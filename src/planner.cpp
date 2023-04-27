@@ -100,19 +100,20 @@ Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointSt
 
 double ManipulatorPlanner::modelLength() const
 {
-    double len = 0;
-    for (size_t i = 1; i <= _dof; ++i)
+    static double len = 0;
+    if (len == 0)
     {
-        len += _model->geom_size[i * 3 + 1] * 2;
+        for (size_t i = 1; i <= _dof; ++i)
+        {
+            len += _model->geom_size[i * 3 + 1] * 2;
+        }
     }
     return len;
 }
 double ManipulatorPlanner::maxStepLen() const
 {
-    // sin(g_eps / 2) * modelLength() * 2
-    // formula above correct, but more difficult to compute
-    // formula below more than above, but easier to compute
-    return g_eps * modelLength();
+    static double maxStep = sin(g_eps / 2) * modelLength() * 2;
+    return maxStep;
 }
 
 void ManipulatorPlanner::initPrimitiveSteps()
