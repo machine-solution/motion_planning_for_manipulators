@@ -1,0 +1,58 @@
+#pragma once
+
+#include "joint_state.h"
+
+#include <string>
+#include <memory>
+
+enum TaskType
+{
+    TASK_STATE,
+    TASK_POSITION,
+    TASK_MAX // the number of Task types
+};
+
+class ITask
+{
+public:
+    virtual TaskType type() const = 0;
+};
+
+class TaskState : public ITask
+{
+public:
+    TaskState(const JointState& startPos, const JointState& goalPos);
+
+    const JointState& start() const;
+    const JointState& goal() const;
+    
+    TaskType type() const override;
+private:
+    JointState _start;
+    JointState _goal;
+};
+
+class TaskSet
+{
+public:
+    TaskSet(size_t dof);
+    TaskSet(size_t dof, const std::string& filename);
+    TaskSet(size_t dof, size_t n, size_t seed = 12345);
+
+    void loadTasks(const std::string& filename);
+    void generateRandomTasks(size_t n, size_t seed = 12345);
+    void removeTasks();
+    void restartTasks();
+
+    const ITask* getTask(size_t i) const;
+    const ITask* getNextTask();
+    bool haveNextTask() const;
+
+    size_t progress() const;
+    size_t size() const;
+
+private:
+    std::vector<std::unique_ptr<ITask>> _tasks;
+    size_t _nextTaskId;
+    size_t _dof;
+};

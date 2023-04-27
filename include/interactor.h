@@ -2,7 +2,7 @@
 
 #include "planner.h"
 #include "logger.h"
-#include "testset.h"
+#include "taskset.h"
 
 #include <mujoco/mujoco.h>
 #include <GLFW/glfw3.h>
@@ -13,11 +13,11 @@ struct Config
 {
     double timeLimit;
     double w;
-    int testNum;
-    bool randomTests;
+    int taskNum;
+    bool randomTasks;
     std::string scenFilename;
     std::string statsFilename;
-    std::string testsFilename;
+    std::string tasksFilename;
     bool displayMotion = false;
 };
 
@@ -71,7 +71,7 @@ private:
 
     ManipulatorPlanner* _planner;
     Logger* _logger;
-    TestSet* _testset;
+    TaskSet* _taskset;
 
     size_t _dof;
 

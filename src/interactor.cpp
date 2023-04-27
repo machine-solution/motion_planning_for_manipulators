@@ -17,7 +17,7 @@ Interactor::Interactor(const std::string& modelFilename)
 
     _planner = new ManipulatorPlanner(_dof, mCopy, dCopy);
     _logger = new Logger(_dof);
-    _testset = new TestSet(_dof);
+    _taskset = new TaskSet(_dof);
 }
 Interactor::~Interactor()
 {
@@ -28,7 +28,7 @@ Interactor::~Interactor()
     mj_deleteModel(_model);
     delete _planner;
     delete _logger;
-    delete _testset;
+    delete _taskset;
     mj_deactivate();
 
     // close glfw window
@@ -78,16 +78,16 @@ void Interactor::setUp(Config config)
     _logger->prepareScenFile(_config.scenFilename);
     _logger->prepareStatsFile(_config.statsFilename);
 
-    if (_config.randomTests)
+    if (_config.randomTasks)
     {
-        _testset->generateRandomTests(_config.testNum);
+        _taskset->generateRandomTasks(_config.taskNum);
     }
     else
     {
-        _testset->loadTests(_config.testsFilename);
+        _taskset->loadTasks(_config.tasksFilename);
     }
 
-    printf("Test count = %zu.\n", _testset->size());
+    printf("Task count = %zu.\n", _taskset->size());
     printf("Simulation is started!\n\n");
 }
 
@@ -130,16 +130,16 @@ void Interactor::step()
         _modelState.action = JointState(_dof, 0);
         if (!_modelState.haveToPlan)
         {
-            // generating new test
-            if (!_testset->haveNextTest())
+            // generating new task
+            if (!_taskset->haveNextTask())
             {
                 _shouldClose = true;
                 return;
             }
-            Test test = _testset->getNextTest();
-            _modelState.currentState = test.start();
-            _modelState.goal = test.goal();
-            // if correct test TODO remove
+            const ITask* task = _taskset->getNextTask();
+            _modelState.currentState = static_cast<const TaskState*>(task)->start();
+            _modelState.goal = static_cast<const TaskState*>(task)->goal();
+            // if correct task TODO remove
             if (!_planner->checkCollision(_modelState.currentState) && !_planner->checkCollision(_modelState.goal))
             {
                 setManipulatorState(_modelState.currentState);
@@ -163,7 +163,7 @@ void Interactor::step()
                 _logger->printStatsLog(_modelState.solution);
                 _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
                 
-                printf("solved %d/%zu\n\n", ++_modelState.solved, _testset->size());
+                printf("solved %d/%zu\n\n", ++_modelState.solved, _taskset->size());
             }
         }
     }
