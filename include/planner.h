@@ -30,6 +30,10 @@ public:
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
     Solution planSteps(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1,
         double timeLimit = 1.0, double w = 1.0);
+    // plan path to move end-effector to (doubleX, doubleY) point
+    // timeLimit - is a maximum time in *seconds*, after that planner will give up
+    Solution planSteps(const JointState& startPos, double goalX, double goalY, int alg = ALG_ASTAR,
+        double timeLimit = 1.0, double w = 1.0);
 
     // this method used that edges of model are cylinders
     // and that manipulator has geom numbers 1 .. _dof inclusively
@@ -48,6 +52,10 @@ private:
 
     Solution astarPlanning(
         const JointState& startPos, const JointState& goalPos,
+        float weight, double timeLimit
+    );
+    Solution astarPlanning(
+        const JointState& startPos, double goalX, double goalY,
         float weight, double timeLimit
     );
 
@@ -74,11 +82,20 @@ private:
         const JointState& _goal;
     };
 
-    class AstarCheckerSite : public AstarChecker
+    class AstarCheckerSite : public astar::IAstarChecker
     {
     public:
-        AstarCheckerSite(ManipulatorPlanner* planner, const JointState& goal);
+        AstarCheckerSite(ManipulatorPlanner* planner, double goalX, double goalY);
+
+        bool isCorrect(const JointState& state, const JointState& action) override;
         bool isGoal(const JointState& state) override;
+        CostType costAction(const JointState& action) override;
+        const std::vector<JointState>& getActions() override;
+        const JointState& getZeroAction() override;
         CostType heuristic(const JointState& state) override;
+    protected:
+        ManipulatorPlanner* _planner;
+        double _goalX;
+        double _goalY;
     };
 };

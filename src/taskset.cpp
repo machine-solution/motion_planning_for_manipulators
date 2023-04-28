@@ -23,25 +23,42 @@ TaskType TaskState::type() const
     return TASK_STATE;
 }
 
+TaskPosition::TaskPosition(const JointState& startPos, double goalX, double goalY)
+{
+    _start = startPos;
+    _goalX = goalX;
+    _goalY = goalY;
+}
+
+const JointState& TaskPosition::start() const
+{
+    return _start;
+}
+double TaskPosition::goalX() const
+{
+    return _goalX;
+}
+double TaskPosition::goalY() const
+{
+    return _goalY;
+}
+
+TaskType TaskPosition::type() const
+{
+    return TASK_POSITION;
+}
+
+// TaskSet
+
 TaskSet::TaskSet(size_t dof)
 {
     _dof = dof;
     _nextTaskId = 0;
 }
-TaskSet::TaskSet(size_t dof, const std::string& filename) : TaskSet(dof)
-{
-    loadTasks(filename);
-}
-TaskSet::TaskSet(size_t dof, size_t n, size_t seed) : TaskSet(dof)
-{
-    generateRandomTasks(n, seed);
-}
 
 void TaskSet::loadTasks(const std::string& filename)
 {
     FILE* file = fopen(filename.c_str(), "r");
-    // This may be called in constructor and
-    // exceptions in constructor is a bad idea
     if (file == nullptr)
     {
         throw std::runtime_error("TaskSet::loadTasks: Could not open file " + filename);
@@ -70,12 +87,24 @@ void TaskSet::loadTasks(const std::string& filename)
     }
     fclose(file);
 }
-void TaskSet::generateRandomTasks(size_t n, size_t seed)
+void TaskSet::generateRandomTasks(size_t n, TaskType type, size_t seed)
 {
     srand(seed);
-    for (size_t i = 0; i < n; ++i)
+    if (type == TASK_STATE)
     {
-        _tasks.push_back(std::make_unique<TaskState>(randomState(_dof, g_units), randomState(_dof, g_units)));
+        for (size_t i = 0; i < n; ++i)
+        {
+            _tasks.push_back(std::make_unique<TaskState>(randomState(_dof, g_units), randomState(_dof, g_units)));
+        }
+    }
+    else if (type == TASK_POSITION)
+    {
+        const double bound = 1;
+        for (size_t i = 0; i < n; ++i)
+        {
+            _tasks.push_back(std::make_unique<TaskPosition>(randomState(_dof, g_units),
+                rand() * 2 * bound / RAND_MAX - bound, rand() * 2 * bound / RAND_MAX - bound));
+        }
     }
 }
 void TaskSet::removeTasks()

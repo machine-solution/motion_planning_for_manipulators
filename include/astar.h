@@ -87,12 +87,11 @@ public:
 vector<SearchNode*> generateSuccessors(
     SearchNode* node,
     IAstarChecker& checker,
-    const JointState& goal,
     double weight
 );
 
 Solution astar(
-    const JointState& startPos, const JointState& goalPos,
+    const JointState& startPos,
     IAstarChecker& checker,
     double weight = 1.0,
     double timeLimit = 1.0

@@ -32,15 +32,29 @@ private:
     JointState _goal;
 };
 
+class TaskPosition : public ITask
+{
+public:
+    TaskPosition(const JointState& startPos, double goalX, double goalY);
+
+    const JointState& start() const;
+    double goalX() const;
+    double goalY() const;
+    
+    TaskType type() const override;
+private:
+    JointState _start;
+    double _goalX;
+    double _goalY;
+};
+
 class TaskSet
 {
 public:
     TaskSet(size_t dof);
-    TaskSet(size_t dof, const std::string& filename);
-    TaskSet(size_t dof, size_t n, size_t seed = 12345);
 
     void loadTasks(const std::string& filename);
-    void generateRandomTasks(size_t n, size_t seed = 12345);
+    void generateRandomTasks(size_t n, TaskType type, size_t seed = 12345);
     void removeTasks();
     void restartTasks();
 

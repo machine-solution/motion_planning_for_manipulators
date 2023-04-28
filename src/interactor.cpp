@@ -80,7 +80,7 @@ void Interactor::setUp(Config config)
 
     if (_config.randomTasks)
     {
-        _taskset->generateRandomTasks(_config.taskNum);
+        _taskset->generateRandomTasks(_config.taskNum, _config.taskType);
     }
     else
     {

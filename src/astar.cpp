@@ -128,7 +128,6 @@ bool SearchTree::wasExpanded(SearchNode* node) const
 vector<SearchNode*> generateSuccessors(
     SearchNode* node,
     IAstarChecker& checker,
-    const JointState& goal,
     double weight
 )
 {
@@ -156,7 +155,7 @@ vector<SearchNode*> generateSuccessors(
 }
 
 Solution astar(
-    const JointState& startPos, const JointState& goalPos,
+    const JointState& startPos,
     IAstarChecker& checker,
     double weight,
     double timeLimit
@@ -188,7 +187,7 @@ Solution astar(
             break;
         }
         // expand current node
-        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, checker, goalPos, weight);
+        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, checker, weight);
         for (auto successor : successors)
         {
             tree.addToOpen(successor);

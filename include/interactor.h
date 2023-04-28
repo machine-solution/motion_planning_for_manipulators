@@ -14,6 +14,7 @@ struct Config
     double timeLimit;
     double w;
     int taskNum;
+    TaskType taskType;
     bool randomTasks;
     std::string scenFilename;
     std::string statsFilename;
