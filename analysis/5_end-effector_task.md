@@ -28,3 +28,18 @@ At the end I say that one expansion takes more time in new task. I beleive I can
 ### Conclusion step 1
 1. New task works more slow and need speeding up by high and low level optimizations.
 2. New task hard to implement in one step and I will continue integrating the second variant of test to project.
+
+## Step 2 : divide two types of tests
+
+### New task in code
+In previous step I said that generating, reading and writing tests of new type not implemented yet. In this section I describe how I implemented their. In the last version class there was only one class Task. Now I add classes TaskState (old problem) and TaskPosition (new problem). They are inherited from ITask abstract class and stored in TaskSet like vector of ITask* (ITask pointers). Now in every method I check type of test (ITask has abstract method ITask::type()) and use one of two planSteps method of planner. Methods differ only in arguments.
+
+### New task generation
+In taskset I implemented new random task generation. It generates random start state and random end-effector goal in [-1,1]^2 square. But in first run algorithm solved 0 tasks from 500. Problem was in determining the target state. At the previous step I determine goal as state in which end-effector far not more than eps (now eps = 10^(-6)) from final position. It worked fine in tests where exists state in which end-effector placed exactly on final position. But for random positions it isn't good idea. I have change 10^(-6) to 0.05 and task generation system and task solving began working correctly. This task generator (as for previous problem) can generate incorrect tasks. It isn't good.
+
+### Read and write tests
+I want to read old tasksets without any changes, but also I want to read any taskset without difference in methods and arguments. It is obviously, that I can't achieve both results at the same time and I chose reading tasksets without changes and now in config I must choose task types to read files or generating it at random. In this scenario now I can read and write test using Logger. Logger writes tests log and small python script reads it and rewrite to taskset format.
+
+### Conclusions step 2
+1. Now in project I can use both types of tasks but read and generate only one type in one interactor.
+2. There is a not good task generator in this project and I need to improve it in future to generate more correct tasks.
