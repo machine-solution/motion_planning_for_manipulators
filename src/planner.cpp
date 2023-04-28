@@ -250,7 +250,7 @@ bool ManipulatorPlanner::AstarCheckerSite::isCorrect(const JointState& state, co
 }
 bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
 {
-    const double r = 1e-6; // minimum dist from pos
+    const double r = 0.05; // minimum dist from pos
     for (size_t i = 0; i < _planner->_dof; ++i)
     {
         _planner->_data->qpos[i] = state.rad(i);

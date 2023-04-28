@@ -33,6 +33,7 @@ struct ModelState
     JointState currentState;
     JointState goal;
     JointState action;
+    const ITask* task;
 };
 
 class Interactor
@@ -49,6 +50,9 @@ public:
     // at end stage aplies action to currentState
     // return next stage
     size_t simulateAction(JointState& currentState, const JointState& action, size_t stage);
+
+    void setTask();
+    void solveTask();
 
     void step();
 

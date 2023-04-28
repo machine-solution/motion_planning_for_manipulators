@@ -56,7 +56,7 @@ TaskSet::TaskSet(size_t dof)
     _nextTaskId = 0;
 }
 
-void TaskSet::loadTasks(const std::string& filename)
+void TaskSet::loadTasks(const std::string& filename, TaskType type)
 {
     FILE* file = fopen(filename.c_str(), "r");
     if (file == nullptr)
@@ -69,21 +69,40 @@ void TaskSet::loadTasks(const std::string& filename)
     {
         throw std::runtime_error("TaskSet::loadTasks: dof in taskfile and in class are not same");
     }
-    while (!feof(file))
+    if (type == TASK_STATE)
     {
-        JointState start(dof);
-        JointState goal(dof);
-        for (size_t i = 0; i < dof; ++i)
+        while (!feof(file))
         {
-            fscanf(file, "%d", &start[i]);
+            JointState start(dof);
+            JointState goal(dof);
+            for (size_t i = 0; i < dof; ++i)
+            {
+                fscanf(file, "%d", &start[i]);
+            }
+            for (size_t i = 0; i < dof; ++i)
+            {
+                fscanf(file, "%d", &goal[i]);
+            }
+            float optimal;
+            fscanf(file, "%f", &optimal); // it is really unused now
+            _tasks.push_back(std::make_unique<TaskState>(start, goal));
         }
-        for (size_t i = 0; i < dof; ++i)
+    }
+    else if (type == TASK_POSITION)
+    {
+        while (!feof(file))
         {
-            fscanf(file, "%d", &goal[i]);
+            JointState start(dof);
+            for (size_t i = 0; i < dof; ++i)
+            {
+                fscanf(file, "%d", &start[i]);
+            }
+            double goalX, goalY;
+            fscanf(file, "%f%f", &goalX, &goalY);
+            float optimal;
+            fscanf(file, "%f", &optimal); // it is really unused now
+            _tasks.push_back(std::make_unique<TaskPosition>(start, goalX, goalY));
         }
-        float optimal;
-        fscanf(file, "%f", &optimal); // it is really unused now
-        _tasks.push_back(std::make_unique<TaskState>(start, goal));
     }
     fclose(file);
 }
@@ -99,11 +118,16 @@ void TaskSet::generateRandomTasks(size_t n, TaskType type, size_t seed)
     }
     else if (type == TASK_POSITION)
     {
-        const double bound = 1;
+        const double bound = 1.0;
         for (size_t i = 0; i < n; ++i)
         {
-            _tasks.push_back(std::make_unique<TaskPosition>(randomState(_dof, g_units),
-                rand() * 2 * bound / RAND_MAX - bound, rand() * 2 * bound / RAND_MAX - bound));
+            double x = (double)rand() / RAND_MAX * 2 * bound - bound;
+            double y = (double)rand() / RAND_MAX * 2 * bound - bound;
+            _tasks.push_back(std::make_unique<TaskPosition>(randomState(_dof, g_units), x, y));
+
+            printf("TEST: %0.3f, %0.3f\n", x, y, rand());
+
+            // _tasks.push_back(std::make_unique<TaskPosition>(randomState(_dof, g_units), 1, 1));e
         }
     }
 }

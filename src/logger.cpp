@@ -97,6 +97,10 @@ void Logger::printScenLog(const Solution& solution, const JointState& startPos, 
 {
     printScenLog(_scenFile, solution, startPos, goalPos);
 }
+void Logger::printScenLog(const Solution& solution, const JointState& startPos, double goalX, double goalY)
+{
+    printScenLog(_scenFile, solution, startPos, goalX, goalY);
+}
 void Logger::printCSpace(const vector<string>& cspace)
 {
     printCspace(_cspaceFile, cspace);
@@ -199,6 +203,17 @@ void Logger::printScenLog(FILE* file, const Solution& solution, const JointState
     {
         fprintf(file, "%d,", goalPos[i]);
     }
+    fprintf(file, "%f,%f,%f\n", solution.stats.pathCost,
+        1.0 * solution.stats.pathCost / solution.stats.pathPotentialCost,
+        solution.stats.runtime);
+}
+void Logger::printScenLog(FILE* file, const Solution& solution, const JointState& startPos, double goalX, double goalY)
+{
+    for (size_t i = 0; i < startPos.dof(); ++i)
+    {
+        fprintf(file, "%d,", startPos[i]);
+    }
+    fprintf(file, "%f,%f,", goalX, goalY);
     fprintf(file, "%f,%f,%f\n", solution.stats.pathCost,
         1.0 * solution.stats.pathCost / solution.stats.pathPotentialCost,
         solution.stats.runtime);

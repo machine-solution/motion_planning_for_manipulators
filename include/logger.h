@@ -19,6 +19,7 @@ public:
     void printRuntimeLog(const Solution& solution);
     void printStatsLog(const Solution& solution);
     void printScenLog(const Solution& solution, const JointState& startPos, const JointState& goalPos);
+    void printScenLog(const Solution& solution, const JointState& startPos, double goalX, double goalY);
     void printCSpace(const vector<string>& cSpace);
 
 private:
@@ -32,6 +33,7 @@ private:
 
     void printScenLogHeader(FILE* file, size_t dof);
     void printScenLog(FILE* file, const Solution& solution, const JointState& startPos, const JointState& goalPos);
+    void printScenLog(FILE* file, const Solution& solution, const JointState& startPos, double goalX, double goalY);
 
     void printCspace(FILE* file, const vector<string>& cSpace);
 

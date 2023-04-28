@@ -84,7 +84,7 @@ void Interactor::setUp(Config config)
     }
     else
     {
-        _taskset->loadTasks(_config.tasksFilename);
+        _taskset->loadTasks(_config.tasksFilename, _config.taskType);
     }
 
     printf("Task count = %zu.\n", _taskset->size());
@@ -123,6 +123,73 @@ size_t Interactor::simulateAction(JointState& currentState, const JointState& ac
     }
 }
 
+void Interactor::setTask()
+{
+    // generating new task
+    if (!_taskset->haveNextTask())
+    {
+        _shouldClose = true;
+        return;
+    }
+    _modelState.task = _taskset->getNextTask();
+    if (_modelState.task->type() == TASK_STATE)
+    {
+        _modelState.currentState = static_cast<const TaskState*>(_modelState.task)->start();
+        _modelState.goal = static_cast<const TaskState*>(_modelState.task)->goal();
+        // if correct task TODO remove
+        if (!_planner->checkCollision(_modelState.currentState) && !_planner->checkCollision(_modelState.goal))
+        {
+            setManipulatorState(_modelState.currentState);
+            setGoalState(_modelState.goal);
+            _modelState.haveToPlan = true;
+        }
+    }
+    else if (_modelState.task->type() == TASK_POSITION)
+    {
+        _modelState.currentState = static_cast<const TaskPosition*>(_modelState.task)->start();
+        // if correct task TODO remove
+        if (!_planner->checkCollision(_modelState.currentState))
+        {
+            setManipulatorState(_modelState.currentState);
+            _modelState.haveToPlan = true;
+        }
+    }
+}
+void Interactor::solveTask()
+{
+    // planning path to goal
+    ++_modelState.counter;
+    if (_modelState.counter > 8) // to first of all simulator can show picture
+    {
+        _modelState.counter = 0;
+        if (_modelState.task->type() == TASK_STATE)
+        {
+            _modelState.solution = _planner->planSteps(_modelState.currentState, _modelState.goal,
+                ALG_ASTAR, _config.timeLimit, _config.w);
+
+            _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
+        }
+        else if (_modelState.task->type() == TASK_POSITION)
+        {
+            _modelState.solution = _planner->planSteps(_modelState.currentState,
+                static_cast<const TaskPosition*>(_modelState.task)->goalX(),
+                static_cast<const TaskPosition*>(_modelState.task)->goalY(),
+                ALG_ASTAR, _config.timeLimit, _config.w);
+
+            _logger->printScenLog(_modelState.solution, _modelState.currentState, 
+                static_cast<const TaskPosition*>(_modelState.task)->goalX(),
+                static_cast<const TaskPosition*>(_modelState.task)->goalY());
+        }
+        _modelState.haveToPlan = false;
+
+        _logger->printMainLog(_modelState.solution);
+        
+        _logger->printStatsLog(_modelState.solution);
+        
+        printf("progress %zu/%zu\n\n", _taskset->progress(), _taskset->size());
+    }
+}
+
 void Interactor::step()
 {
     if (!_config.displayMotion || _modelState.solution.goalAchieved())
@@ -130,41 +197,11 @@ void Interactor::step()
         _modelState.action = JointState(_dof, 0);
         if (!_modelState.haveToPlan)
         {
-            // generating new task
-            if (!_taskset->haveNextTask())
-            {
-                _shouldClose = true;
-                return;
-            }
-            const ITask* task = _taskset->getNextTask();
-            _modelState.currentState = static_cast<const TaskState*>(task)->start();
-            _modelState.goal = static_cast<const TaskState*>(task)->goal();
-            // if correct task TODO remove
-            if (!_planner->checkCollision(_modelState.currentState) && !_planner->checkCollision(_modelState.goal))
-            {
-                setManipulatorState(_modelState.currentState);
-                setGoalState(_modelState.goal);
-                _modelState.haveToPlan = true;
-            }
+            setTask();
         }
         else if (_modelState.haveToPlan)
         {
-            // planning path to goal
-            ++_modelState.counter;
-            if (_modelState.counter > 8) // to first of all simulator can show picture
-            {
-                _modelState.counter = 0;
-                _modelState.solution = _planner->planSteps(_modelState.currentState, _modelState.goal,
-                    ALG_ASTAR, _config.timeLimit, _config.w);
-                _modelState.haveToPlan = false;
-
-                _logger->printMainLog(_modelState.solution);
-                
-                _logger->printStatsLog(_modelState.solution);
-                _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
-                
-                printf("solved %d/%zu\n\n", ++_modelState.solved, _taskset->size());
-            }
+            solveTask();
         }
     }
     else

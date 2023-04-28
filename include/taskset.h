@@ -53,7 +53,7 @@ class TaskSet
 public:
     TaskSet(size_t dof);
 
-    void loadTasks(const std::string& filename);
+    void loadTasks(const std::string& filename, TaskType type);
     void generateRandomTasks(size_t n, TaskType type, size_t seed = 12345);
     void removeTasks();
     void restartTasks();
