@@ -98,7 +98,7 @@ void TaskSet::loadTasks(const std::string& filename, TaskType type)
                 fscanf(file, "%d", &start[i]);
             }
             double goalX, goalY;
-            fscanf(file, "%f%f", &goalX, &goalY);
+            fscanf(file, "%lf%lf", &goalX, &goalY);
             float optimal;
             fscanf(file, "%f", &optimal); // it is really unused now
             _tasks.push_back(std::make_unique<TaskPosition>(start, goalX, goalY));
