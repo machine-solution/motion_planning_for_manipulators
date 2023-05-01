@@ -118,16 +118,12 @@ void TaskSet::generateRandomTasks(size_t n, TaskType type, size_t seed)
     }
     else if (type == TASK_POSITION)
     {
-        const double bound = 1.0;
+        const double bound = 2.0;
         for (size_t i = 0; i < n; ++i)
         {
             double x = (double)rand() / RAND_MAX * 2 * bound - bound;
             double y = (double)rand() / RAND_MAX * 2 * bound - bound;
             _tasks.push_back(std::make_unique<TaskPosition>(randomState(_dof, g_units), x, y));
-
-            printf("TEST: %0.3f, %0.3f\n", x, y, rand());
-
-            // _tasks.push_back(std::make_unique<TaskPosition>(randomState(_dof, g_units), 1, 1));e
         }
     }
 }

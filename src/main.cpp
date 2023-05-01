@@ -26,9 +26,9 @@ int main(int argc, const char** argv)
         interactor.setUp({
             3.0, // time
             ws[i], // w
-            1000,
+            10000,
             TASK_POSITION,
-            false, // random test generation
+            true, // random test generation
             "scenaries/scen.log",
             "pyplot/6/stats_dof=2_w=" + names[i] + ".log",
             "scenaries/4_2-dof_pos_hard.scen",
