@@ -61,6 +61,7 @@ void Logger::prepareRuntimeFile(const std::string& filename)
         throw std::runtime_error("Logger::prepareMainFile: Could not open file " + filename);
     }
     // TODO print header
+    // Now header is printed when is printed first line of log
 }
 void Logger::prepareScenFile(const std::string& filename)
 {
@@ -154,6 +155,11 @@ void Logger::printRuntimeLogHeader(FILE* file, const Solution& solution)
 }
 void Logger::printRuntimeLog(FILE* file, const Solution& solution)
 {
+    if (!_runtimeHaveHeader)
+    {
+        _runtimeHaveHeader = true;
+        printRuntimeLogHeader(file, solution);
+    }
     for (const ProfileInfo& info : solution.plannerProfile)
     {
         fprintf(file, "%f,", info.runtime * 1000);

@@ -19,6 +19,7 @@ struct Config
     std::string scenFilename;
     std::string statsFilename;
     std::string tasksFilename;
+    std::string runtimeFilename;
     bool displayMotion = false;
 };
 
@@ -27,7 +28,6 @@ struct ModelState
     int counter = 0;
     int partOfMove = 0;
     bool haveToPlan = false;
-    int solved = 0;
     Solution solution;
 
     JointState currentState;

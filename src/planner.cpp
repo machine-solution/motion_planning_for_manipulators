@@ -129,10 +129,21 @@ double ManipulatorPlanner::modelLength() const
     }
     return len;
 }
-double ManipulatorPlanner::maxStepLen() const
+double ManipulatorPlanner::maxStepLength() const
 {
     static double maxStep = sin(g_eps / 2) * modelLength() * 2;
     return maxStep;
+}
+std::pair<double, double> ManipulatorPlanner::sitePosition(const JointState& state) const
+{
+    startProfiling();
+    for (size_t i = 0; i < _dof; ++i)
+    {
+        _data->qpos[i] = state.rad(i);
+    }
+    mj_forward(_model, _data);
+    stopProfiling();
+    return {_data->site_xpos[0], _data->site_xpos[1]};
 }
 
 void ManipulatorPlanner::initPrimitiveSteps()
@@ -251,13 +262,9 @@ bool ManipulatorPlanner::AstarCheckerSite::isCorrect(const JointState& state, co
 bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
 {
     const double r = 0.05; // minimum dist from pos
-    for (size_t i = 0; i < _planner->_dof; ++i)
-    {
-        _planner->_data->qpos[i] = state.rad(i);
-    }
-    mj_forward(_planner->_model, _planner->_data); // Use it in planner's method
-    double dx = _planner->_data->site_xpos[0] - _goalX;
-    double dy = _planner->_data->site_xpos[1] - _goalY;
+    std::pair<double, double> xy = _planner->sitePosition(state);
+    double dx = xy.first - _goalX;
+    double dy = xy.second - _goalY;
     return dx * dx + dy * dy <= r * r;
 }
 CostType ManipulatorPlanner::AstarCheckerSite::costAction(const JointState& action)
@@ -274,14 +281,9 @@ const JointState& ManipulatorPlanner::AstarCheckerSite::getZeroAction()
 }
 CostType ManipulatorPlanner::AstarCheckerSite::heuristic(const JointState& state)
 {
-    // TODO remove copy-paste
-    for (size_t i = 0; i < _planner->_dof; ++i)
-    {
-        _planner->_data->qpos[i] = state.rad(i);
-    }
-    mj_forward(_planner->_model, _planner->_data); // Use in planner in method
-    double dx = _planner->_data->site_xpos[0] - _goalX;
-    double dy = _planner->_data->site_xpos[1] - _goalY;
-    return sqrt(dx * dx + dy * dy) / _planner->maxStepLen();
+    std::pair<double, double> xy = _planner->sitePosition(state);
+    double dx = xy.first - _goalX;
+    double dy = xy.second - _goalY;
+    return sqrt(dx * dx + dy * dy) / _planner->maxStepLength();
 }
 

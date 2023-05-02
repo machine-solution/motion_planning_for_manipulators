@@ -40,7 +40,9 @@ public:
     // calculate length only 1 time
     double modelLength() const;
     // calculate answer only 1 time
-    double maxStepLen() const;
+    double maxStepLength() const;
+    // return coords of site by state of joints
+    std::pair<double, double> sitePosition(const JointState& state) const;
 
     const int units = g_units;
     const double eps = g_eps;

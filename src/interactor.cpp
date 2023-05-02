@@ -77,6 +77,7 @@ void Interactor::setUp(Config config)
     _logger->prepareMainFile("");
     _logger->prepareScenFile(_config.scenFilename);
     _logger->prepareStatsFile(_config.statsFilename);
+    _logger->prepareRuntimeFile(_config.runtimeFilename);
 
     if (_config.randomTasks)
     {
@@ -185,6 +186,8 @@ void Interactor::solveTask()
         _logger->printMainLog(_modelState.solution);
         
         _logger->printStatsLog(_modelState.solution);
+
+        _logger->printRuntimeLog(_modelState.solution);
         
         printf("progress %zu/%zu\n\n", _taskset->progress(), _taskset->size());
     }

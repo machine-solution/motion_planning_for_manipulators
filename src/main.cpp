@@ -27,25 +27,9 @@ int main(int argc, const char** argv)
             TASK_POSITION,
             false, // random test generation
             "scenaries/scen.log",
-            "pyplot/6/stats_hard_w=" + names[i] + ".log",
+            "pyplot/7/stats_hard_w=" + names[i] + ".log",
             "scenaries/4_2-dof_pos_hard.scen",
-            false // display motion
-        });
-        interactor.doMainLoop();
-    }
-
-    for (size_t i = 0; i < ws.size(); ++i)
-    {
-        Interactor interactor("model/2-dof/manipulator_4.xml");
-        interactor.setUp({
-            3.0, // time
-            ws[i], // w
-            10000,
-            TASK_POSITION,
-            false, // random test generation
-            "scenaries/scen.log",
-            "pyplot/6/stats_medium_w=" + names[i] + ".log",
-            "scenaries/4_2-dof_pos_medium.scen",
+            "pyplot/6/runtime_hard_w=" + names[i] + ".log",
             false // display motion
         });
         interactor.doMainLoop();

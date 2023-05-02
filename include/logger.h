@@ -43,5 +43,7 @@ private:
     FILE* _scenFile = nullptr;
     FILE* _statsFile = nullptr;
 
+    bool _runtimeHaveHeader = false;
+
     size_t _dof;
 };
