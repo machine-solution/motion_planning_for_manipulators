@@ -14,11 +14,8 @@
 // main function
 int main(int argc, const char** argv)
 {
-    // std::vector<double> ws = {1.0, 1.1, 1.2, 1.5, 2.0, 4.0, 10.0, 30.0, 100.0};
-    // std::vector<std::string> names = {"1.0", "1.1", "1.2", "1.5", "2.0", "4.0", "10.0", "30.0", "100.0"};
-
-    std::vector<double> ws = {1.0};
-    std::vector<std::string> names = {"1.0"};
+    std::vector<double> ws = {1.0, 1.1, 1.2, 1.5, 2.0, 4.0, 10.0, 30.0, 100.0};
+    std::vector<std::string> names = {"1.0", "1.1", "1.2", "1.5", "2.0", "4.0", "10.0", "30.0", "100.0"};
 
     for (size_t i = 0; i < ws.size(); ++i)
     {
@@ -28,29 +25,31 @@ int main(int argc, const char** argv)
             ws[i], // w
             10000,
             TASK_POSITION,
-            true, // random test generation
+            false, // random test generation
             "scenaries/scen.log",
-            "pyplot/6/stats_dof=2_w=" + names[i] + ".log",
+            "pyplot/6/stats_hard_w=" + names[i] + ".log",
             "scenaries/4_2-dof_pos_hard.scen",
-            true // display motion
+            false // display motion
         });
         interactor.doMainLoop();
     }
 
-    // for (size_t i = 0; i < ws.size(); ++i)
-    // {
-    //     Interactor interactor("model/4-dof/manipulator_4.xml");
-    //     interactor.setUp({
-    //         1.0, // time
-    //         ws[i], // w
-    //         1000,
-    //         false,
-    //         "scenaries/4_4-dof_scen.log",
-    //         "pyplot/5/stats_dof=4_w=" + names[i] + ".log",
-    //         "scenaries/4_4-dof_hard.scen"
-    //     });
-    //     interactor.doMainLoop();
-    // }
+    for (size_t i = 0; i < ws.size(); ++i)
+    {
+        Interactor interactor("model/2-dof/manipulator_4.xml");
+        interactor.setUp({
+            3.0, // time
+            ws[i], // w
+            10000,
+            TASK_POSITION,
+            false, // random test generation
+            "scenaries/scen.log",
+            "pyplot/6/stats_medium_w=" + names[i] + ".log",
+            "scenaries/4_2-dof_pos_medium.scen",
+            false // display motion
+        });
+        interactor.doMainLoop();
+    }
 
     return 0;
 }
