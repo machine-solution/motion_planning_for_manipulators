@@ -1,0 +1,4 @@
+sudo apt update
+sudo apt install libglfw3-dev
+sudo cp lib/libmujoco.so /usr/lib/libmujoco.so
+sudo cp lib/libmujoco.so.2.3.2 /usr/lib/libmujoco.so.2.3.2
