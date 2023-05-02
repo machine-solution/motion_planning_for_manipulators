@@ -14,6 +14,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: configure
-      run: ./configure
+      run: .github/configure
     - name: make
       run: make
+    - name: unit tests
+      run: ./run_tests
