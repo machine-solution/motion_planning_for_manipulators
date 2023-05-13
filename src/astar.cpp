@@ -134,8 +134,8 @@ vector<SearchNode*> generateSuccessors(
     vector<SearchNode*> result;
     for (size_t i = 0; i < checker.getActions().size(); ++i)
     {
-        JointState action = checker.getActions()[i];
-        JointState newState = node->state() + action;
+        Action action = checker.getActions()[i];
+        JointState newState = node->state().applied(action);
         if (!checker.isCorrect(node->state(), action))
         {
             continue;
@@ -225,7 +225,7 @@ Solution astar(
         // push steps
         for (int i = steps.size() - 1; i >= 0; --i)
         {
-            solution.addStep(steps[i]);
+            solution.addAction(steps[i]);
         }
     }
 

@@ -11,7 +11,7 @@ ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
     _dof = dof;
     _model = model;
     _data = data;
-    initPrimitiveSteps();
+    initPrimitiveActions();
 }
 
 size_t ManipulatorPlanner::dof() const
@@ -33,7 +33,7 @@ bool ManipulatorPlanner::checkCollision(const JointState& position) const
     return mj_light_collision(_model, _data);
 }
 
-bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const JointState& delta) const
+bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Action& action) const
 {
     startProfiling();
     if (_model == nullptr || _data == nullptr) // if we have not data for check
@@ -51,7 +51,7 @@ bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Joi
     {
         for (size_t i = 0; i < _dof; ++i)
         {
-            _data->qpos[i] = start.rad(i) + g_worldEps * delta[i] * t; // temporary we use global constant here for speed
+            _data->qpos[i] = start.rad(i) + g_worldEps * action[i] * t; // temporary we use global constant here for speed
         }
         if (mj_light_collision(_model, _data))
         {
@@ -77,13 +77,13 @@ vector<string> ManipulatorPlanner::configurationSpace() const
     return cSpace;
 }
 
-Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointState& goalPos, int alg, double timeLimit, double w)
+Solution ManipulatorPlanner::planActions(const JointState& startPos, const JointState& goalPos, int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
 
     if (checkCollision(startPos) || checkCollision(goalPos))
     {
-        Solution solution(_primitiveSteps, _zeroStep);
+        Solution solution(_primitiveActions, _zeroAction);
         solution.stats.pathVerdict = PATH_NOT_EXISTS; // incorrect aim
         return  solution;
     }
@@ -94,17 +94,17 @@ Solution ManipulatorPlanner::planSteps(const JointState& startPos, const JointSt
     case ALG_ASTAR:
         return astarPlanning(startPos, goalPos, w, timeLimit);
     default:
-        return Solution(_primitiveSteps, _zeroStep);
+        return Solution(_primitiveActions, _zeroAction);
     }
 }
 
-Solution ManipulatorPlanner::planSteps(const JointState& startPos, double goalX, double goalY, int alg, double timeLimit, double w)
+Solution ManipulatorPlanner::planActions(const JointState& startPos, double goalX, double goalY, int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
 
     if (checkCollision(startPos))
     {
-        Solution solution(_primitiveSteps, _zeroStep);
+        Solution solution(_primitiveActions, _zeroAction);
         solution.stats.pathVerdict = PATH_NOT_EXISTS; // incorrect aim
         return  solution;
     }
@@ -113,7 +113,7 @@ Solution ManipulatorPlanner::planSteps(const JointState& startPos, double goalX,
     case ALG_ASTAR:
         return astarPlanning(startPos, goalX, goalY, w, timeLimit);
     default:
-        return Solution(_primitiveSteps, _zeroStep);
+        return Solution(_primitiveActions, _zeroAction);
     }
 }
 
@@ -129,10 +129,10 @@ double ManipulatorPlanner::modelLength() const
     }
     return len;
 }
-double ManipulatorPlanner::maxStepLength() const
+double ManipulatorPlanner::maxActionLength() const
 {
-    static double maxStep = sin(g_eps / 2) * modelLength() * 2;
-    return maxStep;
+    static double maxAction = sin(g_eps / 2) * modelLength() * 2;
+    return maxAction;
 }
 std::pair<double, double> ManipulatorPlanner::sitePosition(const JointState& state) const
 {
@@ -146,22 +146,22 @@ std::pair<double, double> ManipulatorPlanner::sitePosition(const JointState& sta
     return {_data->site_xpos[0], _data->site_xpos[1]};
 }
 
-void ManipulatorPlanner::initPrimitiveSteps()
+void ManipulatorPlanner::initPrimitiveActions()
 {
-    _zeroStep = JointState(_dof, 0);
+    _zeroAction = Action(_dof, 0);
 
-    _primitiveSteps.assign(2 * _dof, JointState(_dof, 0));
+    _primitiveActions.assign(2 * _dof, Action(_dof, 0));
 
     for (int i = 0; i < _dof; ++i)
     {
-        _primitiveSteps[i][i] = 1;
-        _primitiveSteps[i + _dof][i] = -1;
+        _primitiveActions[i][i] = 1;
+        _primitiveActions[i + _dof][i] = -1;
     }
 }
 
 Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const JointState& goalPos)
 {
-    Solution solution(_primitiveSteps, _zeroStep);
+    Solution solution(_primitiveActions, _zeroAction);
 
     JointState currentPos = startPos;
     for (size_t i = 0; i < _dof; ++i)
@@ -178,13 +178,13 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
                 t = i + _dof;
             }
 
-            if (checkCollisionAction(currentPos, _primitiveSteps[t]))
+            if (checkCollisionAction(currentPos, _primitiveActions[t]))
             {
                 solution.stats.pathVerdict = PATH_NOT_FOUND;
                 return solution; // we temporary need to give up : TODO
             }
-            currentPos += _primitiveSteps[t];
-            solution.addStep(t);
+            currentPos.apply(_primitiveActions[t]);
+            solution.addAction(t);
         }
     }
 
@@ -220,25 +220,25 @@ ManipulatorPlanner::AstarChecker::AstarChecker(ManipulatorPlanner* planner, cons
     _planner = planner;
 }
 
-bool ManipulatorPlanner::AstarChecker::isCorrect(const JointState& state, const JointState& action)
+bool ManipulatorPlanner::AstarChecker::isCorrect(const JointState& state, const Action& action)
 {
-    return (state + action).isCorrect() && (!_planner->checkCollisionAction(state, action));
+    return state.applied(action).isCorrect() && (!_planner->checkCollisionAction(state, action));
 }
 bool ManipulatorPlanner::AstarChecker::isGoal(const JointState& state)
 {
     return state == _goal;
 }
-CostType ManipulatorPlanner::AstarChecker::costAction(const JointState& action)
+CostType ManipulatorPlanner::AstarChecker::costAction(const Action& action)
 {
     return action.abs();
 }
-const std::vector<JointState>& ManipulatorPlanner::AstarChecker::getActions()
+const std::vector<Action>& ManipulatorPlanner::AstarChecker::getActions()
 {
-    return _planner->_primitiveSteps;
+    return _planner->_primitiveActions;
 }
-const JointState& ManipulatorPlanner::AstarChecker::getZeroAction()
+const Action& ManipulatorPlanner::AstarChecker::getZeroAction()
 {
-    return _planner->_zeroStep;
+    return _planner->_zeroAction;
 }
 CostType ManipulatorPlanner::AstarChecker::heuristic(const JointState& state)
 {
@@ -255,9 +255,9 @@ ManipulatorPlanner::AstarCheckerSite::AstarCheckerSite(ManipulatorPlanner* plann
     _goalY = goalY;
 }
 
-bool ManipulatorPlanner::AstarCheckerSite::isCorrect(const JointState& state, const JointState& action)
+bool ManipulatorPlanner::AstarCheckerSite::isCorrect(const JointState& state, const Action& action)
 {
-    return (state + action).isCorrect() && (!_planner->checkCollisionAction(state, action));
+    return state.applied(action).isCorrect() && (!_planner->checkCollisionAction(state, action));
 }
 bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
 {
@@ -267,23 +267,23 @@ bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
     double dy = xy.second - _goalY;
     return dx * dx + dy * dy <= r * r;
 }
-CostType ManipulatorPlanner::AstarCheckerSite::costAction(const JointState& action)
+CostType ManipulatorPlanner::AstarCheckerSite::costAction(const Action& action)
 {
     return action.abs();
 }
-const std::vector<JointState>& ManipulatorPlanner::AstarCheckerSite::getActions()
+const std::vector<Action>& ManipulatorPlanner::AstarCheckerSite::getActions()
 {
-    return _planner->_primitiveSteps;
+    return _planner->_primitiveActions;
 }
-const JointState& ManipulatorPlanner::AstarCheckerSite::getZeroAction()
+const Action& ManipulatorPlanner::AstarCheckerSite::getZeroAction()
 {
-    return _planner->_zeroStep;
+    return _planner->_zeroAction;
 }
 CostType ManipulatorPlanner::AstarCheckerSite::heuristic(const JointState& state)
 {
     std::pair<double, double> xy = _planner->sitePosition(state);
     double dx = xy.first - _goalX;
     double dy = xy.second - _goalY;
-    return sqrt(dx * dx + dy * dy) / _planner->maxStepLength();
+    return sqrt(dx * dx + dy * dy) / _planner->maxActionLength();
 }
 

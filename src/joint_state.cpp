@@ -21,6 +21,44 @@ int trueMod(int n, int mod)
     }
 }
 
+
+Action::Action(size_t dof, int value)
+{
+    _dof = dof;
+    _joints.assign(_dof, value);
+}
+Action::Action(std::initializer_list<int> list)
+{
+    _joints.assign(list);
+    _dof = _joints.size();
+}
+
+size_t Action::dof() const
+{
+    return _dof;
+}
+int Action::operator[](size_t i) const
+{
+    // TODO
+    return _joints[i];
+}
+int& Action::operator[](size_t i)
+{
+    // TODO
+    return _joints[i];
+}
+
+int Action::abs() const
+{
+    int len = 0;
+    for (size_t i = 0; i < dof(); ++i)
+    {
+        len += std::abs(_joints[i]); // It is integer abs
+    }
+    return len;
+}
+
+
 JointState::JointState(size_t dof, int value)
 {
     _dof = dof;
@@ -45,10 +83,23 @@ int& JointState::operator[](size_t i)
     return _joints[i];
 }
 
-JointState JointState::operator+(const JointState& other) const
+JointState& JointState::apply(const Action& action)
+{
+    if (_dof != action.dof())
+    {
+        throw std::runtime_error("JointState::apply: dofs of operands are not equal");
+    }
+    for (size_t i = 0; i < _dof; ++i)
+    {
+        _joints[i] += action[i];
+    }
+    normalize();
+    return *this;
+}
+JointState JointState::applied(const Action& action) const
 {
     JointState result = *this;
-    return (result += other);
+    return result.apply(action);
 }
 
 JointState& JointState::operator=(const JointState& other)
@@ -58,19 +109,6 @@ JointState& JointState::operator=(const JointState& other)
     for (size_t i = 0; i < _dof; ++i)
     {
         _joints[i] = other._joints[i];
-    }
-    normalize();
-    return *this;
-}
-JointState& JointState::operator+=(const JointState& other)
-{
-    if (_dof != other._dof)
-    {
-        throw std::runtime_error("JointState::operator+=: dofs of operands are not equal");
-    }
-    for (size_t i = 0; i < _dof; ++i)
-    {
-        _joints[i] += other._joints[i];
     }
     normalize();
     return *this;
