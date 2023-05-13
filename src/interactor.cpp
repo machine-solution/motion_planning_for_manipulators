@@ -3,94 +3,6 @@
 
 #include <stdexcept>
 
-TestSet::TestSet(size_t dof)
-{
-    _dof = dof;
-    _nextTestId = 0;
-}
-TestSet::TestSet(size_t dof, const std::string& filename) : TestSet(dof)
-{
-    loadTests(filename);
-}
-TestSet::TestSet(size_t dof, size_t n, size_t seed) : TestSet(dof)
-{
-    generateRandomTests(n, seed);
-}
-
-void TestSet::loadTests(const std::string& filename)
-{
-    FILE* file = fopen(filename.c_str(), "r");
-    // This may be called in constructor and
-    // exceptions in constructor is a bad idea
-    if (file == nullptr)
-    {
-        throw std::runtime_error("TestSet::loadTests: Could not open file " + filename);
-    }
-    int dof;
-    fscanf(file, "%d", &dof);
-    if (dof != _dof)
-    {
-        throw std::runtime_error("TestSet::loadTests: dof in testfile and in class are not same");
-    }
-    while (!feof(file))
-    {
-        JointState start(dof);
-        JointState goal(dof);
-        for (size_t i = 0; i < dof; ++i)
-        {
-            fscanf(file, "%d", &start[i]);
-        }
-        for (size_t i = 0; i < dof; ++i)
-        {
-            fscanf(file, "%d", &goal[i]);
-        }
-        float optimal;
-        fscanf(file, "%f", &optimal); // it is really unused now
-        _tests.push_back({start, goal});
-    }
-    fclose(file);
-}
-void TestSet::generateRandomTests(size_t n, size_t seed)
-{
-    srand(seed);
-    for (size_t i = 0; i < n; ++i)
-    {
-        _tests.push_back({randomState(_dof, g_units), randomState(_dof, g_units)});
-    }
-}
-void TestSet::removeTests()
-{
-    _tests.clear();
-    _nextTestId = 0;
-}
-void TestSet::restartTests()
-{
-    _nextTestId = 0;
-}
-
-const std::pair<JointState, JointState>& TestSet::getTest(size_t i) const
-{
-    return _tests[i];
-}
-const std::pair<JointState, JointState>& TestSet::getNextTest()
-{
-    return _tests[_nextTestId++];
-}
-bool TestSet::haveNextTest() const
-{
-    return _nextTestId < _tests.size();
-}
-
-size_t TestSet::progress() const
-{
-    return _nextTestId;
-}
-size_t TestSet::size() const
-{
-    return _tests.size();
-}
-
-
 Interactor::Interactor(const std::string& modelFilename)
 {
     char error[1000] = "Could not load binary model";
@@ -105,7 +17,7 @@ Interactor::Interactor(const std::string& modelFilename)
 
     _planner = new ManipulatorPlanner(_dof, mCopy, dCopy);
     _logger = new Logger(_dof);
-    _testset = new TestSet(_dof);
+    _taskset = new TaskSet(_dof);
 }
 Interactor::~Interactor()
 {
@@ -116,7 +28,7 @@ Interactor::~Interactor()
     mj_deleteModel(_model);
     delete _planner;
     delete _logger;
-    delete _testset;
+    delete _taskset;
     mj_deactivate();
 
     // close glfw window
@@ -165,17 +77,18 @@ void Interactor::setUp(Config config)
     _logger->prepareMainFile("");
     _logger->prepareScenFile(_config.scenFilename);
     _logger->prepareStatsFile(_config.statsFilename);
+    _logger->prepareRuntimeFile(_config.runtimeFilename);
 
-    if (_config.randomTests)
+    if (_config.randomTasks)
     {
-        _testset->generateRandomTests(_config.testNum);
+        _taskset->generateRandomTasks(_config.taskNum, _config.taskType);
     }
     else
     {
-        _testset->loadTests(_config.testsFilename);
+        _taskset->loadTasks(_config.tasksFilename, _config.taskType);
     }
 
-    printf("Test count = %zu.\n", _testset->size());
+    printf("Task count = %zu.\n", _taskset->size());
     printf("Simulation is started!\n\n");
 }
 
@@ -211,58 +124,97 @@ size_t Interactor::simulateAction(JointState& currentState, const JointState& ac
     }
 }
 
+void Interactor::setTask()
+{
+    // generating new task
+    if (!_taskset->haveNextTask())
+    {
+        _shouldClose = true;
+        return;
+    }
+    _modelState.task = _taskset->getNextTask();
+    if (_modelState.task->type() == TASK_STATE)
+    {
+        _modelState.currentState = static_cast<const TaskState*>(_modelState.task)->start();
+        _modelState.goal = static_cast<const TaskState*>(_modelState.task)->goal();
+        // if correct task TODO remove
+        if (!_planner->checkCollision(_modelState.currentState) && !_planner->checkCollision(_modelState.goal))
+        {
+            setManipulatorState(_modelState.currentState);
+            setGoalState(_modelState.goal);
+            _modelState.haveToPlan = true;
+        }
+    }
+    else if (_modelState.task->type() == TASK_POSITION)
+    {
+        _modelState.currentState = static_cast<const TaskPosition*>(_modelState.task)->start();
+        // if correct task TODO remove
+        if (!_planner->checkCollision(_modelState.currentState))
+        {
+            setManipulatorState(_modelState.currentState);
+            _modelState.haveToPlan = true;
+        }
+    }
+}
+void Interactor::solveTask()
+{
+    // planning path to goal
+    ++_modelState.counter;
+    if (_modelState.counter > 8) // to first of all simulator can show picture
+    {
+        _modelState.counter = 0;
+        if (_modelState.task->type() == TASK_STATE)
+        {
+            _modelState.solution = _planner->planSteps(_modelState.currentState, _modelState.goal,
+                ALG_ASTAR, _config.timeLimit, _config.w);
+
+            _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
+        }
+        else if (_modelState.task->type() == TASK_POSITION)
+        {
+            _modelState.solution = _planner->planSteps(_modelState.currentState,
+                static_cast<const TaskPosition*>(_modelState.task)->goalX(),
+                static_cast<const TaskPosition*>(_modelState.task)->goalY(),
+                ALG_ASTAR, _config.timeLimit, _config.w);
+
+            _logger->printScenLog(_modelState.solution, _modelState.currentState, 
+                static_cast<const TaskPosition*>(_modelState.task)->goalX(),
+                static_cast<const TaskPosition*>(_modelState.task)->goalY());
+        }
+        _modelState.haveToPlan = false;
+
+        _logger->printMainLog(_modelState.solution);
+        
+        _logger->printStatsLog(_modelState.solution);
+
+        _logger->printRuntimeLog(_modelState.solution);
+        
+        printf("progress %zu/%zu\n\n", _taskset->progress(), _taskset->size());
+    }
+}
+
 void Interactor::step()
 {
-    // if (solution.goalAchieved())
+    if (!_config.displayMotion || _modelState.solution.goalAchieved())
     {
         _modelState.action = JointState(_dof, 0);
         if (!_modelState.haveToPlan)
         {
-            // generating new test
-            if (!_testset->haveNextTest())
-            {
-                _shouldClose = true;
-                return;
-            }
-            std::pair<JointState, JointState> test = _testset->getNextTest();
-            _modelState.currentState = test.first;
-            _modelState.goal = test.second;
-            // if correct test TODO remove
-            if (!_planner->checkCollision(_modelState.currentState) && !_planner->checkCollision(_modelState.goal))
-            {
-                setManipulatorState(_modelState.currentState);
-                setGoalState(_modelState.goal);
-                _modelState.haveToPlan = true;
-            }
+            setTask();
         }
         else if (_modelState.haveToPlan)
         {
-            // planning path to goal
-            ++_modelState.counter;
-            if (_modelState.counter > 8) // to first of all simulator can show picture
-            {
-                _modelState.counter = 0;
-                _modelState.solution = _planner->planSteps(_modelState.currentState, _modelState.goal,
-                    ALG_ASTAR, _config.timeLimit, _config.w);
-                _modelState.haveToPlan = false;
-
-                _logger->printMainLog(_modelState.solution);
-                
-                _logger->printStatsLog(_modelState.solution);
-                _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
-                
-                printf("solved %d/%zu\n\n", ++_modelState.solved, _testset->size());
-            }
+            solveTask();
         }
     }
-    // else
-    // {
-    //     partOfMove = simulateAction(currentState, action, partOfMove);
-    //     if (partOfMove == 0)
-    //     {
-    //         action = solution.nextStep();
-    //     }
-    // }
+    else
+    {
+        _modelState.partOfMove = simulateAction(_modelState.currentState, _modelState.action, _modelState.partOfMove);
+        if (_modelState.partOfMove == 0)
+        {
+            _modelState.action = _modelState.solution.nextStep();
+        }
+    }
 
     mj_step(_model, _data);
 }

@@ -61,6 +61,7 @@ void Logger::prepareRuntimeFile(const std::string& filename)
         throw std::runtime_error("Logger::prepareMainFile: Could not open file " + filename);
     }
     // TODO print header
+    // Now header is printed when is printed first line of log
 }
 void Logger::prepareScenFile(const std::string& filename)
 {
@@ -96,6 +97,10 @@ void Logger::printStatsLog(const Solution& solution)
 void Logger::printScenLog(const Solution& solution, const JointState& startPos, const JointState& goalPos)
 {
     printScenLog(_scenFile, solution, startPos, goalPos);
+}
+void Logger::printScenLog(const Solution& solution, const JointState& startPos, double goalX, double goalY)
+{
+    printScenLog(_scenFile, solution, startPos, goalX, goalY);
 }
 void Logger::printCSpace(const vector<string>& cspace)
 {
@@ -150,6 +155,11 @@ void Logger::printRuntimeLogHeader(FILE* file, const Solution& solution)
 }
 void Logger::printRuntimeLog(FILE* file, const Solution& solution)
 {
+    if (!_runtimeHaveHeader)
+    {
+        _runtimeHaveHeader = true;
+        printRuntimeLogHeader(file, solution);
+    }
     for (const ProfileInfo& info : solution.plannerProfile)
     {
         fprintf(file, "%f,", info.runtime * 1000);
@@ -199,6 +209,17 @@ void Logger::printScenLog(FILE* file, const Solution& solution, const JointState
     {
         fprintf(file, "%d,", goalPos[i]);
     }
+    fprintf(file, "%f,%f,%f\n", solution.stats.pathCost,
+        1.0 * solution.stats.pathCost / solution.stats.pathPotentialCost,
+        solution.stats.runtime);
+}
+void Logger::printScenLog(FILE* file, const Solution& solution, const JointState& startPos, double goalX, double goalY)
+{
+    for (size_t i = 0; i < startPos.dof(); ++i)
+    {
+        fprintf(file, "%d,", startPos[i]);
+    }
+    fprintf(file, "%f,%f,", goalX, goalY);
     fprintf(file, "%f,%f,%f\n", solution.stats.pathCost,
         1.0 * solution.stats.pathCost / solution.stats.pathPotentialCost,
         solution.stats.runtime);

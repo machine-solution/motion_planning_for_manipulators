@@ -1,48 +1,26 @@
 #pragma once
 
-#include "joint_state.h"
 #include "planner.h"
 #include "logger.h"
+#include "taskset.h"
 
 #include <mujoco/mujoco.h>
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
 
-class TestSet
-{
-public:
-    TestSet(size_t dof);
-    TestSet(size_t dof, const std::string& filename);
-    TestSet(size_t dof, size_t n, size_t seed = 12345);
-
-    void loadTests(const std::string& filename);
-    void generateRandomTests(size_t n, size_t seed = 12345);
-    void removeTests();
-    void restartTests();
-
-    const std::pair<JointState, JointState>& getTest(size_t i) const;
-    const std::pair<JointState, JointState>& getNextTest();
-    bool haveNextTest() const;
-
-    size_t progress() const;
-    size_t size() const;
-
-private:
-    std::vector<std::pair<JointState, JointState>> _tests;
-    size_t _nextTestId;
-    size_t _dof;
-};
-
 struct Config
 {
     double timeLimit;
     double w;
-    int testNum;
-    bool randomTests;
+    int taskNum;
+    TaskType taskType;
+    bool randomTasks;
     std::string scenFilename;
     std::string statsFilename;
-    std::string testsFilename;
+    std::string tasksFilename;
+    std::string runtimeFilename;
+    bool displayMotion = false;
 };
 
 struct ModelState
@@ -50,12 +28,12 @@ struct ModelState
     int counter = 0;
     int partOfMove = 0;
     bool haveToPlan = false;
-    int solved = 0;
     Solution solution;
 
     JointState currentState;
     JointState goal;
     JointState action;
+    const ITask* task;
 };
 
 class Interactor
@@ -72,6 +50,9 @@ public:
     // at end stage aplies action to currentState
     // return next stage
     size_t simulateAction(JointState& currentState, const JointState& action, size_t stage);
+
+    void setTask();
+    void solveTask();
 
     void step();
 
@@ -95,7 +76,7 @@ private:
 
     ManipulatorPlanner* _planner;
     Logger* _logger;
-    TestSet* _testset;
+    TaskSet* _taskset;
 
     size_t _dof;
 
