@@ -58,11 +58,20 @@ public:
 
     bool isCorrect() const;
 
+    bool hasCacheXY() const;
+    double cacheX() const;
+    double cacheY() const;
+    void setCacheXY(double x, double y) const;
+
 private:
     void normalize();
 
     vector<int> _joints;
     size_t _dof;
+
+    mutable double _cacheX = 0;
+    mutable double _cacheY = 0;
+    mutable bool _hasCacheXY = false;
 };
 
 int manhattanDistance(const JointState& state1, const JointState& state2);

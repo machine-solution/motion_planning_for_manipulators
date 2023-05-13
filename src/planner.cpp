@@ -261,11 +261,21 @@ bool ManipulatorPlanner::AstarCheckerSite::isCorrect(const JointState& state, co
 }
 bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
 {
-    const double r = 0.05; // minimum dist from pos
-    std::pair<double, double> xy = _planner->sitePosition(state);
-    double dx = xy.first - _goalX;
-    double dy = xy.second - _goalY;
-    return dx * dx + dy * dy <= r * r;
+    const double r = 0.05; // const minimum dist from pos
+    if (state.hasCacheXY())
+    {
+        double dx = state.cacheX() - _goalX;
+        double dy = state.cacheY() - _goalY;
+        return dx * dx + dy * dy <= r * r;
+    }
+    else
+    {
+        std::pair<double, double> xy = _planner->sitePosition(state);
+        state.setCacheXY(xy.first, xy.second);
+        double dx = xy.first - _goalX;
+        double dy = xy.second - _goalY;
+        return dx * dx + dy * dy <= r * r;
+    }
 }
 CostType ManipulatorPlanner::AstarCheckerSite::costAction(const Action& action)
 {
@@ -281,9 +291,18 @@ const Action& ManipulatorPlanner::AstarCheckerSite::getZeroAction()
 }
 CostType ManipulatorPlanner::AstarCheckerSite::heuristic(const JointState& state)
 {
-    std::pair<double, double> xy = _planner->sitePosition(state);
-    double dx = xy.first - _goalX;
-    double dy = xy.second - _goalY;
-    return sqrt(dx * dx + dy * dy) / _planner->maxActionLength();
+    if (state.hasCacheXY())
+    {
+        double dx = state.cacheX() - _goalX;
+        double dy = state.cacheY() - _goalY;
+        return sqrt(dx * dx + dy * dy) / _planner->maxActionLength();
+    }
+    else
+    {
+        std::pair<double, double> xy = _planner->sitePosition(state);
+        state.setCacheXY(xy.first, xy.second);
+        double dx = xy.first - _goalX;
+        double dy = xy.second - _goalY;
+        return sqrt(dx * dx + dy * dy) / _planner->maxActionLength();
+    }
 }
-

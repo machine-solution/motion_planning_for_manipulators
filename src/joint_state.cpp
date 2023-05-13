@@ -79,12 +79,14 @@ int JointState::operator[](size_t i) const
 }
 int& JointState::operator[](size_t i)
 {
+    _hasCacheXY = false;
     // TODO
     return _joints[i];
 }
 
 JointState& JointState::apply(const Action& action)
 {
+    _hasCacheXY = false;
     if (_dof != action.dof())
     {
         throw std::runtime_error("JointState::apply: dofs of operands are not equal");
@@ -104,6 +106,7 @@ JointState JointState::applied(const Action& action) const
 
 JointState& JointState::operator=(const JointState& other)
 {
+    _hasCacheXY = false;
     _dof = other._dof;
     _joints.resize(_dof);
     for (size_t i = 0; i < _dof; ++i)
@@ -201,6 +204,25 @@ int manhattanDistance(const JointState& state1, const JointState& state2)
 CostType manhattanHeuristic(const JointState& state1, const JointState& state2)
 {
     return manhattanDistance(state1, state2);
+}
+
+bool JointState::hasCacheXY() const
+{
+    return _hasCacheXY;
+}
+double JointState::cacheX() const
+{
+    return _cacheX;
+}
+double JointState::cacheY() const
+{
+    return _cacheY;
+}
+void JointState::setCacheXY(double x, double y) const
+{
+    _hasCacheXY = true;
+    _cacheX = x;
+    _cacheY = y;
 }
 
 void JointState::normalize()
