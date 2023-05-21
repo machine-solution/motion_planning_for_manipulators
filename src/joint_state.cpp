@@ -95,6 +95,7 @@ JointState& JointState::apply(const Action& action)
     {
         _joints[i] += action[i];
     }
+    _lastAction = &action;
     normalize();
     return *this;
 }
@@ -160,6 +161,11 @@ size_t JointState::dof() const
     return _dof;
 }
 
+const Action* JointState::lastAction() const
+{
+    return _lastAction;
+}
+
 int JointState::maxJoint() const
 {
     return *std::max_element(_joints.begin(), _joints.end());
@@ -197,6 +203,15 @@ int manhattanDistance(const JointState& state1, const JointState& state2)
         {
             dist += abs(state1[i] - state2[i]);
         }
+    }
+    return dist;
+}
+int manhattanDistance(const Action& action1, const Action& action2)
+{
+    int dist = 0;
+    for (size_t i = 0; i < action1.dof(); ++i)
+    {
+        dist += abs(action1[i] - action2[i]);
     }
     return dist;
 }

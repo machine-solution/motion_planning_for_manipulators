@@ -34,6 +34,7 @@ public:
     int operator[](size_t i) const;
     int& operator[](size_t i);
 
+    // TODO forbid to use temporaty action object
     JointState& apply(const Action& action);
     JointState applied(const Action& action) const;
 
@@ -50,6 +51,8 @@ public:
     double rad(size_t i) const;
 
     size_t dof() const;
+
+    const Action* lastAction() const;
 
     int maxJoint() const;
     int minJoint() const;
@@ -68,6 +71,7 @@ private:
 
     vector<int> _joints;
     size_t _dof;
+    const Action* _lastAction = nullptr;
 
     mutable double _cacheX = 0;
     mutable double _cacheY = 0;
@@ -75,6 +79,7 @@ private:
 };
 
 int manhattanDistance(const JointState& state1, const JointState& state2);
+int manhattanDistance(const Action& action1, const Action& action2);
 
 CostType manhattanHeuristic(const JointState& state1, const JointState& state2);
 

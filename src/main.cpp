@@ -30,7 +30,7 @@ int main(int argc, const char** argv)
             "pyplot/7/stats_hard_w=" + names[i] + ".log",
             "scenaries/4_2-dof_pos_hard.scen",
             "pyplot/6/runtime_hard_w=" + names[i] + ".log",
-            false // display motion
+            true // display motion
         });
         interactor.doMainLoop();
     }

@@ -75,7 +75,7 @@ private:
 
         bool isCorrect(const JointState& state, const Action& action) override;
         bool isGoal(const JointState& state) override;
-        CostType costAction(const Action& action) override;
+        CostType costAction(const JointState& state, const Action& action) override;
         const std::vector<Action>& getActions() override;
         const Action& getZeroAction() override;
         CostType heuristic(const JointState& state) override;
@@ -91,7 +91,7 @@ private:
 
         bool isCorrect(const JointState& state, const Action& action) override;
         bool isGoal(const JointState& state) override;
-        CostType costAction(const Action& action) override;
+        CostType costAction(const JointState& state, const Action& action) override;
         const std::vector<Action>& getActions() override;
         const Action& getZeroAction() override;
         CostType heuristic(const JointState& state) override;

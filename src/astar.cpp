@@ -142,7 +142,7 @@ vector<SearchNode*> generateSuccessors(
         }
         result.push_back(
             new SearchNode(
-                node->g() + checker.costAction(action),
+                node->g() + checker.costAction(node->state(), action),
                 checker.heuristic(newState) * weight,
                 newState,
                 i,
@@ -210,12 +210,10 @@ Solution astar(
     }
     else if (solution.stats.pathVerdict == PATH_FOUND)
     {
+        solution.stats.pathCost = currentNode->g();
         vector<size_t> steps;
         while (currentNode->parent() != nullptr)
         {
-            // count stats
-            solution.stats.pathCost += checker.costAction(checker.getActions()[currentNode->stepNum()]);
-            //
             steps.push_back(currentNode->stepNum());
             currentNode = currentNode->parent();
         }

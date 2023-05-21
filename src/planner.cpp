@@ -228,9 +228,16 @@ bool ManipulatorPlanner::AstarChecker::isGoal(const JointState& state)
 {
     return state == _goal;
 }
-CostType ManipulatorPlanner::AstarChecker::costAction(const Action& action)
+CostType ManipulatorPlanner::AstarChecker::costAction(const JointState& state, const Action& action)
 {
-    return action.abs();
+    if (state.lastAction() == nullptr)
+    {
+        return action.abs();
+    }
+    else
+    {
+        return action.abs() + g_weightSmoothness * manhattanDistance(action, *state.lastAction());
+    }
 }
 const std::vector<Action>& ManipulatorPlanner::AstarChecker::getActions()
 {
@@ -277,9 +284,16 @@ bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
         return dx * dx + dy * dy <= r * r;
     }
 }
-CostType ManipulatorPlanner::AstarCheckerSite::costAction(const Action& action)
+CostType ManipulatorPlanner::AstarCheckerSite::costAction(const JointState& state, const Action& action)
 {
-    return action.abs();
+    if (state.lastAction() == nullptr)
+    {
+        return action.abs();
+    }
+    else
+    {
+        return action.abs() + g_weightSmoothness * manhattanDistance(action, *state.lastAction());
+    }
 }
 const std::vector<Action>& ManipulatorPlanner::AstarCheckerSite::getActions()
 {
