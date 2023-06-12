@@ -72,7 +72,7 @@ void Interactor::setUp(Config config)
 
     _modelState.currentState = JointState(_dof, 0);
     _modelState.goal = JointState(_dof, 0);
-    _modelState.action = JointState(_dof, 0);
+    _modelState.action = Action(_dof, 0);
 
     _logger->prepareMainFile("");
     _logger->prepareScenFile(_config.scenFilename);
@@ -106,11 +106,11 @@ void Interactor::setGoalState(const JointState& state)
         _data->qpos[i + _dof] = state.rad(i);
     }
 }
-size_t Interactor::simulateAction(JointState& currentState, const JointState& action, size_t stage)
+size_t Interactor::simulateAction(JointState& currentState, const Action& action, size_t stage)
 {
     if (stage == g_unitSize - 1)
     {
-        currentState += action;
+        currentState.apply(action);
         setManipulatorState(currentState);
         return 0;
     }
@@ -165,14 +165,14 @@ void Interactor::solveTask()
         _modelState.counter = 0;
         if (_modelState.task->type() == TASK_STATE)
         {
-            _modelState.solution = _planner->planSteps(_modelState.currentState, _modelState.goal,
+            _modelState.solution = _planner->planActions(_modelState.currentState, _modelState.goal,
                 ALG_ASTAR, _config.timeLimit, _config.w);
 
             _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
         }
         else if (_modelState.task->type() == TASK_POSITION)
         {
-            _modelState.solution = _planner->planSteps(_modelState.currentState,
+            _modelState.solution = _planner->planActions(_modelState.currentState,
                 static_cast<const TaskPosition*>(_modelState.task)->goalX(),
                 static_cast<const TaskPosition*>(_modelState.task)->goalY(),
                 ALG_ASTAR, _config.timeLimit, _config.w);
@@ -197,7 +197,7 @@ void Interactor::step()
 {
     if (!_config.displayMotion || _modelState.solution.goalAchieved())
     {
-        _modelState.action = JointState(_dof, 0);
+        _modelState.action = Action(_dof, 0);
         if (!_modelState.haveToPlan)
         {
             setTask();
@@ -212,7 +212,7 @@ void Interactor::step()
         _modelState.partOfMove = simulateAction(_modelState.currentState, _modelState.action, _modelState.partOfMove);
         if (_modelState.partOfMove == 0)
         {
-            _modelState.action = _modelState.solution.nextStep();
+            _modelState.action = _modelState.solution.nextAction();
         }
     }
 

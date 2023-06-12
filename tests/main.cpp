@@ -6,20 +6,6 @@
 
 #include <cstdio>
 
-TEST_CASE("JointState arithmetic")
-{
-    JointState a({1, 2});
-    JointState b({3, -4});
-    a += b;
-    REQUIRE(a == JointState({4, -2}));
-    b += JointState({1, 0});
-    REQUIRE(b == JointState({4, -4}));
-    REQUIRE(a != b);
-    REQUIRE(JointState{4, 0} + JointState{0, -4} == b);
-    b += a;
-    REQUIRE(JointState{4, -4} + a == b);
-}
-
 TEST_CASE("JointState comparation")
 {
     JointState a({1, 2});
@@ -41,10 +27,10 @@ void testPlanningFromTo(JointState a, JointState b, int alg)
 {
     REQUIRE(a.dof() == b.dof());
     ManipulatorPlanner planner(a.dof());
-    Solution solution = planner.planSteps(a, b, alg);
+    Solution solution = planner.planActions(a, b, alg);
     while (!solution.goalAchieved())
     {
-        a += solution.nextStep();
+        a.apply(solution.nextAction());
     }
     REQUIRE(a == b);
 }
@@ -58,10 +44,10 @@ void testStressPlanning(int dof, int alg)
     JointState b = randomState(dof);
     for (size_t i = 0; i < 20; ++i)
     {
-        Solution solution = planner.planSteps(a, b, alg);
+        Solution solution = planner.planActions(a, b, alg);
         while (!solution.goalAchieved())
         {
-            a += solution.nextStep();
+            a.apply(solution.nextAction());
         }
         REQUIRE(a == b);
         b = randomState(dof);

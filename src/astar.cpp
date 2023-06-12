@@ -134,15 +134,15 @@ vector<SearchNode*> generateSuccessors(
     vector<SearchNode*> result;
     for (size_t i = 0; i < checker.getActions().size(); ++i)
     {
-        JointState action = checker.getActions()[i];
-        JointState newState = node->state() + action;
+        Action action = checker.getActions()[i];
+        JointState newState = node->state().applied(action);
         if (!checker.isCorrect(node->state(), action))
         {
             continue;
         }
         result.push_back(
             new SearchNode(
-                node->g() + checker.costAction(action),
+                node->g() + checker.costAction(node->state(), action),
                 checker.heuristic(newState) * weight,
                 newState,
                 i,
@@ -210,22 +210,19 @@ Solution astar(
     }
     else if (solution.stats.pathVerdict == PATH_FOUND)
     {
-        vector<size_t> steps;
+        solution.stats.pathCost = currentNode->g();
+        vector<size_t> actions;
         while (currentNode->parent() != nullptr)
         {
-            // count stats
-            solution.stats.pathCost += checker.costAction(checker.getActions()[currentNode->stepNum()]);
-            //
-            steps.push_back(currentNode->stepNum());
+            actions.push_back(currentNode->stepNum());
             currentNode = currentNode->parent();
         }
-
         solution.stats.pathPotentialCost = checker.heuristic(startPos);
 
-        // push steps
-        for (int i = steps.size() - 1; i >= 0; --i)
+        // push actions
+        for (int i = actions.size() - 1; i >= 0; --i)
         {
-            solution.addStep(steps[i]);
+            solution.addAction(actions[i]);
         }
     }
 

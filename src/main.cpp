@@ -19,18 +19,18 @@ int main(int argc, const char** argv)
 
     for (size_t i = 0; i < ws.size(); ++i)
     {
-        Interactor interactor("model/2-dof/manipulator_4.xml");
+        Interactor interactor("model/2-dof/manipulator_5.xml");
         interactor.setUp({
             3.0, // time
             ws[i], // w
-            10000,
-            TASK_POSITION,
-            false, // random test generation
+            10000, // the number of random tests
+            TASK_STATE, // kind of task
+            true, // random test generation
             "scenaries/scen.log",
             "pyplot/7/stats_hard_w=" + names[i] + ".log",
             "scenaries/4_2-dof_pos_hard.scen",
             "pyplot/6/runtime_hard_w=" + names[i] + ".log",
-            false // display motion
+            true // display motion
         });
         interactor.doMainLoop();
     }

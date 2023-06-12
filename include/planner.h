@@ -21,18 +21,18 @@ public:
     size_t dof() const;
 
     bool checkCollision(const JointState& position) const;
-    bool checkCollisionAction(const JointState& start, const JointState& delta) const;
+    bool checkCollisionAction(const JointState& start, const Action& action) const;
 
     // return C-Space as strings where @ an obstacle, . - is not
     // only for _dof = 2 now
     vector<string> configurationSpace() const;
 
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
-    Solution planSteps(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1,
+    Solution planActions(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1,
         double timeLimit = 1.0, double w = 1.0);
     // plan path to move end-effector to (doubleX, doubleY) point
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
-    Solution planSteps(const JointState& startPos, double goalX, double goalY, int alg = ALG_ASTAR,
+    Solution planActions(const JointState& startPos, double goalX, double goalY, int alg = ALG_ASTAR,
         double timeLimit = 1.0, double w = 1.0);
 
     // this method used that edges of model are cylinders
@@ -40,7 +40,7 @@ public:
     // calculate length only 1 time
     double modelLength() const;
     // calculate answer only 1 time
-    double maxStepLength() const;
+    double maxActionLength() const;
     // return coords of site by state of joints
     std::pair<double, double> sitePosition(const JointState& state) const;
 
@@ -48,7 +48,7 @@ public:
     const double eps = g_eps;
 
 private:
-    void initPrimitiveSteps();
+    void initPrimitiveActions();
 
     Solution linearPlanning(const JointState& startPos, const JointState& goalPos);
 
@@ -61,8 +61,8 @@ private:
         float weight, double timeLimit
     );
 
-    vector<JointState> _primitiveSteps;
-    JointState _zeroStep;
+    vector<Action> _primitiveActions;
+    Action _zeroAction;
     size_t _dof;
 
     mutable mjModel* _model; // model for collision checks
@@ -73,11 +73,11 @@ private:
     public:
         AstarChecker(ManipulatorPlanner* planner, const JointState& goal);
 
-        bool isCorrect(const JointState& state, const JointState& action) override;
+        bool isCorrect(const JointState& state, const Action& action) override;
         bool isGoal(const JointState& state) override;
-        CostType costAction(const JointState& action) override;
-        const std::vector<JointState>& getActions() override;
-        const JointState& getZeroAction() override;
+        CostType costAction(const JointState& state, const Action& action) override;
+        const std::vector<Action>& getActions() override;
+        const Action& getZeroAction() override;
         CostType heuristic(const JointState& state) override;
     protected:
         ManipulatorPlanner* _planner;
@@ -89,11 +89,11 @@ private:
     public:
         AstarCheckerSite(ManipulatorPlanner* planner, double goalX, double goalY);
 
-        bool isCorrect(const JointState& state, const JointState& action) override;
+        bool isCorrect(const JointState& state, const Action& action) override;
         bool isGoal(const JointState& state) override;
-        CostType costAction(const JointState& action) override;
-        const std::vector<JointState>& getActions() override;
-        const JointState& getZeroAction() override;
+        CostType costAction(const JointState& state, const Action& action) override;
+        const std::vector<Action>& getActions() override;
+        const Action& getZeroAction() override;
         CostType heuristic(const JointState& state) override;
     protected:
         ManipulatorPlanner* _planner;
