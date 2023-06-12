@@ -38,6 +38,7 @@ This project uses some output files witch don't exist in github repository. To m
 ```
 ./github/build_structure
 ```
+It will create empty folders in witch you can find output files after run: with logs and statistics.
 
 # Run
 For run on linux you can use 'run_linux' file. Execute this in the root of the repository.  
