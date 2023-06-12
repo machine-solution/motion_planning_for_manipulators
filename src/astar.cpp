@@ -211,19 +211,18 @@ Solution astar(
     else if (solution.stats.pathVerdict == PATH_FOUND)
     {
         solution.stats.pathCost = currentNode->g();
-        vector<size_t> steps;
+        vector<size_t> actions;
         while (currentNode->parent() != nullptr)
         {
-            steps.push_back(currentNode->stepNum());
+            actions.push_back(currentNode->stepNum());
             currentNode = currentNode->parent();
         }
-
         solution.stats.pathPotentialCost = checker.heuristic(startPos);
 
-        // push steps
-        for (int i = steps.size() - 1; i >= 0; --i)
+        // push actions
+        for (int i = actions.size() - 1; i >= 0; --i)
         {
-            solution.addAction(steps[i]);
+            solution.addAction(actions[i]);
         }
     }
 
