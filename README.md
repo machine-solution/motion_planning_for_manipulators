@@ -2,6 +2,7 @@ This project uses [mujoco](https://github.com/deepmind/mujoco) as simulator and 
 
 Content
 1. [Installation](#installation)
+1. [Before run](#before-run)
 1. [Run](#run)
 1. [Run tests](#run-tests)
 1. [Project description](#project-description)
@@ -31,6 +32,13 @@ sudo cp lib/libmujoco.so.2.3.2 /usr/lib/libmujoco.so.2.3.2
 ```
 Congradulations! You have completed installation.  
 
+# Before run
+
+This project uses some output files witch don't exist in github repository. To make all necessary folders run
+```
+./github/build_structure
+```
+
 # Run
 For run on linux you can use 'run_linux' file. Execute this in the root of the repository.  
 ```
@@ -47,7 +55,7 @@ After this operation in the root of this repository you can find 'manipulator' f
 ./simulator
 ```
 
-If you get into trouble with running some of this files, do this and try again:
+If you got into trouble with running some of this files, do this and try again:
 ```
 chmod +x <execution_file>
 ```
