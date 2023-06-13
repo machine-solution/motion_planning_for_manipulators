@@ -108,7 +108,7 @@ void TaskSet::loadTasks(const std::string& filename, TaskType type)
             counter_scanned += fscanf(file, "%f", &optimal); // it is really unused now
             if (counter_scanned == (dof + 3))
             {
-            _tasks.push_back(std::make_unique<TaskPosition>(start, goalX, goalY));
+                _tasks.push_back(std::make_unique<TaskPosition>(start, goalX, goalY));
             }
         }
     }
