@@ -131,3 +131,18 @@ TEST_CASE("A* Search Tree")
     best = tree.extractBestNode();
     REQUIRE(best == nullptr);
 }
+
+void testReadFile(const int dof, const std::string& file_path,const int number_of_tests, TaskType type)
+{
+    TaskSet *taskset = new TaskSet(dof);
+    taskset->loadTasks(file_path, type);
+    REQUIRE(taskset->size() == number_of_tests);
+}
+
+TEST_CASE("File read test")
+{
+    testReadFile(2, "tests/samples/load_taskset/2-dof_pos(1).scen", 0, TASK_POSITION);
+    testReadFile(2, "tests/samples/load_taskset/2-dof.scen", 4, TASK_STATE);
+    testReadFile(2, "tests/samples/load_taskset/2-dof_pos(2).scen", 369, TASK_POSITION);
+    testReadFile(3, "tests/samples/load_taskset/3-dof.scen", 12, TASK_STATE);
+}
