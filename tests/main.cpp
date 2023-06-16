@@ -1,6 +1,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch_amalgamated.hpp"
 
+#include "taskset.h"
 #include "planner.h"
 #include "astar.h"
 
