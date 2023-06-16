@@ -22,7 +22,7 @@ testing: tests/tests
 $(TARGET): $(SOURCES) $(OBJ)/main.o
 	$(CXX) $(SOURCES) $(OBJ)/main.o $(LIBS) -o $(TARGET)
 
-tests/tests: $(SOURCES) $(INC)/planner.h $(INC)/astar.h $(OBJ)/catch_amalgamated.o tests/main.cpp
+tests/tests: $(SOURCES) $(INC)/planner.h $(INC)/astar.h $(INC)/taskset.h $(OBJ)/catch_amalgamated.o tests/main.cpp
 	$(CXX) $(FLAGS) $(SOURCES) $(OBJ)/catch_amalgamated.o tests/main.cpp $(LIBS) -o tests/tests
 
 # compile commands
