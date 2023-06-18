@@ -32,7 +32,7 @@ struct ModelState
 
     JointState currentState;
     JointState goal;
-    JointState action;
+    Action action;
     const ITask* task;
 };
 
@@ -49,7 +49,7 @@ public:
     // simulate action in currentState
     // at end stage aplies action to currentState
     // return next stage
-    size_t simulateAction(JointState& currentState, const JointState& action, size_t stage);
+    size_t simulateAction(JointState& currentState, const Action& action, size_t stage);
 
     void setTask();
     void solveTask();

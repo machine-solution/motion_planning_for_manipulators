@@ -3,29 +3,29 @@
 
 Solution::Solution()
 {
-    _nextStepId = 0;
-    _solveSteps.clear();
+    _nextActionId = 0;
+    _solveActions.clear();
 }
-Solution::Solution(const vector<JointState>& primitiveSteps, const JointState& zeroStep) : Solution()
+Solution::Solution(const vector<Action>& primitiveActions, const Action& zeroAction) : Solution()
 {
-    _primitiveSteps = primitiveSteps;
-    _zeroStep = zeroStep;
+    _primitiveActions = primitiveActions;
+    _zeroAction = zeroAction;
 }
 
-JointState& Solution::nextStep()
+Action& Solution::nextAction()
 {
-    if (_nextStepId >= _solveSteps.size())
+    if (_nextActionId >= _solveActions.size())
     {
-        return _zeroStep;
+        return _zeroAction;
     }
-    return _primitiveSteps[_solveSteps[_nextStepId++]];
+    return _primitiveActions[_solveActions[_nextActionId++]];
 }
-void Solution::addStep(size_t stepId)
+void Solution::addAction(size_t stepId)
 {
-    _solveSteps.push_back(stepId);
+    _solveActions.push_back(stepId);
 }
 
 bool Solution::goalAchieved() const
 {
-    return _nextStepId >= _solveSteps.size();
+    return _nextActionId >= _solveActions.size();
 }

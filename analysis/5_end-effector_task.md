@@ -43,3 +43,12 @@ I want to read old tasksets without any changes, but also I want to read any tas
 ### Conclusions step 2
 1. Now in project I can use both types of tasks but read and generate only one type in one interactor.
 2. There is a not good task generator in this project and I need to improve it in future to generate more correct tasks.
+
+## Step 3: end
+
+### The last step
+At the end I create cache for calculating end-effector position. In algorithm I use it two times: when checking goal position and when calculating heuristic. And to calculate it more efficiently I cached this results in JointState.
+
+## Global conclusions
+1. New kind of task was added.
+2. It is bring new slow method SitePosition witch calculates position of end-effector by angles of joints.
