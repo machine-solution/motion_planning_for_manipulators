@@ -133,7 +133,7 @@ TEST_CASE("A* Search Tree")
     REQUIRE(best == nullptr);
 }
 
-void testReadFile(const int dof, const std::string& file_path, const int number_of_tests, TaskType type)
+void testReadFile(int dof, const std::string& file_path, int number_of_tests, TaskType type)
 {
     TaskSet *taskset = new TaskSet(dof);
     taskset->loadTasks(file_path, type);
