@@ -22,7 +22,7 @@ testing: tests/tests
 $(TARGET): $(SOURCES) $(OBJ)/main.o
 	$(CXX) $(SOURCES) $(OBJ)/main.o $(LIBS) -o $(TARGET)
 
-tests/tests: $(SOURCES) $(INC)/planner.h $(INC)/astar.h $(INC)/taskset.h $(INC)/doctest.h
+tests/tests: $(SOURCES) $(INC)/planner.h $(INC)/astar.h $(INC)/taskset.h $(INC)/doctest.h $(INC)/joint_state.h
 	$(CXX) $(FLAGS) $(SOURCES) tests/main.cpp $(LIBS) -o tests/tests
 
 # compile commands
