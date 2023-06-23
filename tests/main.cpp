@@ -4,6 +4,7 @@
 #include "taskset.h"
 #include "planner.h"
 #include "astar.h"
+#include "joint_state.h"
 
 #include <cstdio>
 
