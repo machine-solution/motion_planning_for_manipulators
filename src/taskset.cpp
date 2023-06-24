@@ -75,17 +75,21 @@ void TaskSet::loadTasks(const std::string& filename, TaskType type)
         {
             JointState start(dof);
             JointState goal(dof);
+            int counter_scanned = 0;
             for (size_t i = 0; i < dof; ++i)
             {
-                fscanf(file, "%d", &start[i]);
+                counter_scanned += fscanf(file, "%d", &start[i]);
             }
             for (size_t i = 0; i < dof; ++i)
             {
-                fscanf(file, "%d", &goal[i]);
+                counter_scanned += fscanf(file, "%d", &goal[i]);
             }
             float optimal;
-            fscanf(file, "%f", &optimal); // it is really unused now
-            _tasks.push_back(std::make_unique<TaskState>(start, goal));
+            counter_scanned += fscanf(file, "%f", &optimal); // it is really unused now
+            if (counter_scanned == (2 * dof + 1))
+            {
+                _tasks.push_back(std::make_unique<TaskState>(start, goal));
+            }
         }
     }
     else if (type == TASK_POSITION)
@@ -93,15 +97,19 @@ void TaskSet::loadTasks(const std::string& filename, TaskType type)
         while (!feof(file))
         {
             JointState start(dof);
+            int counter_scanned = 0;
             for (size_t i = 0; i < dof; ++i)
             {
-                fscanf(file, "%d", &start[i]);
+                counter_scanned += fscanf(file, "%d", &start[i]);
             }
             double goalX, goalY;
-            fscanf(file, "%lf%lf", &goalX, &goalY);
+            counter_scanned += fscanf(file, "%lf%lf", &goalX, &goalY);
             float optimal;
-            fscanf(file, "%f", &optimal); // it is really unused now
-            _tasks.push_back(std::make_unique<TaskPosition>(start, goalX, goalY));
+            counter_scanned += fscanf(file, "%f", &optimal); // it is really unused now
+            if (counter_scanned == (dof + 3))
+            {
+                _tasks.push_back(std::make_unique<TaskPosition>(start, goalX, goalY));
+            }
         }
     }
     fclose(file);

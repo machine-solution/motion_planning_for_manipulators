@@ -1,6 +1,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch_amalgamated.hpp"
 
+#include "taskset.h"
 #include "planner.h"
 #include "astar.h"
 
@@ -116,4 +117,19 @@ TEST_CASE("A* Search Tree")
     tree.addToClosed(best);
     best = tree.extractBestNode();
     REQUIRE(best == nullptr);
+}
+
+void testReadFile(int dof, const std::string& file_path, int number_of_tests, TaskType type)
+{
+    TaskSet *taskset = new TaskSet(dof);
+    taskset->loadTasks(file_path, type);
+    REQUIRE(taskset->size() == number_of_tests);
+}
+
+TEST_CASE("File read test")
+{
+    testReadFile(2, "tests/samples/load_taskset/2-dof_pos_test_1.scen", 0, TASK_POSITION);
+    testReadFile(2, "tests/samples/load_taskset/2-dof_test_2.scen", 4, TASK_STATE);
+    testReadFile(2, "tests/samples/load_taskset/2-dof_pos_test_3.scen", 2, TASK_POSITION);
+    testReadFile(3, "tests/samples/load_taskset/3-dof_test_4.scen", 4, TASK_STATE);
 }
