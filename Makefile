@@ -65,8 +65,3 @@ $(OBJ)/taskset.o: $(SRC)/taskset.cpp $(INC)/taskset.h $(INC)/global_defs.h
 $(OBJ)/interactor.o: $(SRC)/interactor.cpp $(INC)/interactor.h $(INC)/logger.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/taskset.h $(INC)/global_defs.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/interactor.cpp $(LIBS) -c -o $(OBJ)/interactor.o
-
-# test "lib" catch2
-$(OBJ)/catch_amalgamated.o: tests/catch2/catch_amalgamated.cpp include/catch2/catch_amalgamated.hpp
-	mkdir -p $(OBJ)
-	$(CXX) $(FLAGS) tests/catch2/catch_amalgamated.cpp -c -o $(OBJ)/catch_amalgamated.o
