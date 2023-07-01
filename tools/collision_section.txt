@@ -1,0 +1,12 @@
+        <pair geom1="geom edge 0" geom2="geom obstacle 0"/>
+        <pair geom1="geom edge 0" geom2="geom obstacle 1"/>
+        <pair geom1="geom edge 0" geom2="geom obstacle 2"/>
+        <pair geom1="geom edge 0" geom2="geom obstacle 3"/>
+        <pair geom1="geom edge 0" geom2="geom obstacle 4"/>
+        <pair geom1="geom edge 0" geom2="geom obstacle 5"/>
+        <pair geom1="geom edge 1" geom2="geom obstacle 0"/>
+        <pair geom1="geom edge 1" geom2="geom obstacle 1"/>
+        <pair geom1="geom edge 1" geom2="geom obstacle 2"/>
+        <pair geom1="geom edge 1" geom2="geom obstacle 3"/>
+        <pair geom1="geom edge 1" geom2="geom obstacle 4"/>
+        <pair geom1="geom edge 1" geom2="geom obstacle 5"/>
