@@ -3,4 +3,3 @@
       <framepos objtype="site" objname="tip"/>
     </sensor>
 </mujoco>
-
