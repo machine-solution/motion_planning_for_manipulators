@@ -23,4 +23,3 @@ with open(f'tools/{joints}-dof_{obstacles}-obs_manipulator.xml', "w+") as f:
     
     f.write('    </contact>\n')
     f.write(open('tools/const/footer.txt', 'r').read())
-
