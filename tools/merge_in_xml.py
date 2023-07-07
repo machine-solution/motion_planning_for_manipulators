@@ -1,11 +1,14 @@
 joints = 2
 obstacles = 6
 
-with open(f"tools/{joints}-dof/manipulator.xml", "w+") as f:
+file_path_to_edges = 'tools/edges.txt'
+file_path_to_obstacles = 'tools/obstacles.txt'
+
+with open(f'tools/{joints}-dof_{obstacles}-obs_manipulator.xml', "w+") as f:
     f.write(open('tools/const/header.txt', 'r').read())
     f.write('\n')
-    f.write(open('tools/edges.txt', 'r').read())
-    f.write(open('tools/obstacles.txt', 'r').read())
+    f.write(open(file_path_to_edges, 'r').read())
+    f.write(open(file_path_to_obstacles, 'r').read())
     f.write('\n')
     f.write('    </worldbody>\n\n')
     f.write('    <contact>\n')
@@ -20,3 +23,4 @@ with open(f"tools/{joints}-dof/manipulator.xml", "w+") as f:
     
     f.write('    </contact>\n')
     f.write(open('tools/const/footer.txt', 'r').read())
+
