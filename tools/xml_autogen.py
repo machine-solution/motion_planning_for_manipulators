@@ -8,6 +8,7 @@ with open(f'tools/{joints}-dof_{obstacles}-obs_manipulator.xml', "w+") as f:
     f.write(open('tools/const/header.txt', 'r').read())
     f.write('\n')
     f.write(open(file_path_to_edges, 'r').read())
+    f.write('\n')
     f.write(open(file_path_to_obstacles, 'r').read())
     f.write('\n')
     f.write('    </worldbody>\n\n')
