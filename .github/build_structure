@@ -1,0 +1,2 @@
+mkdir -p pyplot
+mkdir -p pyplot/{1..8}

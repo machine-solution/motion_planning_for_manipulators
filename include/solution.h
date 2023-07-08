@@ -25,10 +25,10 @@ class Solution
 {
 public:
     Solution();
-    Solution(const vector<JointState>& primitiveSteps, const JointState& zeroStep);
+    Solution(const vector<Action>& primitiveActions, const Action& zeroAction);
 
-    JointState& nextStep();
-    void addStep(size_t stepId);
+    Action& nextAction();
+    void addAction(size_t stepId);
 
     bool goalAchieved() const;
 
@@ -38,8 +38,8 @@ public:
     vector<ProfileInfo> searchTreeProfile;
 
 private:
-    vector<JointState> _primitiveSteps;
-    JointState _zeroStep;
-    vector<size_t> _solveSteps; // vector id-s of primitiveSteps
-    size_t _nextStepId;
+    vector<Action> _primitiveActions;
+    Action _zeroAction;
+    vector<size_t> _solveActions; // vector id-s of primitiveActions
+    size_t _nextActionId;
 };

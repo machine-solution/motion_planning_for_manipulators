@@ -9,6 +9,22 @@
 
 using std::vector;
 
+class Action
+{
+public:
+    Action(size_t dof = 2, int value = 0);
+    Action(std::initializer_list<int> list);
+
+    size_t dof() const;
+    int operator[](size_t i) const;
+    int& operator[](size_t i);
+    int abs() const;
+
+private:
+    vector<int> _joints;
+    size_t _dof;
+};
+
 class JointState
 {
 public:
@@ -18,10 +34,11 @@ public:
     int operator[](size_t i) const;
     int& operator[](size_t i);
 
-    JointState operator+(const JointState& other) const;
+    // TODO forbid to use temporaty action object
+    JointState& apply(const Action& action);
+    JointState applied(const Action& action) const;
 
     JointState& operator=(const JointState& other);
-    JointState& operator+=(const JointState& other);
 
     friend bool operator<(const JointState& state1, const JointState& state2);
     friend bool operator>(const JointState& state1, const JointState& state2);
@@ -35,6 +52,8 @@ public:
 
     size_t dof() const;
 
+    const Action* lastAction() const;
+
     int maxJoint() const;
     int minJoint() const;
 
@@ -42,17 +61,25 @@ public:
 
     bool isCorrect() const;
 
-    // const int units = g_units;
-    // const double eps = g_eps;
+    bool hasCacheXY() const;
+    double cacheX() const;
+    double cacheY() const;
+    void setCacheXY(double x, double y) const;
 
 private:
     void normalize();
 
     vector<int> _joints;
     size_t _dof;
+    const Action* _lastAction = nullptr;
+
+    mutable double _cacheX = 0;
+    mutable double _cacheY = 0;
+    mutable bool _hasCacheXY = false;
 };
 
 int manhattanDistance(const JointState& state1, const JointState& state2);
+int manhattanDistance(const Action& action1, const Action& action2);
 
 CostType manhattanHeuristic(const JointState& state1, const JointState& state2);
 

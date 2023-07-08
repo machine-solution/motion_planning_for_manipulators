@@ -7,7 +7,7 @@ INC = include
 TARGET = simulator
 
 SOURCES = $(OBJ)/utils.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/solution.o $(OBJ)/interactor.o $(OBJ)/logger.o $(OBJ)/taskset.o $(OBJ)/light_mujoco.o
-INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $(INC)/solution.h $(INC)/interactor.h $(INC)/logger.h $(INC)/taskset.h $(INC)/light_mujoco.h $(INC)/global_defs.h
+INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $(INC)/solution.h $(INC)/interactor.h $(INC)/logger.h $(INC)/taskset.h $(INC)/light_mujoco.h $(INC)/global_defs.h $(INC)/doctest.h
 
 .PHONY: all clean testing simulator
 
@@ -22,8 +22,8 @@ testing: tests/tests
 $(TARGET): $(SOURCES) $(OBJ)/main.o
 	$(CXX) $(SOURCES) $(OBJ)/main.o $(LIBS) -o $(TARGET)
 
-tests/tests: $(SOURCES) $(INC)/planner.h $(INC)/astar.h $(INC)/taskset.h $(OBJ)/catch_amalgamated.o tests/main.cpp
-	$(CXX) $(FLAGS) $(SOURCES) $(OBJ)/catch_amalgamated.o tests/main.cpp $(LIBS) -o tests/tests
+tests/tests: $(SOURCES) $(INC)/planner.h $(INC)/astar.h $(INC)/taskset.h $(INC)/doctest.h
+	$(CXX) $(FLAGS) $(SOURCES) tests/main.cpp $(LIBS) -o tests/tests
 
 # compile commands
 $(OBJ)/main.o: $(SRC)/main.cpp $(INC)/planner.h $(INC)/joint_state.h $(INC)/global_defs.h

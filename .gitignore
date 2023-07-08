@@ -7,6 +7,6 @@ simulator
 *.log
 venv/
 *.ipynb_checkpoints
-/tools
+/tools/*.txt
 pyplot/
 *.ipynb

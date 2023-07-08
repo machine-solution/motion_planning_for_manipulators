@@ -1,5 +1,5 @@
-#define CATCH_CONFIG_MAIN
-#include "catch2/catch_amalgamated.hpp"
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest.h"
 
 #include "taskset.h"
 #include "planner.h"
@@ -7,47 +7,33 @@
 
 #include <cstdio>
 
-TEST_CASE("JointState arithmetic")
-{
-    JointState a({1, 2});
-    JointState b({3, -4});
-    a += b;
-    REQUIRE(a == JointState({4, -2}));
-    b += JointState({1, 0});
-    REQUIRE(b == JointState({4, -4}));
-    REQUIRE(a != b);
-    REQUIRE(JointState{4, 0} + JointState{0, -4} == b);
-    b += a;
-    REQUIRE(JointState{4, -4} + a == b);
-}
-
 TEST_CASE("JointState comparation")
 {
     JointState a({1, 2});
     JointState b({3, -4});
     JointState c({5});
-    REQUIRE(a < b);
-    REQUIRE(c < a);
-    REQUIRE(c < b);
-    REQUIRE(a > c);
-    REQUIRE(a <= b);
-    REQUIRE(c != a);
-    REQUIRE(b >= c);
-    REQUIRE(b >= JointState({2, 2}));
-    REQUIRE(c == JointState({5}));
+    CHECK(a < b);
+    CHECK(c < a);
+    CHECK(c < b);
+    CHECK(a > c);
+    CHECK(a <= b);
+    CHECK(c != a);
+    CHECK(b >= c);
+    CHECK(b >= JointState({2, 2}));
+    CHECK(c == JointState({5}));
 }
 
 // test empty plane scenario
 void testPlanningFromTo(JointState a, JointState b, int alg)
 {
-    REQUIRE(a.dof() == b.dof());
+    CHECK(a.dof() == b.dof());
     ManipulatorPlanner planner(a.dof());
-    Solution solution = planner.planSteps(a, b, alg);
+    Solution solution = planner.planActions(a, b, alg);
     while (!solution.goalAchieved())
     {
-        a += solution.nextStep();
+        a.apply(solution.nextAction());
     }
-    REQUIRE(a == b);
+    CHECK(a == b);
 }
 
 // test row of empty plane scenarios
@@ -59,12 +45,12 @@ void testStressPlanning(int dof, int alg)
     JointState b = randomState(dof);
     for (size_t i = 0; i < 20; ++i)
     {
-        Solution solution = planner.planSteps(a, b, alg);
+        Solution solution = planner.planActions(a, b, alg);
         while (!solution.goalAchieved())
         {
-            a += solution.nextStep();
+            a.apply(solution.nextAction());
         }
-        REQUIRE(a == b);
+        CHECK(a == b);
         b = randomState(dof);
     }
 }
@@ -103,10 +89,10 @@ TEST_CASE("A* Nodes has operators")
 {
     astar::SearchNode node1(1, 0, JointState(1, 0));
     astar::SearchNode node2(2, 0, JointState(1, 0));
-    REQUIRE(node1 < node2);
+    CHECK(node1 < node2);
     astar::SearchNode* p1 = &node1;
     astar::SearchNode* p2 = &node2;
-    REQUIRE(p1 < p2);
+    CHECK(p1 < p2);
 }
 
 TEST_CASE("A* Search Tree")
@@ -120,24 +106,24 @@ TEST_CASE("A* Search Tree")
     tree.addToOpen(n2);
     tree.addToOpen(n3);
     tree.addToOpen(n4);
-    REQUIRE(tree.size() == 4);
+    CHECK(tree.size() == 4);
     astar::SearchNode* best = tree.extractBestNode();
-    REQUIRE(best != nullptr);
-    REQUIRE(best->f() == 1);
+    CHECK(best != nullptr);
+    CHECK(best->f() == 1);
     tree.addToClosed(best);
     best = tree.extractBestNode();
-    REQUIRE(best != nullptr);
-    REQUIRE(best->f() == 1);
+    CHECK(best != nullptr);
+    CHECK(best->f() == 1);
     tree.addToClosed(best);
     best = tree.extractBestNode();
-    REQUIRE(best == nullptr);
+    CHECK(best == nullptr);
 }
 
 void testReadFile(int dof, const std::string& file_path, int number_of_tests, TaskType type)
 {
     TaskSet *taskset = new TaskSet(dof);
     taskset->loadTasks(file_path, type);
-    REQUIRE(taskset->size() == number_of_tests);
+    CHECK(taskset->size() == number_of_tests);
 }
 
 TEST_CASE("File read test")
