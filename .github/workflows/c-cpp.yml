@@ -19,4 +19,6 @@ jobs:
     - name: make
       run: make
     - name: unit tests
-      run: ./run_tests
+      run: ./run_unit_tests
+    - name: integreation tests
+      run: ./run_integration_test

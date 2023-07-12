@@ -1,2 +1,2 @@
 make testing && \
-./tests/tests
+./tests/unit_tests/tests

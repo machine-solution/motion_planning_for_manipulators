@@ -1,5 +1,5 @@
 #include "light_mujoco.h"
-
+#include <algorithm>
 /*
 This code is copied out from src mujoco and refactoring to be
 faster in collision checks which we need. Use this code only
