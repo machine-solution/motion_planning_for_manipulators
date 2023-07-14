@@ -2,11 +2,11 @@ def collision_section(joints, obstacles):
     output = ''
     for i in range(joints):
         for j in range(obstacles):
-            output += ' ' * 8 + f'<pair geom1="geom edge {i}" geom2="geom obstacle {j}"/>\n'
+            output += ' ' * 8 + f'<pair geom1=\"geom edge {i}\" geom2=\"geom obstacle {j}\"/>\n'
     for i in range(joints):
         for j in range(joints):
             if j - i > 1:
-                output += ' ' * 8 + f'<pair geom1="geom edge {i}" geom2="geom edge {j}"/>\n'
+                output += ' ' * 8 + f'<pair geom1=\"geom edge {i}\" geom2=\"geom edge {j}\"/>\n'
     return output
 
 def manipulator_autogen(joints, size, pos):
@@ -48,8 +48,8 @@ def obstacles_autogen(obstacles, obstacles_types, \
     obstacles_sizes, obstacles_positions):
     output = ''
     for i in range(obstacles):
-        output += f'        <body name="obstacle {i}">\n'
-        output += f'            <geom name="geom obstacle {i}" type="{obstacles_types[f"obs_{i}"]}" size="{obstacles_sizes[f"obs_{i}"]}" pos="{obstacles_positions[f"obs_{i}"]}" material="blue"/>\n'
+        output += f'        <body name=\"obstacle {i}\">\n'
+        output += f'            <geom name=\"geom obstacle {i}\" type=\"{obstacles_types[f"obs_{i}"]}\" size=\"{obstacles_sizes[f"obs_{i}"]}\" pos=\"{obstacles_positions[f"obs_{i}"]}\" material=\"blue\"/>\n'
         output += f'        </body>\n'
     return output
 
