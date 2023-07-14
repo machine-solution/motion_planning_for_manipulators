@@ -11,19 +11,26 @@ INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $
 
 .PHONY: all clean testing simulator
 
-all: $(TARGET) tests/unit_tests/tests
+all: 
+	$(TARGET) tests/unit_tests/tests 
+	$(TARGET) tests/integration_tests/tests
 
 clean:
 	rm -rf $(OBJ)
 	rm -f $(TARGET)
 
-testing: tests/unit_tests/tests
+unit_testing: tests/unit_tests/tests
+
+integration_testing: tests/integration_tests/tests
 
 $(TARGET): $(SOURCES) $(OBJ)/main.o
 	$(CXX) $(SOURCES) $(OBJ)/main.o $(LIBS) -o $(TARGET)
 
 tests/unit_tests/tests: $(SOURCES) $(INC)/planner.h $(INC)/astar.h $(INC)/taskset.h $(INC)/doctest.h
 	$(CXX) $(FLAGS) $(SOURCES) tests/unit_tests/main.cpp $(LIBS) -o tests/unit_tests/tests
+
+tests/integration_tests/tests: $(SOURCES) $(INC)/interactor.h $(INC)/doctest.h
+	$(CXX) $(FLAGS) $(SOURCES) tests/integration_tests/main.cpp $(LIBS) -o tests/integration_tests/tests
 
 # compile commands
 $(OBJ)/main.o: $(SRC)/main.cpp $(INC)/planner.h $(INC)/joint_state.h $(INC)/global_defs.h
