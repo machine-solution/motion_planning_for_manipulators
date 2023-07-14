@@ -11,9 +11,7 @@ INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $
 
 .PHONY: all clean testing simulator
 
-all: 
-	$(TARGET) tests/unit_tests/tests 
-	$(TARGET) tests/integration_tests/tests
+all: $(TARGET) tests/unit_tests/tests 
 
 clean:
 	rm -rf $(OBJ)
