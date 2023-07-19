@@ -83,12 +83,25 @@ type=\"cylinder\" size=\"{f"0.05 {current_len}"}\" material=\"green\"/>\n'
 
     return output
 
-def obstacles_autogen(obstacles, obstacles_types, \
-    obstacles_sizes, obstacles_positions):
+def obstacles_autogen(billet):
     output = ''
-    for i in range(obstacles):
+    billet = billet.split('\n')
+    if billet[0] == '':
+        del billet[0] 
+    if billet[-1] == '':
+        del billet[-1]
+    input = []
+    for s in billet:
+        obs = {}
+        characteristics = s.split('"')
+        obs['type'] = characteristics[1]
+        obs['size'] = characteristics[3]
+        obs['pos'] = characteristics[5]
+        input.append(obs)
+    for i in range(len(input)):
         output += f'        <body name=\"obstacle {i}\">\n'
-        output += f'            <geom name=\"geom obstacle {i}\" type=\"{obstacles_types[f"obs_{i}"]}\" size=\"{obstacles_sizes[f"obs_{i}"]}\" pos=\"{obstacles_positions[f"obs_{i}"]}\" material=\"blue\"/>\n'
+        output += f'            <geom name=\"geom obstacle {i}\" type=\"{input[i]["type"]}\" \
+size=\"{input[i]["size"]}\" pos=\"{input[i]["pos"]}\" material=\"blue\"/>\n'
         output += f'        </body>\n'
     return output
 
@@ -100,12 +113,12 @@ with open(f'tools/{joints}-dof_{obstacles}-obs_manipulator.xml', "w+") as f:
     f.write('\n')
     f.write(manipulator_autogen(joints, [0.3, 0.4, 0.6]))
     f.write('\n')
-    f.write(obstacles_autogen(obstacles, {'obs_0':'box', \
-    'obs_1':'sphere', 'obs_2':'sphere', 'obs_3':'box'}, \
-    {'obs_0':'0.1 0.2 0.3', 'obs_1':'0.2', \
-    'obs_2':'0.4', 'obs_3':'0.2 0.1 0.3'}, \
-    {'obs_0':'1.5 0.9 0.0', 'obs_1':'0.0 -1.5 0.0', \
-    'obs_2':'-1.5 0.0 0.0', 'obs_3':'1.5 0.9 0.0'}))
+    f.write(obstacles_autogen( \
+"""
+type="box" size="0.1 0.2 0.3" pos="1.5 0.9 0.0"
+type="sphere" size="0.2" pos="0.0 -1.5 0.0"
+""" \
+))
     f.write('\n')
     f.write('    </worldbody>\n\n')
     f.write('    <contact>\n')
