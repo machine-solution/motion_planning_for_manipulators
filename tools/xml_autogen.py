@@ -9,39 +9,78 @@ def collision_section(joints, obstacles):
                 output += ' ' * 8 + f'<pair geom1=\"geom edge {i}\" geom2=\"geom edge {j}\"/>\n'
     return output
 
-def manipulator_autogen(joints, size, pos):
+def manipulator_autogen(joints, lengths: list):
     output = ''
     output_suffix = []
     output_prefix = ''
     current_space = '        '
+
     for i in range(joints):
+
         if i == 0:
             euler = '\"0 90 0\"'
+            prev_len = 0
+            current_len = lengths[i]
         else:
             euler = '\"0 0 0\"'
-        output_prefix += f'{current_space}<body name=\"edge {i}\" pos={pos[f"edge_{i}"]} euler={euler}>\n'
-        
-        output_prefix += f'{current_space + "    "}<joint name=\"joint {i}\" type=\"hinge\" axis=\"-1 0 0\" pos={pos["joints"]}/>\n'
-        output_prefix += f'{current_space + "    "}<geom name=\"geom edge {i}\" type=\"cylinder\" size={size["cylinder"]} material=\"blue\"/>\n'
+            prev_len = lengths[i - 1]
+            current_len = lengths[i]
+
+        if i == 0:
+            output_prefix += f'{current_space}<body name=\"edge {i}\" \
+pos=\"{f"{prev_len + current_len} 0 0.1"}\" euler={euler}>\n'
+        else:
+            output_prefix += f'{current_space}<body name=\"edge {i}\" \
+pos=\"{f"0 0 {prev_len + current_len}"}\" euler={euler}>\n'
+
+        output_prefix += f'{current_space + "    "}<joint name=\"joint {i}\" type=\"hinge\" \
+axis=\"-1 0 0\" pos=\"{f"0 0 {-current_len}"}\"/>\n'
+
+        output_prefix += f'{current_space + "    "}<geom name=\"geom edge {i}\" \
+type=\"cylinder\" size=\"{f"0.05 {current_len}"}\" material=\"red\"/>\n'
+
         if i == joints - 1:
-            output_prefix += f'{current_space + "    "}<site name=\"tip\" size={size["tip"]} pos={pos["tip"]}/>\n'
+            output_prefix += f'{current_space + "    "}<site name=\"tip\" size=\"0.1\" \
+pos=\"{f"0 0 {current_len}"}\"/>\n'
+
         output_suffix.append(f'{current_space}</body>\n')
         current_space += '    '
+
     output += output_prefix + ''.join(output_suffix[-1:-len(output_suffix)-1:-1]) + '\n'
+
     current_space = '        '
     output_prefix = ''
     output_suffix = []
+
     for i in range(joints):
+
         if i == 0:
             euler = '\"0 90 0\"'
+            prev_len = 0
+            current_len = lengths[i]
         else:
             euler = '\"0 0 0\"'
-        output_prefix += f'{current_space}<body name=\"edge {i} shade\" pos={pos[f"edge_{i}"]} euler={euler}>\n'
-        output_prefix += f'{current_space + "    "}<joint name=\"joint {i} shade\" type=\"hinge\" axis=\"-1 0 0\" pos={pos["joints"]}/>\n'
-        output_prefix += f'{current_space + "    "}<geom name=\"geom edge {i} shade\" type=\"cylinder\" size={size["cylinder"]} material=\"green\"/>\n'
+            prev_len = lengths[i - 1]
+            current_len = lengths[i]
+
+        if i == 0:
+            output_prefix += f'{current_space}<body name=\"edge {i} shade\" \
+pos=\"{f"{prev_len + current_len} 0 0.1"}\" euler={euler}>\n'
+        else:
+            output_prefix += f'{current_space}<body name=\"edge {i} shade\" \
+pos=\"{f"0 0 {prev_len + current_len}"}\" euler={euler}>\n'
+
+        output_prefix += f'{current_space + "    "}<joint name=\"joint {i} shade\" type=\"hinge\" \
+axis=\"-1 0 0\" pos=\"{f"0 0 {-current_len}"}\"/>\n'
+
+        output_prefix += f'{current_space + "    "}<geom name=\"geom edge {i} shade\" \
+type=\"cylinder\" size=\"{f"0.05 {current_len}"}\" material=\"green\"/>\n'
+
         output_suffix.append(f'{current_space}</body>\n')
         current_space += '    '
-    output += output_prefix + ''.join(output_suffix[-1:-len(output_suffix)-1:-1])
+
+    output += output_prefix + ''.join(output_suffix[-1:-len(output_suffix)-1:-1]) + '\n'
+
     return output
 
 def obstacles_autogen(obstacles, obstacles_types, \
@@ -53,14 +92,13 @@ def obstacles_autogen(obstacles, obstacles_types, \
         output += f'        </body>\n'
     return output
 
-joints = 2
+joints = 3
 obstacles = 4
 
 with open(f'tools/{joints}-dof_{obstacles}-obs_manipulator.xml', "w+") as f:
     f.write(open('tools/const/header.txt', 'r').read())
     f.write('\n')
-    f.write(manipulator_autogen(joints, {"cylinder":'\"0.5 0 0.1\"', \
-    "tip":'\"0.1\"'}, {"edge_0":'\"0.5 0 0.1\"', "edge_1":'\"0 0 1\"', "joints":'\"0 0 -0.5\"', "tip":'\"0 0 0.4\"'}))
+    f.write(manipulator_autogen(joints, [0.3, 0.4, 0.6]))
     f.write('\n')
     f.write(obstacles_autogen(obstacles, {'obs_0':'box', \
     'obs_1':'sphere', 'obs_2':'sphere', 'obs_3':'box'}, \
