@@ -1,7 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "interactor.h"
-#include "light_mujoco.h"
+#include <mujoco/mujoco.h>
 
 TEST_CASE("Integration test")
 {
