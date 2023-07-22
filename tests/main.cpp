@@ -4,9 +4,20 @@
 #include "planner.h"
 #include "astar.h"
 
+#include <cstdio>
+
+#include "interactor.h"
+
+#include <stdbool.h> 
+#include <set>
+
+#include <mujoco/mujoco.h>
 #include <GLFW/glfw3.h>
 
-#include <cstdio>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fstream>
 
 TEST_CASE("Integration")
 {
