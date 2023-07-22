@@ -8,6 +8,31 @@
 
 #include <cstdio>
 
+TEST_CASE("Integration")
+{
+    std::vector<double> ws = {1.0};
+    std::vector<std::string> names = {"1.0"};
+
+    for (size_t i = 0; i < ws.size(); ++i)
+    {
+        Interactor interactor("model/2-dof/manipulator_5.xml");
+        interactor.setUp({
+            1.0, // time
+            ws[i], // w
+            10, // the number of random tests
+            TASK_STATE, // kind of task
+            true, // random test generation
+            "scenaries/scen.log",
+            "pyplot/7/stats_hard_w=" + names[i] + ".log",
+            "scenaries/4_2-dof_pos_hard.scen",
+            "pyplot/7/runtime_hard_w=" + names[i] + ".log",
+            true // display motion
+        });
+        interactor.doMainLoop();
+    }
+    REQUIRE(true);
+}
+
 TEST_CASE("JointState comparation")
 {
     JointState a({1, 2});
