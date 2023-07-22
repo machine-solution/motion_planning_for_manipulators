@@ -4,6 +4,8 @@
 #include "planner.h"
 #include "astar.h"
 
+#include <GLFW/glfw3.h>
+
 #include <cstdio>
 
 TEST_CASE("JointState comparation")
