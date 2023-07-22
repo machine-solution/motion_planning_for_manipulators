@@ -1,3 +1,2 @@
-Xvfb :1 -screen 0 1600x1200x32
 make testing && \
 ./tests/tests

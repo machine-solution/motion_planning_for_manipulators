@@ -19,4 +19,6 @@ jobs:
     - name: make
       run: make
     - name: unit tests
-      run: ./run_tests
+      run: Xvfb :1 -screen 0 1600x1200x16
+           export DISPLAY=localhost:1.0
+           ./run_tests
