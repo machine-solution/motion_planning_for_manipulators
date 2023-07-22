@@ -1,16 +1,15 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
+
 #include "interactor.h"
 
 #include <stdbool.h> 
-#include <set>
 
 #include <mujoco/mujoco.h>
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <fstream>
 
 TEST_CASE("Integration test")
@@ -26,7 +25,7 @@ TEST_CASE("Integration test")
         "tests/integration_tests/pyplot/7/stats_hard_w=1.0.log",
         "tests/integration_tests/2-dof_example.scen",
         "tests/integration_tests/pyplot/7/runtime_hard_w=1.0.log",
-        true // display motion
+        false // display motion
     });
     interactor.doMainLoop();
 }
