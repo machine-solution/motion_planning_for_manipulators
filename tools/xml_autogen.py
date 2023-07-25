@@ -1,9 +1,9 @@
 joints = 3
 obstacles = 3
 length = [1, 1.2, 1.6]
-path_to_obstacles = 'tools/src/obstacles.txt'
-path_to_header = 'tools/src/const/header.txt'
-path_to_footer = 'tools/src/const/footer.txt'
+path_to_obstacles = 'tools/args/obstacles.txt'
+path_to_header = 'tools/const/header.txt'
+path_to_footer = 'tools/const/footer.txt'
 offset4 = ' ' * 4
 offset8 = ' ' * 8
 
@@ -101,14 +101,12 @@ type=\"cylinder\" size=\"{f"0.05 {current_half_len}"}\" material=\"green\"/>\n'
 
 def obstacles_autogen(file_path):
     output = ''
-    billet = open(file_path).read()
-    billet = billet.split('\n')
-    if billet[0] == '':
-        del billet[0] 
-    if billet[-1] == '':
-        del billet[-1]
+    data = open(file_path).read()
+    data = data.split('\n')
     input = []
-    for s in billet:
+    for s in data:
+        if s == '':
+            continue
         obs = {}
         characteristics = s.split('"')
         obs['type'] = characteristics[1]
