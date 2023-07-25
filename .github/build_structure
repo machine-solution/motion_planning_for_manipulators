@@ -1,2 +1,4 @@
 mkdir -p pyplot
 mkdir -p pyplot/{1..8}
+mkdir -p tests/integration_tests/pyplot
+mkdir -p tests/integration_tests/pyplot/{1..8}
