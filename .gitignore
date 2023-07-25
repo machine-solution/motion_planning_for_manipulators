@@ -8,4 +8,5 @@ simulator
 venv/
 *.ipynb_checkpoints
 /tools/*.txt
+pyplot/
 *.ipynb
