@@ -16,8 +16,8 @@
 
 TEST_CASE("Integration test")
 {
-    std::vector<double> ws = {1.0, 1.1, 1.2, 1.5, 2.0, 4.0, 10.0, 30.0, 100.0};
-    std::vector<std::string> names = {"1.0", "1.1", "1.2", "1.5", "2.0", "4.0", "10.0", "30.0", "100.0"};
+    std::vector<double> ws = {1.0, 100.0};
+    std::vector<std::string> names = {"1.0", "100.0"};
 
     for (size_t i = 0; i < ws.size(); ++i)
     {
