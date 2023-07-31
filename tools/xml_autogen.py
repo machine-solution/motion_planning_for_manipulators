@@ -4,6 +4,7 @@ length = [1, 1.2, 1.6]
 path_to_obstacles = 'tools/args/obstacles.txt'
 path_to_header = 'tools/const/header.txt'
 path_to_footer = 'tools/const/footer.txt'
+material_of_obstacles = 'blue'
 offset4 = ' ' * 4
 offset8 = ' ' * 8
 
@@ -116,10 +117,9 @@ def obstacles_autogen(file_path):
     for i in range(len(input)):
         output += f'        <body name=\"obstacle {i}\">\n'
         output += f'            <geom name=\"geom obstacle {i}\" type=\"{input[i]["type"]}\" \
-size=\"{input[i]["size"]}\" pos=\"{input[i]["pos"]}\" material=\"blue\"/>\n'
+size=\"{input[i]["size"]}\" pos=\"{input[i]["pos"]}\" material=\"{material_of_obstacles}\"/>\n'
         output += f'        </body>\n'
     return output
-
 
 with open(f'tools/{joints}-dof_{obstacles}-obs_manipulator.xml', "w+") as f:
     f.write(open(path_to_header, 'r').read())
