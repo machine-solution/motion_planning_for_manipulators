@@ -1,10 +1,8 @@
 joints = 3
-obstacles = 3
 length = [1, 1.2, 1.6]
 path_to_obstacles = 'tools/args/obstacles.txt'
 path_to_header = 'tools/const/header.txt'
 path_to_footer = 'tools/const/footer.txt'
-material_of_obstacles = 'blue'
 offset4 = ' ' * 4
 offset8 = ' ' * 8
 
@@ -101,27 +99,21 @@ type=\"cylinder\" size=\"{f"0.05 {current_half_len}"}\" material=\"green\"/>\n'
 
 
 def obstacles_autogen(file_path):
+    global obstacles
+    obstacles = 0
     output = ''
     data = open(file_path).read()
     data = data.split('\n')
-    input = []
     for s in data:
         if s == '':
             continue
-        obs = {}
-        characteristics = s.split('"')
-        obs['type'] = characteristics[1]
-        obs['size'] = characteristics[3]
-        obs['pos'] = characteristics[5]
-        input.append(obs)
-    for i in range(len(input)):
-        output += f'        <body name=\"obstacle {i}\">\n'
-        output += f'            <geom name=\"geom obstacle {i}\" type=\"{input[i]["type"]}\" \
-size=\"{input[i]["size"]}\" pos=\"{input[i]["pos"]}\" material=\"{material_of_obstacles}\"/>\n'
+        output += f'        <body name=\"obstacle {obstacles}\">\n'
+        output += f'            <geom name=\"geom obstacle {obstacles}\" {s} material=\"blue\"/>\n'
         output += f'        </body>\n'
+        obstacles += 1
     return output
 
-with open(f'tools/{joints}-dof_{obstacles}-obs_manipulator.xml', "w+") as f:
+with open(f'tools/{joints}-dof_manipulator.xml', "w+") as f:
     f.write(open(path_to_header, 'r').read())
     f.write('\n')
     f.write(manipulator_autogen(joints, length))
