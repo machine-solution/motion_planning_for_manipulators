@@ -14,9 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: configure
-      run: .github/configure
+      run: .github/configure &&
            .github/build_structure
     - name: make
       run: make
     - name: unit tests
-      run: ./run_tests
+      run: ./run_unit_tests
+    - name: integration tests
+      run: xvfb-run -a ./run_integration_tests
