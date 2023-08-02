@@ -113,7 +113,7 @@ def obstacles_autogen(file_path):
     return {'obstacles':output, 'obstacles_counter': obstacles}
 
 gen_obstacles = obstacles_autogen(path_to_obstacles)
-
+ 
 with open(f'tools/{joints}-dof_{gen_obstacles["obstacles_counter"]}-obs_manipulator.xml', "w+") as f:
     f.write(open(path_to_header, 'r').read())
     f.write('\n')
