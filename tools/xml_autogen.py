@@ -99,7 +99,6 @@ type=\"cylinder\" size=\"{f"0.05 {current_half_len}"}\" material=\"green\"/>\n'
 
 
 def obstacles_autogen(file_path):
-    global obstacles
     obstacles = 0
     output = ''
     data = open(file_path).read()
@@ -111,17 +110,19 @@ def obstacles_autogen(file_path):
         output += f'            <geom name=\"geom obstacle {obstacles}\" {s} material=\"blue\"/>\n'
         output += f'        </body>\n'
         obstacles += 1
-    return output
+    return {'obstacles':output, 'obstacles_counter': obstacles}
 
-with open(f'tools/{joints}-dof_manipulator.xml', "w+") as f:
+gen_obstacles = obstacles_autogen(path_to_obstacles)
+
+with open(f'tools/{joints}-dof_{gen_obstacles["obstacles_counter"]}-obs_manipulator.xml', "w+") as f:
     f.write(open(path_to_header, 'r').read())
     f.write('\n')
     f.write(manipulator_autogen(joints, length))
     f.write(manipulator_shade_autogen(joints, length))
-    f.write(obstacles_autogen(path_to_obstacles))
+    f.write(gen_obstacles['obstacles'])
     f.write('\n')
     f.write('    </worldbody>\n\n')
     f.write('    <contact>\n')
-    f.write(collision_section(joints, obstacles))    
+    f.write(collision_section(joints, gen_obstacles['obstacles_counter']))    
     f.write('    </contact>\n')
     f.write(open(path_to_footer, 'r').read())
