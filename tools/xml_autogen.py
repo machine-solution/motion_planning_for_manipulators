@@ -1,5 +1,4 @@
 joints = 3
-obstacles = 3
 length = [1, 1.2, 1.6]
 path_to_obstacles = 'tools/args/obstacles.txt'
 path_to_header = 'tools/const/header.txt'
@@ -100,36 +99,30 @@ type=\"cylinder\" size=\"{f"0.05 {current_half_len}"}\" material=\"green\"/>\n'
 
 
 def obstacles_autogen(file_path):
+    obstacles = 0
     output = ''
     data = open(file_path).read()
     data = data.split('\n')
-    input = []
     for s in data:
         if s == '':
             continue
-        obs = {}
-        characteristics = s.split('"')
-        obs['type'] = characteristics[1]
-        obs['size'] = characteristics[3]
-        obs['pos'] = characteristics[5]
-        input.append(obs)
-    for i in range(len(input)):
-        output += f'        <body name=\"obstacle {i}\">\n'
-        output += f'            <geom name=\"geom obstacle {i}\" type=\"{input[i]["type"]}\" \
-size=\"{input[i]["size"]}\" pos=\"{input[i]["pos"]}\" material=\"blue\"/>\n'
+        output += f'        <body name=\"obstacle {obstacles}\">\n'
+        output += f'            <geom name=\"geom obstacle {obstacles}\" {s} material=\"blue\"/>\n'
         output += f'        </body>\n'
-    return output
+        obstacles += 1
+    return {'obstacles':output, 'obstacles_counter': obstacles}
 
+gen_obstacles = obstacles_autogen(path_to_obstacles)
 
-with open(f'tools/{joints}-dof_{obstacles}-obs_manipulator.xml', "w+") as f:
+with open(f'tools/{joints}-dof_{gen_obstacles["obstacles_counter"]}-obs_manipulator.xml', "w+") as f:
     f.write(open(path_to_header, 'r').read())
     f.write('\n')
     f.write(manipulator_autogen(joints, length))
     f.write(manipulator_shade_autogen(joints, length))
-    f.write(obstacles_autogen(path_to_obstacles))
+    f.write(gen_obstacles['obstacles'])
     f.write('\n')
     f.write('    </worldbody>\n\n')
     f.write('    <contact>\n')
-    f.write(collision_section(joints, obstacles))    
+    f.write(collision_section(joints, gen_obstacles['obstacles_counter']))    
     f.write('    </contact>\n')
     f.write(open(path_to_footer, 'r').read())
