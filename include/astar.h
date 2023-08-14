@@ -3,7 +3,7 @@
 #include "joint_state.h"
 #include "utils.h"
 #include "solution.h"
-
+#include <memory>
 #include <set>
 
 using std::set;
@@ -15,14 +15,14 @@ namespace astar
 class SearchNode
 {
 public:
-    SearchNode(CostType g, CostType h, const JointState& state, int stepNum = -1, SearchNode* parent = nullptr);
+    SearchNode(CostType g, CostType h, const JointState& state, int stepNum = -1, std::unique_ptr<SearchNode> parent = nullptr);
 
     CostType g() const;
     CostType h() const;
     CostType f() const;
     int stepNum() const;
     const JointState& state() const;
-    SearchNode* parent();
+    std::unique_ptr<SearchNode> parent();
 
     // sort by priority
     bool operator<(const SearchNode& sn);
@@ -31,18 +31,18 @@ private:
     CostType _g, _h, _f;
     int _stepNum; // number of step, which change parent.state() -> this.state(). -1 if have not parent
     JointState _state;
-    SearchNode* _parent;
+    std::unique_ptr<SearchNode> _parent;
 };
 
 class CmpByState
 {
 public:
-    bool operator()(SearchNode* a, SearchNode* b) const;
+    bool operator()(std::unique_ptr<SearchNode> a, std::unique_ptr<SearchNode> b) const;
 };
 class CmpByPriority
 {
 public:
-    bool operator()(SearchNode* a, SearchNode* b) const;
+    bool operator()(std::unique_ptr<SearchNode> a, std::unique_ptr<SearchNode> b) const;
 };
 
 /*
@@ -55,21 +55,21 @@ public:
     SearchTree();
     ~SearchTree();
 
-    void addToOpen(SearchNode* node);
-    void addToClosed(SearchNode* node);
+    void addToOpen(std::unique_ptr<SearchNode> node);
+    void addToClosed(std::unique_ptr<SearchNode> node);
 
     // returns best node and remove it from open
-    SearchNode* extractBestNode();
+    std::unique_ptr<SearchNode> extractBestNode();
 
     size_t size() const;
     size_t sizeOpen() const;
 
 private:
-    bool wasExpanded(SearchNode* node) const;
+    bool wasExpanded(std::unique_ptr<SearchNode> node) const;
     // sort by priority
-    multiset<SearchNode*, CmpByPriority> _open;
+    multiset<std::unique_ptr<SearchNode>, CmpByPriority> _open;
     // sort by state
-    set<SearchNode*, CmpByState> _closed;
+    set<std::unique_ptr<SearchNode>, CmpByState> _closed;
 };
 
 class IAstarChecker
@@ -84,8 +84,8 @@ public:
 };
 
 // allocates on heap and returns successors
-vector<SearchNode*> generateSuccessors(
-    SearchNode* node,
+vector<std::unique_ptr<SearchNode>> generateSuccessors(
+    std::unique_ptr<SearchNode> node,
     IAstarChecker& checker,
     double weight
 );

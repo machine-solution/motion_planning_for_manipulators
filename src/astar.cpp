@@ -2,17 +2,16 @@
 #include "utils.h"
 
 #include <vector>
-
 namespace astar {
 
-SearchNode::SearchNode(CostType g, CostType h, const JointState& state, int stepNum, SearchNode* parent)
+SearchNode::SearchNode(CostType g, CostType h, const JointState& state, int stepNum, std::unique_ptr<SearchNode> parent)
 {
     _g = g;
     _h = h;
     _f = _g + _h;
     _state = state;
     _stepNum = stepNum;
-    _parent = parent;
+    auto _parent = std::move(parent);
 }
 
 CostType SearchNode::g() const
@@ -35,9 +34,9 @@ const JointState& SearchNode::state() const
 {
     return _state;
 }
-SearchNode* SearchNode::parent()
+std::unique_ptr<SearchNode> SearchNode::parent()
 {
-    return _parent;
+    return std::move(_parent);
 }
 
 bool SearchNode::operator<(const SearchNode& sn)
@@ -45,11 +44,11 @@ bool SearchNode::operator<(const SearchNode& sn)
     return f() == sn.f() ? -g() < -sn.g() : f() < sn.f();
 }
 
-bool CmpByState::operator()(SearchNode* a, SearchNode* b) const
+bool CmpByState::operator()(std::unique_ptr<SearchNode> a, std::unique_ptr<SearchNode> b) const
 {
     return a->state() < b->state();
 }
-bool CmpByPriority::operator()(SearchNode* a, SearchNode* b) const
+bool CmpByPriority::operator()(std::unique_ptr<SearchNode> a, std::unique_ptr<SearchNode> b) const
 {
     return *a < *b;
 }
@@ -60,38 +59,34 @@ SearchTree::~SearchTree()
 {
     while (!_open.empty())
     {
-        SearchNode* node = *_open.begin();
         _open.erase(_open.begin());
-        delete node;
     }
 
     while (!_closed.empty())
     {
-        SearchNode* node = *_closed.begin();
         _closed.erase(_closed.begin());
-        delete node;
     }
 }
 
-void SearchTree::addToOpen(SearchNode* node)
+void SearchTree::addToOpen(std::unique_ptr<SearchNode> node)
 {
     startProfiling();
     _open.insert(node);
     stopProfiling();
 }
-void SearchTree::addToClosed(SearchNode* node)
+void SearchTree::addToClosed(std::unique_ptr<SearchNode> node)
 {
     startProfiling();
     _closed.insert(node);
     stopProfiling();
 }
 
-SearchNode* SearchTree::extractBestNode()
+std::unique_ptr<SearchNode> SearchTree::extractBestNode()
 {
     startProfiling();
     while (!_open.empty())
     {
-        SearchNode* best = *_open.begin();
+        auto best = std::move(*_open.begin());
         _open.erase(_open.begin());
         if (wasExpanded(best))
         {
@@ -101,7 +96,7 @@ SearchNode* SearchTree::extractBestNode()
         else
         {
             stopProfiling();
-            return best;
+            return std::move(best);
         }
     }
     stopProfiling();
@@ -117,7 +112,8 @@ size_t SearchTree::sizeOpen() const
     return _open.size();
 }
 
-bool SearchTree::wasExpanded(SearchNode* node) const
+
+bool SearchTree::wasExpanded(std::unique_ptr<SearchNode> node) const
 {
     startProfiling();
     bool res = _closed.count(node);
@@ -125,13 +121,13 @@ bool SearchTree::wasExpanded(SearchNode* node) const
     return res;
 }
 
-vector<SearchNode*> generateSuccessors(
-    SearchNode* node,
+vector<std::unique_ptr<SearchNode>> generateSuccessors(
+    std::unique_ptr<SearchNode> node,
     IAstarChecker& checker,
     double weight
 )
 {
-    vector<SearchNode*> result;
+    vector<std::unique_ptr<SearchNode>> result;
     for (size_t i = 0; i < checker.getActions().size(); ++i)
     {
         Action action = checker.getActions()[i];
@@ -169,9 +165,9 @@ Solution astar(
 
     // init search tree
     SearchTree tree;
-    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos) * weight, startPos);
+    std::unique_ptr<SearchNode> startNode = new astar::SearchNode(0, checker.heuristic(startPos) * weight, startPos);
     tree.addToOpen(startNode);
-    SearchNode* currentNode = tree.extractBestNode();
+    std::unique_ptr<SearchNode> currentNode(tree.extractBestNode());
 
     while (currentNode != nullptr)
     {
@@ -187,7 +183,7 @@ Solution astar(
             break;
         }
         // expand current node
-        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, checker, weight);
+        vector<astar::std::unique_ptr<SearchNode>> successors = generateSuccessors(currentNode, checker, weight);
         for (auto successor : successors)
         {
             tree.addToOpen(successor);
