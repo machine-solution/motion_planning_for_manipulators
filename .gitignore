@@ -9,5 +9,6 @@ venv/
 *.ipynb_checkpoints
 /tools/*.txt
 /tools/*.xml
+/tools/args/
 pyplot/
 *.ipynb
