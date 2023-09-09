@@ -1,3 +1,2 @@
-.github/build_structure &&
 make simulator && \
 ./simulator

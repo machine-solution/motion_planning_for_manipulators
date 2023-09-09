@@ -26,10 +26,10 @@ int main(int argc, const char** argv)
             10000, // the number of random tests
             TASK_STATE, // kind of task
             true, // random test generation
-            "scenaries/scen.log",
-            "pyplot/7/stats_hard_w=" + names[i] + ".log",
-            "scenaries/4_2-dof_pos_hard.scen",
-            "pyplot/7/runtime_hard_w=" + names[i] + ".log",
+            "scenaries/scen.log", // output for data about tasks
+            "pyplot/7/stats_hard_w=" + names[i] + ".log", // algorithm stats output
+            "scenaries/4_2-dof_pos_hard.scen", // input tasks list
+            "pyplot/7/runtime_hard_w=" + names[i] + ".log", // profiling output
             true // display motion
         });
         interactor.doMainLoop();
