@@ -10,4 +10,4 @@ const double g_worldEps = (M_PI / g_worldUnits);
 
 using CostType = float;
 
-const CostType g_weightSmoothness = 1.0;
+const CostType g_weightSmoothness = 0.0;
