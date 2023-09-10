@@ -38,6 +38,14 @@ void Logger::prepareCspaceFile(const std::string& filename)
         throw std::runtime_error("Logger::prepareMainFile: Could not open file " + filename);
     }
 }
+void Logger::prepareMpathFile(const std::string& filename)
+{
+    _mpathFile = fopen(filename.c_str(), "w+");
+    if (_mpathFile == nullptr)
+    {
+        throw std::runtime_error("Logger::prepareMainFile: Could not open file " + filename);
+    }
+}
 void Logger::prepareMainFile(const std::string& filename)
 {
     if (filename == "")
@@ -105,6 +113,10 @@ void Logger::printScenLog(const Solution& solution, const JointState& startPos, 
 void Logger::printCSpace(const vector<string>& cspace)
 {
     printCspace(_cspaceFile, cspace);
+}
+void Logger::printMPath(const vector<string>& mpath)
+{
+    printMpath(_mpathFile, mpath);
 }
 
 void Logger::printMainLog(FILE* file, const Solution& solution)
@@ -231,4 +243,12 @@ void Logger::printCspace(FILE* file, const vector<string>& cSpace)
     {
         fprintf(file, "%s\n", cSpace[i].c_str());
     }
+}
+
+void Logger::printMpath(FILE* file, const vector<string>& mPath)
+{
+    for (size_t i = 0; i < mPath.size(); ++i)
+    {
+        fprintf(file, "%s\n", mPath[i].c_str());
+    } 
 }

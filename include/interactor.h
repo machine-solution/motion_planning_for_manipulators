@@ -20,6 +20,7 @@ struct Config
     std::string statsFilename;
     std::string tasksFilename;
     std::string runtimeFilename;
+    std::string CSpacePath;
     bool displayMotion = false;
 };
 

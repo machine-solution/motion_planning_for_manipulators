@@ -78,6 +78,7 @@ void Interactor::setUp(Config config)
     _logger->prepareScenFile(_config.scenFilename);
     _logger->prepareStatsFile(_config.statsFilename);
     _logger->prepareRuntimeFile(_config.runtimeFilename);
+    _logger->prepareMpathFile(_config.CSpacePath);
 
     if (_config.randomTasks)
     {
@@ -188,7 +189,11 @@ void Interactor::solveTask()
         _logger->printStatsLog(_modelState.solution);
 
         _logger->printRuntimeLog(_modelState.solution);
-        
+
+        if (_dof == 2)
+        {
+            _logger->printMPath(_planner->manipulatorPath(_modelState.solution, _modelState.currentState));
+        }
         printf("progress %zu/%zu\n\n", _taskset->progress(), _taskset->size());
     }
 }

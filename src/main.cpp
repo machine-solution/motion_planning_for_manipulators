@@ -23,13 +23,14 @@ int main(int argc, const char** argv)
         interactor.setUp({
             3.0, // time
             ws[i], // w
-            10000, // the number of random tests
-            TASK_STATE, // kind of task
+            1, // the number of random tests
+            TASK_POSITION, // kind of task
             true, // random test generation
-            "scenaries/scen.log", // output for data about tasks
-            "pyplot/7/stats_hard_w=" + names[i] + ".log", // algorithm stats output
-            "scenaries/4_2-dof_pos_hard.scen", // input tasks list
-            "pyplot/7/runtime_hard_w=" + names[i] + ".log", // profiling output
+            "scenaries/scen.log",
+            "pyplot/7/stats_hard_w=" + names[i] + ".log",
+            "scenaries/4_2-dof_pos_easy.scen",
+            "pyplot/7/runtime_hard_w=" + names[i] + ".log",
+            "pyplot/path/path_hard_w" + names[i] + ".txt",
             true // display motion
         });
         interactor.doMainLoop();

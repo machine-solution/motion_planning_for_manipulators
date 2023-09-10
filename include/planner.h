@@ -26,6 +26,7 @@ public:
     // return C-Space as strings where @ an obstacle, . - is not
     // only for _dof = 2 now
     vector<string> configurationSpace() const;
+    vector<string> manipulatorPath(Solution s, const JointState& startPos);
 
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
     Solution planActions(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1,

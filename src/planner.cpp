@@ -77,6 +77,31 @@ vector<string> ManipulatorPlanner::configurationSpace() const
     return cSpace;
 }
 
+vector<string> ManipulatorPlanner::manipulatorPath(Solution s, const JointState& startPos)
+{
+    Action current_action;
+    JointState current_state = startPos;
+    
+    vector<string> path = configurationSpace();
+    current_action = s.nextAction();
+    current_state = current_state.apply(current_action);
+    path[g_units - 1 - current_state[1]][current_state[0] + g_units] = 'A';
+    while (!s.goalAchieved())
+    {
+        current_action = s.nextAction();
+        current_state = current_state.apply(current_action);
+        if(!s.goalAchieved())
+        {
+            path[g_units - 1 - current_state[1]][current_state[0] + g_units] = '+';
+        }
+        else
+        {
+            path[g_units - 1 - current_state[1]][current_state[0] + g_units] = 'B';
+        }
+    }
+    return path;
+}
+
 Solution ManipulatorPlanner::planActions(const JointState& startPos, const JointState& goalPos, int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
