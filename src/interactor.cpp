@@ -2,7 +2,12 @@
 #include "interactor.h"
 #include "utils.h"
 
+#include <external/json.h>
+
+#include <fstream>
 #include <stdexcept>
+
+using json = nlohmann::json;
 
 Interactor::Interactor() {}
 Interactor::~Interactor()
@@ -90,6 +95,10 @@ void Interactor::setUp(Config config)
 
     printf("Task count = %zu.\n", _taskset->size());
     printf("Simulation is started!\n\n");
+}
+void Interactor::setUp(const string& filename)
+{
+    setUp(parseJSON(filename));
 }
 
 void Interactor::setManipulatorState(const JointState& state)
@@ -262,4 +271,37 @@ void Interactor::doMainLoop()
         stepLoop(1 / fps);
         show();
     }
+}
+
+
+Config Interactor::parseJSON(const string& filename)
+{
+    std::ifstream fin(filename);
+    json data = json::parse(fin);
+
+    std::string modelFilename = data["model_filename"];
+    double timeLimit = data["algorithm"]["time_limit"];
+    double w = data["algorithm"]["weight"];
+    int taskNum = data["taskset"]["task_number"];
+    TaskType taskType = data["taskset"]["task_type"];
+    bool randomTasks = data["taskset"]["use_random_tasks"];
+    std::string scenFilename = data["output"]["taskset"];
+    std::string statsFilename = data["output"]["statistics"];
+    std::string tasksFilename = data["taskset"]["taskset_filename"];
+    std::string runtimeFilename = data["output"]["profiling"];
+    bool displayMotion = data["display_motion"];
+
+    return Config{
+        modelFilename,
+        timeLimit,
+        w,
+        taskNum,
+        taskType,
+        randomTasks,
+        scenFilename,
+        statsFilename,
+        tasksFilename,
+        runtimeFilename,
+        displayMotion
+    };
 }

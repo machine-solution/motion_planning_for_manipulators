@@ -1,4 +1,5 @@
 #include "interactor.h"
+#include "utils.h"
 
 #include <stdbool.h> 
 #include <set>
@@ -14,25 +15,11 @@
 // main function
 int main(int argc, const char** argv)
 {
-    std::vector<double> ws = {1.0, 1.1, 1.2, 1.5, 2.0, 4.0, 10.0, 30.0, 100.0};
-    std::vector<std::string> names = {"1.0", "1.1", "1.2", "1.5", "2.0", "4.0", "10.0", "30.0", "100.0"};
-
-    for (size_t i = 0; i < ws.size(); ++i)
+    vector<string> jsons = jsonFilesInDirectory("parameters/launch");
+    for (const auto& pathJSON: jsons)
     {
         Interactor interactor;
-        interactor.setUp({
-            "model/2-dof/manipulator_5.xml", // model filename
-            3.0, // time
-            ws[i], // w
-            10000, // the number of random tests
-            TASK_STATE, // kind of task
-            true, // random test generation
-            "scenaries/scen.log", // output for data about tasks
-            "pyplot/7/stats_hard_w=" + names[i] + ".log", // algorithm stats output
-            "scenaries/4_2-dof_pos_hard.scen", // input tasks list
-            "pyplot/7/runtime_hard_w=" + names[i] + ".log", // profiling output
-            true // display motion
-        });
+        interactor.setUp(pathJSON);
         interactor.doMainLoop();
     }
 

@@ -21,7 +21,7 @@ struct Config
     std::string statsFilename;
     std::string tasksFilename;
     std::string runtimeFilename;
-    bool displayMotion = false;
+    bool displayMotion;
 };
 
 struct ModelState
@@ -44,6 +44,7 @@ public:
     ~Interactor();
 
     void setUp(Config config);
+    void setUp(const string& filename);
 
     void setManipulatorState(const JointState& state);
     void setGoalState(const JointState& state);
@@ -85,5 +86,7 @@ private:
 
     Config _config;
     ModelState _modelState;
+
+    Config parseJSON(const string& filename);
 };
 
