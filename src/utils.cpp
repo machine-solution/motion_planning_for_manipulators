@@ -63,3 +63,26 @@ vector<ProfileInfo> Profiler::getNamedProfileInfo() const
     std::sort(result.begin(), result.end(), CmpByName());
     return result;
 }
+
+vector<string> filesInDirectory(const string& directoryPath)
+{
+    vector<string> result;
+    for (const auto& file: recursive_directory_iterator(directoryPath))
+        result.push_back(file.path().string());
+
+    std::sort(result.begin(), result.end());
+    return result;
+}
+
+vector<string> jsonFilesInDirectory(const string& directoryPath)
+{
+    vector<string> files = filesInDirectory(directoryPath);
+    vector<string> result;
+    for (const string& filepath: files)
+        if (filepath.length() >= 5 && filepath.substr(filepath.length() - 5) == ".json")
+        {
+            result.push_back(filepath);
+        }
+
+    return result;
+}

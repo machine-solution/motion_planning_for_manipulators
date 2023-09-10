@@ -1,9 +1,10 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
-#include "taskset.h"
-#include "planner.h"
 #include "astar.h"
+#include "planner.h"
+#include "taskset.h"
+#include "utils.h"
 
 #include <cstdio>
 
@@ -132,4 +133,26 @@ TEST_CASE("File read test")
     testReadFile(2, "tests/unit_tests/samples/load_taskset/2-dof_test_2.scen", 4, TASK_STATE);
     testReadFile(2, "tests/unit_tests/samples/load_taskset/2-dof_pos_test_3.scen", 2, TASK_POSITION);
     testReadFile(3, "tests/unit_tests/samples/load_taskset/3-dof_test_4.scen", 4, TASK_STATE);
+}
+
+TEST_CASE("Recursively search files in directory")
+{
+    std::vector<std::string> answer{
+        "tests/unit_tests/samples/dir/file1.txt",
+        "tests/unit_tests/samples/dir/file2.txt",
+        "tests/unit_tests/samples/dir/subdir",
+        "tests/unit_tests/samples/dir/subdir/subfile1.txt",
+        "tests/unit_tests/samples/dir/subdir/subjson.json",
+    };
+    std::vector<std::string> result = filesInDirectory("tests/unit_tests/samples/dir");
+    CHECK(answer == result);
+}
+
+TEST_CASE("Recursively search json files in directory")
+{
+    std::vector<std::string> answer{
+        "tests/unit_tests/samples/dir/subdir/subjson.json",
+    };
+    std::vector<std::string> result = jsonFilesInDirectory("tests/unit_tests/samples/dir");
+    CHECK(answer == result);
 }

@@ -1,24 +1,10 @@
-#include "interactor.h"
 #include "global_defs.h"
+#include "interactor.h"
+#include "utils.h"
 
 #include <stdexcept>
 
-Interactor::Interactor(const std::string& modelFilename)
-{
-    char error[1000] = "Could not load binary model";
-    _model = mj_loadXML(modelFilename.c_str(), 0, error, 1000);
-    if (!_model)
-        mju_error_s("Load model error: %s", error); // exception in constructor - bad idea TODO
-    _data = mj_makeData(_model);
-    _dof = _model->nq / 2;
-
-    mjModel* mCopy = mj_copyModel(NULL, _model);
-    mjData* dCopy = mj_makeData(mCopy);
-
-    _planner = new ManipulatorPlanner(_dof, mCopy, dCopy);
-    _logger = new Logger(_dof);
-    _taskset = new TaskSet(_dof);
-}
+Interactor::Interactor() {}
 Interactor::~Interactor()
 {
     // free MuJoCo model and data, deactivate
@@ -42,6 +28,22 @@ Interactor::~Interactor()
 
 void Interactor::setUp(Config config)
 {
+    _config = config;
+
+    char error[1000] = "Could not load binary model";
+    _model = mj_loadXML(_config.modelFilename.c_str(), 0, error, 1000);
+    if (!_model)
+        mju_error_s("Load model error: %s", error); // exception in constructor - bad idea TODO
+    _data = mj_makeData(_model);
+    _dof = _model->nq / 2;
+
+    mjModel* mCopy = mj_copyModel(NULL, _model);
+    mjData* dCopy = mj_makeData(mCopy);
+
+    _planner = new ManipulatorPlanner(_dof, mCopy, dCopy);
+    _logger = new Logger(_dof);
+    _taskset = new TaskSet(_dof);
+
     // init GLFW
     if (!glfwInit())
         mju_error("Could not initialize GLFW");
@@ -67,8 +69,6 @@ void Interactor::setUp(Config config)
     _cam.lookat[0] = arr_view[3];
     _cam.lookat[1] = arr_view[4];
     _cam.lookat[2] = arr_view[5];
-
-    _config = config;
 
     _modelState.currentState = JointState(_dof, 0);
     _modelState.goal = JointState(_dof, 0);

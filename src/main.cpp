@@ -19,8 +19,9 @@ int main(int argc, const char** argv)
 
     for (size_t i = 0; i < ws.size(); ++i)
     {
-        Interactor interactor("model/2-dof/manipulator_5.xml");
+        Interactor interactor;
         interactor.setUp({
+            "model/2-dof/manipulator_5.xml", // model filename
             3.0, // time
             ws[i], // w
             10000, // the number of random tests

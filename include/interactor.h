@@ -11,6 +11,7 @@
 
 struct Config
 {
+    std::string modelFilename;
     double timeLimit;
     double w;
     int taskNum;
@@ -39,7 +40,7 @@ struct ModelState
 class Interactor
 {
 public:
-    Interactor(const std::string& modelFilename);
+    Interactor();
     ~Interactor();
 
     void setUp(Config config);

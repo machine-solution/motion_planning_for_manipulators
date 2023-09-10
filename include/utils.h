@@ -1,13 +1,16 @@
 #pragma once
 
-#include <unordered_map>
+#include <filesystem>
 #include <string>
-#include <vector>
 #include <time.h>
+#include <unordered_map>
+#include <vector>
 
 using std::vector;
 using std::string;
 using std::unordered_map;
+
+using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
 
 struct ProfileInfo
 {
@@ -54,3 +57,10 @@ private:
     mutable unordered_map<string, clock_t> _timeMap;
     mutable unordered_map<string, size_t> _callMap;
 };
+
+
+// return lexical sorted vector of paths to files in directory
+vector<string> filesInDirectory(const string& directoryPath);
+
+// return lexical sorted vector of paths of only .json files in directory
+vector<string> jsonFilesInDirectory(const string& directoryPath);
