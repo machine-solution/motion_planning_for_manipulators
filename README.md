@@ -4,7 +4,7 @@ Content
 1. [Installation](#installation)
 1. [Before run](#before-run)
 1. [Run](#run)
-1. [Run with custom parameters](#run-with-custom-parameters
+1. [Run with custom parameters](#run-with-custom-parameters)
     1. [Where are parameters used for launch project](#where-are-parameters-used-for-launch-project)
     1. [How to setup one scenario](#how-to-setup-one-scenario)
 1. [Project description](#project-description)
@@ -86,18 +86,6 @@ To setup one scenario you need to describe all fields in json, even you don't us
 - **output.statistics:** Set path for output file for data about solutions of tasks: the number of expansions, runtime, cost of path etc in csv format.
 - **output.taskset:** Set path for output file for data about tasks: start configuration, goal, difficult (not really good), cost of path, runtime in csv format. You can use this file and script `tools/clusterizer_*.py` to convert this data to input format of taskset. Using this output you can store random generated taskset.
 - **display_motion:** If true, after plannig in success case programm will show animation of manipulator movements from start position to goal. Set true for demonstration and false for measurement of algorithm indicators. 
-
-- Another options you can choose in method setUp(). You can set the maximum time that planner may spend on one task. If algorithm is not found solution during this time, it returns PATH NOT FOUND verdict. Use [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L24) to set time bound.
-- You can set weight of heuristic using [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L25).
-- You can set the number of generated random tasks if you want use random generated tasks. But planner will not solve incorrect tasks if there are any (for example, the start position intersects obstacle). Generating only correct tasks is planned for this project. Use [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L26) to set this parameter.
-- You can choose kind of task at [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L27). Now available TASK_STATE and TASK_POSITION. In task state goal is full configuration, in task position only coordinates of end-effector.
-- You can turn on random task generation at [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L28). Set true if want random taskset.
-- At [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L29) output file for data about tasks: start configuration, goal, difficult (not really good), cost of path, runtime in csv format. You can use this file and script `tools/clusterizer_*.py` to convert this data to input format of taskset. Using this output you can store random generated taskset.
-- At [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L30) output file for data about solutions of tasks: the number of expansions, runtime, cost of path etc in csv format.
-- At [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L31) you can set taskset if flag of random generation is turned off in special format. You can generate it from csv using scripts in `tools`. Script depends of kind of task. And you have to set kind of task which mathes the kind of tasks presented in taskset.
-- At [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L32) output file for profiling data for general functions of algorithm in csv format.
-- At [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L33) you can choose show found solution by actions in graphical window or not. Set true to show.
-
 
 # Project description
 
