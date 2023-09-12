@@ -4,7 +4,9 @@ Content
 1. [Installation](#installation)
 1. [Before run](#before-run)
 1. [Run](#run)
-1. [Run with custom parameters](#run-with-custom-parameters)
+1. [Run with custom parameters](#run-with-custom-parameters
+    1. [Where are parameters used for launch project](#where-are-parameters-used-for-launch-project)
+    1. [How to setup one scenario](#how-to-setup-one-scenario)
 1. [Project description](#project-description)
     1. [Problem description](#problem-description)
     1. [Planner](#planner)
@@ -63,9 +65,28 @@ chmod +x <execution_file>
 
 # Run with custom parameters
 
-To run this project with your custom parametrs you need to change content in `main.cpp` file. All simulation realized in object Interactor.
+## Where are parameters used for launch project
 
-- To choose scene (manipulator and obstacles) use [constructor of Interactor](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L22). Write the path of file from the root of repository. In `models` folder you can find several scenes or create your xml-file of model.
+At the start of the project, several scenaries are run sequentially. One scenario described in one .json file. This files is located in the `parameters/launch` folder and only files in this folder will be used to launch scenaries. And foles in subfolder of `parameters/launch` will be used to run project. All files sorted by alphabet (by relative path from root of repository) and will be run in this strong order. Also there is a folder `parameters/samples`. There is an example of json-file in this folder. 
+
+Now there is a script `jsons_generator.py` in `tools` folder. You can change code and generate configs automatically just in the `parameters/launch` folder.
+
+## How to setup one scenario
+
+To setup one scenario you need to describe all fields in json, even you don't use several of their. (This update of project have planned). Below is a description of the fields, each field is named as "part_1.part_2.part_3" where "part_1" is name of this field on the first level of json, "part_2" - on the second, etc
+
+- **model_filename:** Use this parameter to choose scene - manipulator and obstacles. Write the path of file from the root of repository. In `models` folder you can find several scenes or create your xml-file of model.
+- **algorithm.time_limit:** Use this parameter to set time bound. You can set the maximum time that planner may spend on one task. If algorithm is not found solution during this time, it returns PATH NOT FOUND verdict.
+- **algorithm.weight:** You can set weight of heuristic using this field.
+- **taskset.use_random_tasks:** Using this option you can turn on random generation of tasks. Set true if want generate taskset at random. In project there is constant seed and tasks not will be random at all, if you generate 2 random taskset with same other parameters, you will get same tasksets.
+- **taskset.task_number:** You can set the number of generated random tasks if you want use random generated tasks. Doesn't affect if `taskset.use_random_tasks` = false
+- **taskset.task_type:** You can choose kind of task with this parameter. Now available 0 (TASK_STATE) and 1 (TASK_POSITION) values. In task state goal is full configuration, in task position only coordinates of end-effector. Set correct parameter regardless of whether the tasks are generated randomly or not.
+- **taskset.taskset_filename:** With this parameter you can set taskset if `taskset.use_random_tasks` = false in special format. You can generate it from csv using scripts `tools/clusterizer_state.py` and `tools/clusterizer_position.py` (soon i'll describe all scripts in this project). Script depends of kind of task. And you have to set `taskset.task_type` which mathes the kind of tasks presented in taskset.
+- **output.profiling:** Set path for output file for profiling data for general functions of algorithm in csv format. 
+- **output.statistics:** Set path for output file for data about solutions of tasks: the number of expansions, runtime, cost of path etc in csv format.
+- **output.taskset:** Set path for output file for data about tasks: start configuration, goal, difficult (not really good), cost of path, runtime in csv format. You can use this file and script `tools/clusterizer_*.py` to convert this data to input format of taskset. Using this output you can store random generated taskset.
+- **display_motion:** If true, after plannig in success case programm will show animation of manipulator movements from start position to goal. Set true for demonstration and false for measurement of algorithm indicators. 
+
 - Another options you can choose in method setUp(). You can set the maximum time that planner may spend on one task. If algorithm is not found solution during this time, it returns PATH NOT FOUND verdict. Use [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L24) to set time bound.
 - You can set weight of heuristic using [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L25).
 - You can set the number of generated random tasks if you want use random generated tasks. But planner will not solve incorrect tasks if there are any (for example, the start position intersects obstacle). Generating only correct tasks is planned for this project. Use [this line](https://github.com/machine-solution/motion_planning_for_manipulators/blob/356d2f567f8efbd18be9b16109bd777bfc7c4f25/src/main.cpp#L26) to set this parameter.
