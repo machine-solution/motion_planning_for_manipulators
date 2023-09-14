@@ -1,21 +1,23 @@
-joints = 3
 length = [1, 1.2, 1.6]
 path_to_obstacles = 'tools/args/obstacles.txt'
-path_to_header = 'tools/const/header.txt'
-path_to_footer = 'tools/const/footer.txt'
-offset4 = ' ' * 4
-offset8 = ' ' * 8
+
+
+joints = len(length) # do not change
+offset4 = ' ' * 4 # do not change
+offset8 = ' ' * 8 # do not change
+path_to_header = 'tools/const/header.txt' # do not change
+path_to_footer = 'tools/const/footer.txt' # do not change
 
 
 def collision_section(joints, obstacles):
     output = ''
     for i in range(joints):
         for j in range(obstacles):
-            output += offset8 + f'<pair geom1=\"geom edge {i}\" geom2=\"geom obstacle {j}\"/>\n'
+            output += offset8 + f'<pair geom1=\"geom link {i}\" geom2=\"geom obstacle {j}\"/>\n'
     for i in range(joints):
         for j in range(joints):
             if j - i > 1:
-                output += offset8 + f'<pair geom1=\"geom edge {i}\" geom2=\"geom edge {j}\"/>\n'
+                output += offset8 + f'<pair geom1=\"geom link {i}\" geom2=\"geom link {j}\"/>\n'
     return output
 
 
@@ -37,16 +39,16 @@ def manipulator_autogen(joints, lengths: list):
             current_half_len = lengths[i] / 2
 
         if i == 0:
-            output_prefix += f'{current_space}<body name=\"edge {i}\" \
+            output_prefix += f'{current_space}<body name=\"link {i}\" \
 pos=\"{f"{prev_half_len + current_half_len} 0 0.1"}\" euler={euler}>\n'
         else:
-            output_prefix += f'{current_space}<body name=\"edge {i}\" \
+            output_prefix += f'{current_space}<body name=\"link {i}\" \
 pos=\"{f"0 0 {prev_half_len + current_half_len}"}\" euler={euler}>\n'
 
         output_prefix += f'{current_space + offset4}<joint name=\"joint {i}\" type=\"hinge\" \
 axis=\"-1 0 0\" pos=\"{f"0 0 {-current_half_len}"}\"/>\n'
 
-        output_prefix += f'{current_space + offset4}<geom name=\"geom edge {i}\" \
+        output_prefix += f'{current_space + offset4}<geom name=\"geom link {i}\" \
 type=\"cylinder\" size=\"{f"0.05 {current_half_len}"}\" material=\"red\"/>\n'
 
         if i == joints - 1:
@@ -79,16 +81,16 @@ def manipulator_shade_autogen(joints, lengths: list):
             current_half_len = lengths[i] / 2
 
         if i == 0:
-            output_prefix += f'{current_space}<body name=\"edge {i} shade\" \
+            output_prefix += f'{current_space}<body name=\"link {i} shade\" \
 pos=\"{f"{prev_half_len + current_half_len} 0 0.1"}\" euler={euler}>\n'
         else:
-            output_prefix += f'{current_space}<body name=\"edge {i} shade\" \
+            output_prefix += f'{current_space}<body name=\"link {i} shade\" \
 pos=\"{f"0 0 {prev_half_len + current_half_len}"}\" euler={euler}>\n'
 
         output_prefix += f'{current_space + offset4}<joint name=\"joint {i} shade\" type=\"hinge\" \
 axis=\"-1 0 0\" pos=\"{f"0 0 {-current_half_len}"}\"/>\n'
 
-        output_prefix += f'{current_space + offset4}<geom name=\"geom edge {i} shade\" \
+        output_prefix += f'{current_space + offset4}<geom name=\"geom link {i} shade\" \
 type=\"cylinder\" size=\"{f"0.05 {current_half_len}"}\" material=\"green\"/>\n'
 
         output_suffix.append(f'{current_space}</body>\n')
