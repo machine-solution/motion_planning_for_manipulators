@@ -97,7 +97,7 @@ In this chapter are described scripts which make interaction with project easier
 
 ## Clusterizer
 
-This script has the purpose to convert output taskset in csv format to input taskset in special human-readable format and clusterize tasks by runtime. You have to define `input_file`, `output_easy`, `output_medium`, `output_hard` filenames and `medium_threshold`, `hard_threshold` float variables. Script prints tasks witch was solved by less than `medium_threshold` seconds to `output_easy` file, between `medium_threshold` and `hard_threshold` to `output_medium` and other tasks to `output_hard` in special format. Also you have to define `dofs` variable and in `clusterizer_position` dim - number of dimensionals in the base space (2 for plane, 3 for space). And you have to use script `clusterizer_position` to process taskset with TASK_POSITION task and `clusterizer_state` to process taskset with TASK_STATE.
+This script has the purpose to convert output taskset in csv format to input taskset in special human-readable format and clusterize tasks by runtime. You have to define `input_file`, `output_easy`, `output_medium`, `output_hard` filenames and `medium_threshold`, `hard_threshold` float variables. Script prints tasks witch was solved by less than `medium_threshold` seconds to `output_easy` file, between `medium_threshold` and `hard_threshold` to `output_medium` and other tasks to `output_hard` in special format. Also you have to define `dofs` variable and in `clusterizer_position` `dim` - number of dimensionals in the base space (2 for plane, 3 for space). And you have to use script `clusterizer_position` to process taskset with TASK_POSITION task and `clusterizer_state` to process taskset with TASK_STATE.
 
 ## JSON generator
 
