@@ -105,7 +105,7 @@ This script has the purpose to convert output taskset in csv format to input tas
 
 ## XML autogen
 
-`xml_autogen` script is needed to generate model with simple manipulator
+`xml_autogen` script is needed to generate model with simple manipulator and obstacles. Manipulator described by `length` list of sizes of every links. The len of list is dof. Obstacles is described in file `path_to_obstacles` in the following format: every row define [geom](https://mujoco.readthedocs.io/en/latest/XMLreference.html#body-geom) of obstacle instead of name and material. After run the script in `tools/` folder will appear xml file, wich you can copy-paste to mmodel folder and without changes run simulation with this scene.
 
 # Project description
 
