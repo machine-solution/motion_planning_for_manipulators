@@ -21,8 +21,9 @@ TEST_CASE("Integration test")
 
     for (size_t i = 0; i < ws.size(); ++i)
     {
-        Interactor interactor("tests/integration_tests/manipulator.xml");
+        Interactor interactor;
         interactor.setUp({
+            "tests/integration_tests/manipulator.xml", // model filename
             3.0, // time
             ws[i], // w
             2, // the number of random tests

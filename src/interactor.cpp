@@ -1,24 +1,15 @@
-#include "interactor.h"
 #include "global_defs.h"
+#include "interactor.h"
+#include "utils.h"
 
+#include <external/json.h>
+
+#include <fstream>
 #include <stdexcept>
 
-Interactor::Interactor(const std::string& modelFilename)
-{
-    char error[1000] = "Could not load binary model";
-    _model = mj_loadXML(modelFilename.c_str(), 0, error, 1000);
-    if (!_model)
-        mju_error_s("Load model error: %s", error); // exception in constructor - bad idea TODO
-    _data = mj_makeData(_model);
-    _dof = _model->nq / 2;
+using json = nlohmann::json;
 
-    mjModel* mCopy = mj_copyModel(NULL, _model);
-    mjData* dCopy = mj_makeData(mCopy);
-
-    _planner = new ManipulatorPlanner(_dof, mCopy, dCopy);
-    _logger = new Logger(_dof);
-    _taskset = new TaskSet(_dof);
-}
+Interactor::Interactor() {}
 Interactor::~Interactor()
 {
     // free MuJoCo model and data, deactivate
@@ -42,6 +33,22 @@ Interactor::~Interactor()
 
 void Interactor::setUp(Config config)
 {
+    _config = config;
+
+    char error[1000] = "Could not load binary model";
+    _model = mj_loadXML(_config.modelFilename.c_str(), 0, error, 1000);
+    if (!_model)
+        mju_error_s("Load model error: %s", error); // exception in constructor - bad idea TODO
+    _data = mj_makeData(_model);
+    _dof = _model->nq / 2;
+
+    mjModel* mCopy = mj_copyModel(NULL, _model);
+    mjData* dCopy = mj_makeData(mCopy);
+
+    _planner = new ManipulatorPlanner(_dof, mCopy, dCopy);
+    _logger = new Logger(_dof);
+    _taskset = new TaskSet(_dof);
+
     // init GLFW
     if (!glfwInit())
         mju_error("Could not initialize GLFW");
@@ -68,8 +75,6 @@ void Interactor::setUp(Config config)
     _cam.lookat[1] = arr_view[4];
     _cam.lookat[2] = arr_view[5];
 
-    _config = config;
-
     _modelState.currentState = JointState(_dof, 0);
     _modelState.goal = JointState(_dof, 0);
     _modelState.action = Action(_dof, 0);
@@ -90,6 +95,10 @@ void Interactor::setUp(Config config)
 
     printf("Task count = %zu.\n", _taskset->size());
     printf("Simulation is started!\n\n");
+}
+void Interactor::setUp(const string& filename)
+{
+    setUp(parseJSON(filename));
 }
 
 void Interactor::setManipulatorState(const JointState& state)
@@ -262,4 +271,37 @@ void Interactor::doMainLoop()
         stepLoop(1 / fps);
         show();
     }
+}
+
+
+Config Interactor::parseJSON(const string& filename)
+{
+    std::ifstream fin(filename);
+    json data = json::parse(fin);
+
+    std::string modelFilename = data["model_filename"];
+    double timeLimit = data["algorithm"]["time_limit"];
+    double w = data["algorithm"]["weight"];
+    int taskNum = data["taskset"]["task_number"];
+    TaskType taskType = data["taskset"]["task_type"];
+    bool randomTasks = data["taskset"]["use_random_tasks"];
+    std::string scenFilename = data["output"]["taskset"];
+    std::string statsFilename = data["output"]["statistics"];
+    std::string tasksFilename = data["taskset"]["taskset_filename"];
+    std::string runtimeFilename = data["output"]["profiling"];
+    bool displayMotion = data["display_motion"];
+
+    return Config{
+        modelFilename,
+        timeLimit,
+        w,
+        taskNum,
+        taskType,
+        randomTasks,
+        scenFilename,
+        statsFilename,
+        tasksFilename,
+        runtimeFilename,
+        displayMotion
+    };
 }
