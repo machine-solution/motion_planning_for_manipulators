@@ -10,7 +10,7 @@ Content
     1. [How to setup one scenario](#how-to-setup-one-scenario)
 1. [Tools description](#tools-description)
     1. [Clusterizer](#clusterizer)
-    1. [JSON generator](#JSONjson-generator)
+    1. [JSON generator](#json-generator)
     1. [XML autogen](#xml-autogen)
 1. [Project description](#project-description)
     1. [Problem description](#problem-description)
@@ -88,10 +88,9 @@ To setup one scenario you need to describe all fields in json, even you don't us
 - **algorithm.weight:** You can set weight of heuristic using this field.
 - **taskset.use_random_tasks:** Using this option you can turn on random generation of tasks. Set true if want generate taskset at random. In project there is constant seed and tasks not will be random at all, if you generate 2 random taskset with same other parameters, you will get same tasksets.
 - **taskset.task_number:** You can set the number of generated random tasks if you want use random generated tasks. Doesn't affect if `taskset.use_random_tasks` = false
-- **taskset.task_type:** You can choose kind of task with this parameter. Now available two options:
+- **taskset.task_type:** You can choose kind of task with this parameter. Set correct parameter even if you choose taskset file. Without this parameter impossible to determine the type of task in the file. Now available two options:
     -  0 (TASK_STATE). In this case goal is full configuration, it is set by n rotation angles, where n is the number of joints.
     -  1 (TASK_POSITION). In this case goal is coordinates of end-effector, it is set by 2 floats. If you choose this option, the planner will find any goal with that end-effector coordinates.
-Set correct parameter even if you choose taskset file. Without this parameter impossible to determine the type of task in the file.
 - **taskset.taskset_filename:** With this parameter you can set taskset if `taskset.use_random_tasks` = false in special format. You can generate it from csv using scripts `tools/clusterizer_state.py` and `tools/clusterizer_position.py` (see [tools description](#tools-description) for more information). Script depends of kind of task. And you have to set `taskset.task_type` which mathes the kind of tasks presented in taskset.
 - **output.profiling:** Set path for output file for profiling data for general functions of algorithm in csv format. 
 - **output.statistics:** Set path for output file for data about solutions of tasks: the number of expansions, runtime, cost of path etc in csv format.
