@@ -46,7 +46,7 @@ Congradulations! You have completed installation.
 
 This project uses some output files witch don't exist in github repository. To make all necessary folders run
 ```
-./github/build_structure
+./.github/build_structure
 ```
 It will create empty folders in witch you can find output files after run: with logs and statistics.
 
