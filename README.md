@@ -32,6 +32,7 @@ To compile and run this project you need to install OpenGL (glfw) library
 ```
 sudo apt update
 sudo apt install libglfw3-dev
+sudo apt install make
 ```
 
 Then copy-paste two files from 'lib' folder libmujoco.so and libmujoco.so.2.3.2 to '/usr/lib' to install mujoco libraries
