@@ -5,6 +5,7 @@ Content
 1. [Installation](#installation)
 1. [Before run](#before-run)
 1. [Run](#run)
+    1. [Run without graphics](#run-without-graphics)
 1. [Run with custom parameters](#run-with-custom-parameters)
     1. [Where are parameters used for launch project](#where-are-parameters-used-for-launch-project)
     1. [How to setup one scenario](#how-to-setup-one-scenario)
@@ -32,6 +33,7 @@ To compile and run this project you need to install OpenGL (glfw) library
 ```
 sudo apt update
 sudo apt install libglfw3-dev
+sudo apt install make
 ```
 
 Then copy-paste two files from 'lib' folder libmujoco.so and libmujoco.so.2.3.2 to '/usr/lib' to install mujoco libraries
@@ -46,7 +48,7 @@ Congradulations! You have completed installation.
 
 This project uses some output files witch don't exist in github repository. To make all necessary folders run
 ```
-./github/build_structure
+./.github/build_structure
 ```
 It will create empty folders in witch you can find output files after run: with logs and statistics.
 
@@ -69,6 +71,19 @@ After this operation in the root of this repository you can find 'manipulator' f
 If you got into trouble with running some of this files, do this and try again:
 ```
 chmod +x <execution_file>
+```
+
+## Run without graphics
+
+If you has no monitor on your device (for example on virtual machine) you can't run project according to the instructions above. But you can whatever run project without graphics. To do this install following tool:
+```
+sudo apt update
+sudo apt install xvfb
+```
+
+To run project execute command:
+```
+xvfb-run -a ./run_linux
 ```
 
 # Run with custom parameters
