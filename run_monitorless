@@ -1,0 +1,1 @@
+xvfb-run -a ./run_linux
