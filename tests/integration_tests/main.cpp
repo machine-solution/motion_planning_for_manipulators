@@ -29,11 +29,12 @@ TEST_CASE("Integration test")
             2, // the number of random tests
             TASK_STATE, // kind of task
             false, // random test generation
-            "scenaries/scen.log",
-            "pyplot/7/stats_hard_w=" + names[i] + ".log",
+            "scenaries/test_scen.log",
+            "pyplot/0/test_stats_w=" + names[i] + ".log",
             "tests/integration_tests/2-dof_example.scen",
-            "pyplot/7/runtime_hard_w=" + names[i] + ".log",
-            true // display motion
+            "pyplot/0/test_runtime_w=" + names[i] + ".log",
+            true, // display motion
+            ALG_LAZY_ASTAR, // algorithm type
         });
         interactor.doMainLoop();
     }

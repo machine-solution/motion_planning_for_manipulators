@@ -9,7 +9,8 @@ for w in ws:
             "model_filename": "model/2-dof/manipulator_5.xml",
             "algorithm": {
                 "time_limit": 3.0,
-                "weight": w
+                "weight": w,
+                "type": 1
             },
             "taskset": {
                 "use_random_tasks": True,

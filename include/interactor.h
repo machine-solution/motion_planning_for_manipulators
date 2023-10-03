@@ -22,6 +22,7 @@ struct Config
     std::string tasksFilename;
     std::string runtimeFilename;
     bool displayMotion;
+    Algorithm algorithm;
 };
 
 struct ModelState

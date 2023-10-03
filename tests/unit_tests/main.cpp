@@ -86,6 +86,21 @@ TEST_CASE("A* planner on empty plane")
     testStressPlanning(4, ALG_ASTAR);
 }
 
+TEST_CASE("lazy A* planner on empty plane")
+{
+    testPlanningFromTo({0, 0}, {0, 0}, ALG_LAZY_ASTAR);
+    testPlanningFromTo({0, 0}, {1, 1}, ALG_LAZY_ASTAR);
+    testPlanningFromTo({1, 2}, {3, -4}, ALG_LAZY_ASTAR);
+    testPlanningFromTo({5, -3}, {-1, -3}, ALG_LAZY_ASTAR);
+    testPlanningFromTo({5}, {-1}, ALG_LAZY_ASTAR);
+    testPlanningFromTo({5, 5, 5}, {-1, -1, -1}, ALG_LAZY_ASTAR);
+    testPlanningFromTo({5, 5, 5, 5}, {-1, -1, -1, -1}, ALG_LAZY_ASTAR);
+    testStressPlanning(1, ALG_LAZY_ASTAR);
+    testStressPlanning(2, ALG_LAZY_ASTAR);
+    testStressPlanning(3, ALG_LAZY_ASTAR);
+    testStressPlanning(4, ALG_LAZY_ASTAR);
+}
+
 TEST_CASE("A* Nodes has operators")
 {
     astar::SearchNode node1(1, 0, JointState(1, 0));

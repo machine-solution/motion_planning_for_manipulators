@@ -282,6 +282,7 @@ Config Interactor::parseJSON(const string& filename)
     std::string modelFilename = data["model_filename"];
     double timeLimit = data["algorithm"]["time_limit"];
     double w = data["algorithm"]["weight"];
+    Algorithm algorithm = data["algorithm"]["type"];
     int taskNum = data["taskset"]["task_number"];
     TaskType taskType = data["taskset"]["task_type"];
     bool randomTasks = data["taskset"]["use_random_tasks"];
@@ -302,6 +303,7 @@ Config Interactor::parseJSON(const string& filename)
         statsFilename,
         tasksFilename,
         runtimeFilename,
-        displayMotion
+        displayMotion,
+        algorithm
     };
 }
