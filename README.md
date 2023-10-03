@@ -83,7 +83,12 @@ sudo apt install xvfb
 
 To run project execute command:
 ```
-xvfb-run -a ./run_linux
+./run_monitorless
+```
+
+To run project on server using nohup execute command:
+```
+./run_server
 ```
 
 # Run with custom parameters
@@ -101,6 +106,9 @@ To setup one scenario you need to describe all fields in json, even you don't us
 - **model_filename:** Use this parameter to choose scene - manipulator and obstacles. Write the path of file from the root of repository. In `models` folder you can find several scenes or create your xml-file of model.
 - **algorithm.time_limit:** Use this parameter to set time bound. You can set the maximum time that planner may spend on one task. If algorithm is not found solution during this time, it returns PATH NOT FOUND verdict.
 - **algorithm.weight:** You can set weight of heuristic using this field.
+- **algorithm.type:** You can choose type of algorithm. Now available:
+    - 1 (A*)
+    - 2 (Lazy A*)
 - **taskset.use_random_tasks:** Using this option you can turn on random generation of tasks. Set true if want generate taskset at random. In project there is constant seed and tasks not will be random at all, if you generate 2 random taskset with same other parameters, you will get same tasksets.
 - **taskset.task_number:** You can set the number of generated random tasks if you want use random generated tasks. Doesn't affect if `taskset.use_random_tasks` = false
 - **taskset.task_type:** You can choose kind of task with this parameter. Set correct parameter even if you choose taskset file. Without this parameter impossible to determine the type of task in the file. Now available two options:
