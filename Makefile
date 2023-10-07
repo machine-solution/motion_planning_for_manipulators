@@ -43,11 +43,11 @@ $(OBJ)/planner.o: $(SRC)/planner.cpp $(INC)/planner.h $(INC)/joint_state.h $(INC
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/planner.cpp $(LIBS) -c -o $(OBJ)/planner.o
 
-$(OBJ)/astar.o: $(SRC)/astar.cpp $(INC)/astar.h $(INC)/utils.h $(INC)/global_defs.h
+$(OBJ)/astar.o: $(SRC)/astar.cpp $(INC)/astar.h $(INC)/utils.h $(INC)/global_defs.h $(INC)/solution.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/astar.cpp $(LIBS) -c -o $(OBJ)/astar.o
 
-$(OBJ)/lazy_astar.o: $(SRC)/lazy_astar.cpp $(INC)/lazy_astar.h $(INC)/utils.h $(INC)/global_defs.h $(INC)/astar.h
+$(OBJ)/lazy_astar.o: $(SRC)/lazy_astar.cpp $(INC)/lazy_astar.h $(INC)/utils.h $(INC)/global_defs.h $(INC)/astar.h $(INC)/solution.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/lazy_astar.cpp $(LIBS) -c -o $(OBJ)/lazy_astar.o
 

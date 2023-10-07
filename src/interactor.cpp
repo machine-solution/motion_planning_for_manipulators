@@ -175,7 +175,7 @@ void Interactor::solveTask()
         if (_modelState.task->type() == TASK_STATE)
         {
             _modelState.solution = _planner->planActions(_modelState.currentState, _modelState.goal,
-                ALG_ASTAR, _config.timeLimit, _config.w);
+                _config.algorithm, _config.timeLimit, _config.w);
 
             _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
         }
@@ -184,7 +184,7 @@ void Interactor::solveTask()
             _modelState.solution = _planner->planActions(_modelState.currentState,
                 static_cast<const TaskPosition*>(_modelState.task)->goalX(),
                 static_cast<const TaskPosition*>(_modelState.task)->goalY(),
-                ALG_ASTAR, _config.timeLimit, _config.w);
+                _config.algorithm, _config.timeLimit, _config.w);
 
             _logger->printScenLog(_modelState.solution, _modelState.currentState, 
                 static_cast<const TaskPosition*>(_modelState.task)->goalX(),

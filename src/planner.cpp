@@ -38,6 +38,7 @@ bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Act
     startProfiling();
     if (_model == nullptr || _data == nullptr) // if we have not data for check
     {
+        stopProfiling();
         return false;
     }
 

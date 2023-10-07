@@ -14,13 +14,18 @@ vector<SearchNode*> lazyGenerateSuccessors(
     {
         Action action = checker.getActions()[i];
         JointState newState = node->state().applied(action);
+        if (!newState.isCorrect())
+        {
+            continue;
+        }
         result.push_back(
             new SearchNode(
                 node->g() + checker.costAction(node->state(), action),
                 checker.heuristic(newState) * weight,
                 newState,
                 i,
-                node
+                node,
+                true
             )
         );
     }
@@ -51,9 +56,12 @@ Solution lazyAstar(
     {
         if (currentNode->isLazy())
         {
+            solution.stats.evaluatedEdges++;
             const Action& lastAction = checker.getActions()[currentNode->stepNum()];
-            if (!checker.isCorrect(currentNode->state(), lastAction))
+            if (!checker.isCorrect(currentNode->parent()->state(), lastAction))
             {
+                delete currentNode;
+                currentNode = tree.extractBestNode();
                 continue;
             }
             else
@@ -79,6 +87,7 @@ Solution lazyAstar(
         for (auto successor : successors)
         {
             tree.addToOpen(successor);
+            solution.stats.consideredEdges++;
         }
         // retake node from tree
         tree.addToClosed(currentNode);

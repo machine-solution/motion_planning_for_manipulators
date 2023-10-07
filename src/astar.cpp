@@ -201,6 +201,8 @@ Solution astar(
         for (auto successor : successors)
         {
             tree.addToOpen(successor);
+            solution.stats.consideredEdges++;
+            solution.stats.evaluatedEdges++;
         }
         // retake node from tree
         tree.addToClosed(currentNode);
