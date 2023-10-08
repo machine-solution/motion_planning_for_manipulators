@@ -1,141 +1,9 @@
 #include "astar.h"
-#include "utils.h"
-
-#include <vector>
+#include "lazy_astar.h"
 
 namespace astar {
 
-SearchNode::SearchNode(CostType g, CostType h, const JointState& state, int stepNum, SearchNode* parent, bool isLazy)
-{
-    _g = g;
-    _h = h;
-    _f = _g + _h;
-    _state = state;
-    _stepNum = stepNum;
-    _parent = parent;
-    _isLazy = isLazy;
-}
-
-CostType SearchNode::g() const
-{
-    return _g;
-}
-CostType SearchNode::h() const
-{
-    return _h;
-}
-CostType SearchNode::f() const
-{
-    return _f;
-}
-int SearchNode::stepNum() const
-{
-    return _stepNum;
-}
-const JointState& SearchNode::state() const
-{
-    return _state;
-}
-SearchNode* SearchNode::parent()
-{
-    return _parent;
-}
-
-void SearchNode::updateLazy(bool newLazy)
-{
-    _isLazy = newLazy;
-}
-bool SearchNode::isLazy() const
-{
-    return _isLazy;
-}
-
-bool SearchNode::operator<(const SearchNode& sn)
-{
-    return f() == sn.f() ? -g() < -sn.g() : f() < sn.f();
-}
-
-bool CmpByState::operator()(SearchNode* a, SearchNode* b) const
-{
-    return a->state() < b->state();
-}
-bool CmpByPriority::operator()(SearchNode* a, SearchNode* b) const
-{
-    return *a < *b;
-}
-
-
-SearchTree::SearchTree() {}
-SearchTree::~SearchTree()
-{
-    while (!_open.empty())
-    {
-        SearchNode* node = *_open.begin();
-        _open.erase(_open.begin());
-        delete node;
-    }
-
-    while (!_closed.empty())
-    {
-        SearchNode* node = *_closed.begin();
-        _closed.erase(_closed.begin());
-        delete node;
-    }
-}
-
-void SearchTree::addToOpen(SearchNode* node)
-{
-    startProfiling();
-    _open.insert(node);
-    stopProfiling();
-}
-void SearchTree::addToClosed(SearchNode* node)
-{
-    startProfiling();
-    _closed.insert(node);
-    stopProfiling();
-}
-
-SearchNode* SearchTree::extractBestNode()
-{
-    startProfiling();
-    while (!_open.empty())
-    {
-        SearchNode* best = *_open.begin();
-        _open.erase(_open.begin());
-        if (wasExpanded(best))
-        {
-            // we must delete this node
-            delete best;
-        }
-        else
-        {
-            stopProfiling();
-            return best;
-        }
-    }
-    stopProfiling();
-    return nullptr;
-}
-
-size_t SearchTree::size() const
-{
-    return _open.size() + _closed.size();
-}
-size_t SearchTree::sizeOpen() const
-{
-    return _open.size();
-}
-
-bool SearchTree::wasExpanded(SearchNode* node) const
-{
-    startProfiling();
-    bool res = _closed.count(node);
-    stopProfiling();
-    return res;
-}
-
-vector<SearchNode*> generateSuccessors(
+vector<SearchNode*> lazyGenerateSuccessors(
     SearchNode* node,
     IAstarChecker& checker,
     double weight
@@ -146,7 +14,7 @@ vector<SearchNode*> generateSuccessors(
     {
         Action action = checker.getActions()[i];
         JointState newState = node->state().applied(action);
-        if (!checker.isCorrect(node->state(), action))
+        if (!newState.isCorrect())
         {
             continue;
         }
@@ -156,7 +24,8 @@ vector<SearchNode*> generateSuccessors(
                 checker.heuristic(newState) * weight,
                 newState,
                 i,
-                node
+                node,
+                true
             )
         );
     }
@@ -164,7 +33,7 @@ vector<SearchNode*> generateSuccessors(
     return result;
 }
 
-Solution astar(
+Solution lazyAstar(
     const JointState& startPos,
     IAstarChecker& checker,
     double weight,
@@ -185,6 +54,23 @@ Solution astar(
 
     while (currentNode != nullptr)
     {
+        if (currentNode->isLazy())
+        {
+            solution.stats.evaluatedEdges++;
+            const Action& lastAction = checker.getActions()[currentNode->stepNum()];
+            if (!checker.isCorrect(currentNode->parent()->state(), lastAction))
+            {
+                delete currentNode;
+                currentNode = tree.extractBestNode();
+                continue;
+            }
+            else
+            {
+                // already not lazy
+                currentNode->updateLazy(false);
+            }
+        }
+
         if (checker.isGoal(currentNode->state()))
         {
             solution.stats.pathVerdict = PATH_FOUND;
@@ -197,12 +83,11 @@ Solution astar(
             break;
         }
         // expand current node
-        vector<astar::SearchNode*> successors = generateSuccessors(currentNode, checker, weight);
+        vector<astar::SearchNode*> successors = lazyGenerateSuccessors(currentNode, checker, weight);
         for (auto successor : successors)
         {
             tree.addToOpen(successor);
             solution.stats.consideredEdges++;
-            solution.stats.evaluatedEdges++;
         }
         // retake node from tree
         tree.addToClosed(currentNode);

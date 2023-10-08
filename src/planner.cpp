@@ -38,6 +38,7 @@ bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Act
     startProfiling();
     if (_model == nullptr || _data == nullptr) // if we have not data for check
     {
+        stopProfiling();
         return false;
     }
 
@@ -93,6 +94,8 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, const Joint
         return linearPlanning(startPos, goalPos);
     case ALG_ASTAR:
         return astarPlanning(startPos, goalPos, w, timeLimit);
+    case ALG_LAZY_ASTAR:
+        return lazyAstarPlanning(startPos, goalPos, w, timeLimit);
     default:
         return Solution(_primitiveActions, _zeroAction);
     }
@@ -112,6 +115,8 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, double goal
     {
     case ALG_ASTAR:
         return astarPlanning(startPos, goalX, goalY, w, timeLimit);
+    case ALG_LAZY_ASTAR:
+        return lazyAstarPlanning(startPos, goalX, goalY, w, timeLimit);
     default:
         return Solution(_primitiveActions, _zeroAction);
     }
@@ -209,6 +214,27 @@ Solution ManipulatorPlanner::astarPlanning(
 {
     AstarCheckerSite checker(this, goalX, goalY);
     Solution solution = astar::astar(startPos, checker, weight, timeLimit);
+    solution.plannerProfile = getNamedProfileInfo();
+    return solution;
+}
+
+Solution ManipulatorPlanner::lazyAstarPlanning(
+    const JointState& startPos, const JointState& goalPos,
+    float weight, double timeLimit
+)
+{
+    AstarChecker checker(this, goalPos);
+    Solution solution = astar::lazyAstar(startPos, checker, weight, timeLimit);
+    solution.plannerProfile = getNamedProfileInfo();
+    return solution;
+}
+Solution ManipulatorPlanner::lazyAstarPlanning(
+    const JointState& startPos, double goalX, double goalY,
+    float weight, double timeLimit
+)
+{
+    AstarCheckerSite checker(this, goalX, goalY);
+    Solution solution = astar::lazyAstar(startPos, checker, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }

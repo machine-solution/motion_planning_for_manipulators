@@ -15,7 +15,14 @@ namespace astar
 class SearchNode
 {
 public:
-    SearchNode(CostType g, CostType h, const JointState& state, int stepNum = -1, SearchNode* parent = nullptr);
+    SearchNode(
+        CostType g,
+        CostType h,
+        const JointState& state,
+        int stepNum = -1,
+        SearchNode* parent = nullptr,
+        bool isLazy = false
+    );
 
     CostType g() const;
     CostType h() const;
@@ -24,14 +31,22 @@ public:
     const JointState& state() const;
     SearchNode* parent();
 
+    // set _isLazy
+    void updateLazy(bool newLazy);
+    bool isLazy() const;
+
     // sort by priority
     bool operator<(const SearchNode& sn);
 
-private:
+protected:
     CostType _g, _h, _f;
-    int _stepNum; // number of step, which change parent.state() -> this.state(). -1 if have not parent
+    // number of step, which change parent.state() -> this.state(). -1 if have no parent
+    int _stepNum;
     JointState _state;
     SearchNode* _parent;
+
+    // True if node has unfinished checks
+    bool _isLazy;
 };
 
 class CmpByState

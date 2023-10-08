@@ -2,6 +2,7 @@
 
 #include "joint_state.h"
 #include "astar.h"
+#include "lazy_astar.h"
 #include "solution.h"
 #include "utils.h"
 #include <mujoco/mujoco.h>
@@ -10,6 +11,7 @@ enum Algorithm
 {
     ALG_LINEAR,
     ALG_ASTAR,
+    ALG_LAZY_ASTAR,
     ALG_MAX,
 };
 
@@ -57,6 +59,15 @@ private:
         float weight, double timeLimit
     );
     Solution astarPlanning(
+        const JointState& startPos, double goalX, double goalY,
+        float weight, double timeLimit
+    );
+
+    Solution lazyAstarPlanning(
+        const JointState& startPos, const JointState& goalPos,
+        float weight, double timeLimit
+    );
+    Solution lazyAstarPlanning(
         const JointState& startPos, double goalX, double goalY,
         float weight, double timeLimit
     );

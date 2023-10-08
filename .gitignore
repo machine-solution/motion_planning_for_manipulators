@@ -12,3 +12,5 @@ venv/
 /tools/args/
 pyplot/
 *.ipynb
+*.out
+tests/*/tests

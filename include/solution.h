@@ -17,6 +17,8 @@ struct Stats
     CostType pathPotentialCost = 0;
     size_t maxTreeSize = 0;
     int pathVerdict = PATH_NOT_FOUND;
+    size_t evaluatedEdges = 0;
+    size_t consideredEdges = 0;
 
     double runtime = 0.0;
 };
