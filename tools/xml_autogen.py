@@ -1,5 +1,6 @@
-length = [1, 1.2, 1.6]
-path_to_obstacles = 'tools/args/obstacles.txt'
+length = [1.05, 0.95] # [0.8, 1.2]
+path_to_obstacles = 'maps/obstacles_8.txt'
+path_to_result = f'model/{len(length)}-dof/manipulator_8.xml'
 
 
 joints = len(length) # do not change
@@ -116,7 +117,7 @@ def obstacles_autogen(file_path):
 
 gen_obstacles = obstacles_autogen(path_to_obstacles)
 
-with open(f'tools/{joints}-dof_{gen_obstacles["obstacles_counter"]}-obs_manipulator.xml', "w+") as f:
+with open(path_to_result, "w+") as f:
     f.write(open(path_to_header, 'r').read())
     f.write('\n')
     f.write(manipulator_autogen(joints, length))

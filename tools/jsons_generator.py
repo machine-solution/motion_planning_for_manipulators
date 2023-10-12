@@ -19,8 +19,8 @@ for w in ws:
                 "taskset_filename": "scenaries/4_2-dof_pos_hard.scen"
             },
             "output": {
-                "profiling": f"pyplot/7/runtime_hard_w={w}.log",
-                "statistics": f"pyplot/7/stats_hard_w={w}.log",
+                "profiling": f"pyplot/0/runtime_hard_w={w}.log",
+                "statistics": f"pyplot/0/stats_hard_w={w}.log",
                 "taskset": "scenaries/scen.log"
             },
             "display_motion": True

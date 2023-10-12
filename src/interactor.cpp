@@ -83,6 +83,11 @@ void Interactor::setUp(Config config)
     _logger->prepareScenFile(_config.scenFilename);
     _logger->prepareStatsFile(_config.statsFilename);
     _logger->prepareRuntimeFile(_config.runtimeFilename);
+    if (_dof == 2)
+    {
+        _logger->prepareCspaceFile(_config.cSpaceFilename);
+        _logger->printCSpace(_planner->configurationSpace());
+    }
 
     if (_config.randomTasks)
     {
@@ -290,6 +295,7 @@ Config Interactor::parseJSON(const string& filename)
     std::string statsFilename = data["output"]["statistics"];
     std::string tasksFilename = data["taskset"]["taskset_filename"];
     std::string runtimeFilename = data["output"]["profiling"];
+    std::string cSpaceFilename = data["output"]["configuration_space"];
     bool displayMotion = data["display_motion"];
 
     return Config{
@@ -303,6 +309,7 @@ Config Interactor::parseJSON(const string& filename)
         statsFilename,
         tasksFilename,
         runtimeFilename,
+        cSpaceFilename,
         displayMotion,
         algorithm
     };

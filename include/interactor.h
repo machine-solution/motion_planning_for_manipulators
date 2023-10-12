@@ -21,6 +21,7 @@ struct Config
     std::string statsFilename;
     std::string tasksFilename;
     std::string runtimeFilename;
+    std::string cSpaceFilename;
     bool displayMotion;
     Algorithm algorithm;
 };

@@ -1,2 +1,3 @@
 mkdir -p pyplot
 mkdir -p pyplot/{0..13}
+mkdir -p maps
