@@ -14,3 +14,10 @@ pyplot/
 *.ipynb
 *.out
 tests/*/tests
+maps/*.txt
+#========================
+model/2-dof/manipulator_6.xml
+model/2-dof/manipulator_7.xml
+model/2-dof/manipulator_8.xml
+model/2-dof/manipulator_9.xml
+tools/random_map.py

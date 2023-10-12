@@ -33,6 +33,7 @@ TEST_CASE("Integration test")
             "pyplot/0/test_stats_w=" + names[i] + ".log",
             "tests/integration_tests/2-dof_example.scen",
             "pyplot/0/test_runtime_w=" + names[i] + ".log",
+            "maps/c_space_0.map",
             true, // display motion
             ALG_LAZY_ASTAR, // algorithm type
         });
