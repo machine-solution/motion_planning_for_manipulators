@@ -1,6 +1,6 @@
-length = [1.05, 0.95] # [0.8, 1.2]
-path_to_obstacles = 'maps/obstacles_8.txt'
-path_to_result = f'model/{len(length)}-dof/manipulator_8.xml'
+length = [1, 1]
+path_to_obstacles = 'maps/obstacles_0.txt'
+path_to_result = f'model/{len(length)}-dof/manipulator_0.xml'
 
 
 joints = len(length) # do not change
