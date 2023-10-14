@@ -7,8 +7,6 @@
 		<material name="gray"  rgba=".5 .5 .5 1"/>
 	</asset>
 
-    <option collision="predefined"/>
-
     <worldbody>
         <light diffuse=".5 .5 .5" pos="0 0 10" dir="0 0 -1"/>
         <geom type="plane" size="2 2 0.1" rgba="1 1 1 1"/>
