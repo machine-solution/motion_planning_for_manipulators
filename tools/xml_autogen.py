@@ -12,13 +12,14 @@ path_to_footer = 'tools/const/footer.txt' # do not change
 
 def collision_section(joints, obstacles):
     output = ''
-    for i in range(joints):
-        for j in range(obstacles):
-            output += offset8 + f'<pair geom1=\"geom link {i}\" geom2=\"geom obstacle {j}\"/>\n'
+    for i in range(joints - 1):
+        output += offset8 + f'<exclude body1=\"link {i} shade\" body2=\"link {i + 1} shade\"/>\n'
     for i in range(joints):
         for j in range(joints):
-            if j - i > 1:
-                output += offset8 + f'<pair geom1=\"geom link {i}\" geom2=\"geom link {j}\"/>\n'
+            output += offset8 + f'<exclude body1=\"link {i} shade\" body2=\"link {j}\"/>\n'
+    for i in range(joints):
+        for j in range(obstacles):
+            output += offset8 + f'<exclude body1=\"link {i} shade\" body2=\"obstacle {j}\"/>\n'
     return output
 
 
