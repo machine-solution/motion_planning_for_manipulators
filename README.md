@@ -118,6 +118,7 @@ To setup one scenario you need to describe all fields in json, even you don't us
 - **output.profiling:** Set path for output file for profiling data for general functions of algorithm in csv format. 
 - **output.statistics:** Set path for output file for data about solutions of tasks: the number of expansions, runtime, cost of path etc in csv format.
 - **output.taskset:** Set path for output file for data about tasks: start configuration, goal, difficulty (not really good), cost of path, runtime in csv format. You can use this file and script `tools/clusterizer_*.py` to convert this data to input format of taskset. Using this output you can store random generated taskset.
+- **output.configuration_space:** Set path for output file for dump C-Space if dof = 2. Otherwise not affected.
 - **display_motion:** If true, after plannig in success case programm will show animation of manipulator movements from start position to goal. Set true for demonstration and false for measurement of algorithm indicators. 
 
 # Tools description
