@@ -24,6 +24,8 @@ Content
 # Short description
 This simulator for manipulator motion planning developed based on the [mujoco](https://github.com/deepmind/mujoco) as simulator and library. It implements variations of A* algorithm. It can find pathes in 2D space for custom manipulators on custom scene and calculate runtime, cost of path and the number of iterations of algorithm A*. You can run set of tasks on your scene and slightly manipulate the heuristic. After solving task project can show simulation images in graphical window.
 
+![Demo of simulation](demo/simulator-demo.gif)
+
 # Installation
 This instruction is written for linux. Before start make sure that you have g++ compiler installed on your machine.  
 To compile and run this project you need to install OpenGL (glfw) library
