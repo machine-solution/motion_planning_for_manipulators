@@ -1,5 +1,3 @@
-This project uses [mujoco](https://github.com/deepmind/mujoco) as simulator and library.
-
 Content
 1. [Short description](#short-description)
 1. [Installation](#installation)
@@ -24,7 +22,7 @@ Content
     1. [Interaction with mujoco](#interaction-with-mujoco)
 
 # Short description
-This repository is high-level simulator for manipulator motion planning. It can find pathes in 2D space for custom manipulators on custom scene and calculate runtime, cost of path and the number of iterations of algorithm A*. You can run set of tasks on your scene and slightly manipulate the heuristic. After solving task project can show simulation images in graphical window.
+This simulator for manipulator motion planning developed based on the [mujoco](https://github.com/deepmind/mujoco) as simulator and library. It implements variations of A* algorithm. It can find pathes in 2D space for custom manipulators on custom scene and calculate runtime, cost of path and the number of iterations of algorithm A*. You can run set of tasks on your scene and slightly manipulate the heuristic. After solving task project can show simulation images in graphical window.
 
 # Installation
 This instruction is written for linux. Before start make sure that you have g++ compiler installed on your machine.  
