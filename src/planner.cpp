@@ -64,6 +64,11 @@ bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Act
     return false;
 }
 
+void putSymbol(vector<string>& cSpace, int i, int j, char symbol)
+{
+    cSpace[g_units - 1 - j][i + g_units] = symbol;
+}
+
 vector<string> ManipulatorPlanner::configurationSpace() const
 {
     vector<string> cSpace(g_units * 2, string(g_units * 2, '.'));
@@ -72,9 +77,23 @@ vector<string> ManipulatorPlanner::configurationSpace() const
         for (int j = -g_units; j < g_units; ++j)
         {
             if (checkCollision({i, j}))
-                cSpace[g_units - 1 - j][i + g_units] = '@';
+                putSymbol(cSpace, i, j, '@');
         }
     }
+    return cSpace;
+}
+
+vector<string> ManipulatorPlanner::pathInConfigurationSpace(const JointState& start, Solution solution) const
+{
+    vector<string> cSpace = configurationSpace();
+    JointState state = start;
+    putSymbol(cSpace, state[0], state[1], 'A');
+    while (!solution.goalAchieved())
+    {
+        state.apply(solution.nextAction());
+        putSymbol(cSpace, state[0], state[1], '+');
+    }
+    putSymbol(cSpace, state[0], state[1], 'B');
     return cSpace;
 }
 

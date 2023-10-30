@@ -22,6 +22,7 @@ struct Config
     std::string tasksFilename;
     std::string runtimeFilename;
     std::string cSpaceFilename;
+    std::string pathsFolder;
     bool displayMotion;
     Algorithm algorithm;
 };
@@ -33,6 +34,7 @@ struct ModelState
     bool haveToPlan = false;
     Solution solution;
 
+    JointState start;
     JointState currentState;
     JointState goal;
     Action action;

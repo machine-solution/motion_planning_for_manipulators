@@ -1,0 +1,22 @@
+{
+	"model_filename": "model/2-dof/manipulator_8.xml",
+	"algorithm": {
+		"time_limit": 3.0,
+		"weight": 1.0,
+		"type": 1
+	},
+	"taskset": {
+		"use_random_tasks": true,
+		"task_number": 10,
+		"task_type": 0,
+		"taskset_filename": "scenaries/4_2-dof_pos_hard.scen"
+	},
+	"output": {
+		"profiling": "pyplot/0/runtime_hard_w=1.0.log",
+		"statistics": "pyplot/0/stats_hard_w=1.0.log",
+		"taskset": "scenaries/scen.log",
+		"configuration_space": "maps/c_space_8.map",
+		"paths_folder": "maps/paths_8/"
+	},
+	"display_motion": true
+}

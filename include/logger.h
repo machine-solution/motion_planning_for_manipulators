@@ -9,6 +9,7 @@ public:
     ~Logger();
 
     void prepareCspaceFile(const std::string& filename);
+    void preparePathsFolder(const std::string& filename);
     // empty filename means stdout
     void prepareMainFile(const std::string& filename);
     void prepareRuntimeFile(const std::string& filename);
@@ -21,6 +22,9 @@ public:
     void printScenLog(const Solution& solution, const JointState& startPos, const JointState& goalPos);
     void printScenLog(const Solution& solution, const JointState& startPos, double goalX, double goalY);
     void printCSpace(const vector<string>& cSpace);
+    // if number non-negative, print to file numbered by it,
+    // else use auto increment from 0
+    void printPath(const vector<string>& cSpacePath, int number = -1);
 
 private:
     void printMainLog(FILE* file, const Solution& solution);
@@ -42,6 +46,9 @@ private:
     FILE* _runtimeFile = nullptr;
     FILE* _scenFile = nullptr;
     FILE* _statsFile = nullptr;
+
+    std::string _pathsFolder = "";
+    int _incrementalPathNumber = 0;
 
     bool _runtimeHaveHeader = false;
 
