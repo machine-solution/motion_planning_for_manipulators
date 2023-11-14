@@ -123,6 +123,7 @@ void Logger::printPath(const vector<string>& cSpacePath, int number)
     FILE* pathFile = fopen(pathFilename.c_str(), "w+");
 
     printCspace(pathFile, cSpacePath);
+    fclose(pathFile);
 }
 
 void Logger::printMainLog(FILE* file, const Solution& solution)

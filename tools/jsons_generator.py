@@ -1,12 +1,15 @@
 import json
 
 output_folder = 'parameters/launch/'
-ws = [1.0, 1.1, 1.2, 1.5, 2.0, 4.0, 10.0, 30.0, 100.0]
+# ws = [1.0, 1.1, 1.2, 1.5, 2.0, 4.0, 10.0, 30.0, 100.0]
+nums = range(4, 12)
 
-for w in ws:
-    with open(output_folder + f'config_w={w}.json', "w+") as outfile:
+w = 1.0
+# for w in ws:
+for num in nums:
+    with open(output_folder + f'config_{num}.json', "w+") as outfile:
         config = {
-            "model_filename": "model/2-dof/manipulator_5.xml",
+            "model_filename": f"model/2-dof/manipulator_{num}.xml",
             "algorithm": {
                 "time_limit": 3.0,
                 "weight": w,
@@ -14,15 +17,17 @@ for w in ws:
             },
             "taskset": {
                 "use_random_tasks": True,
-                "task_number": 10000,
+                "task_number": 100,
                 "task_type": 0,
                 "taskset_filename": "scenaries/4_2-dof_pos_hard.scen"
             },
             "output": {
                 "profiling": f"pyplot/0/runtime_hard_w={w}.log",
                 "statistics": f"pyplot/0/stats_hard_w={w}.log",
-                "taskset": "scenaries/scen.log"
+                "taskset": "scenaries/scen.log",
+                "configuration_space": f"maps/c_space_{num}.map",
+                "paths_folder": f"maps/paths_{num}/"
             },
-            "display_motion": True
+            "display_motion": False
         }
         json.dump(config, outfile, indent='\t')
