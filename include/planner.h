@@ -29,6 +29,10 @@ public:
     // only for _dof = 2 now
     vector<string> configurationSpace() const;
 
+    // On C-Space print start as 'A', end as 'B', path as '+'
+    // Make copy of solution to call nextStep()
+    vector<string> pathInConfigurationSpace(const JointState& start, Solution solution) const;
+
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
     Solution planActions(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1,
         double timeLimit = 1.0, double w = 1.0);

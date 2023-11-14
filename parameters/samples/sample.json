@@ -15,7 +15,8 @@
         "profiling": "pyplot/0/runtime_hard_w=1.0.log",
         "statistics": "pyplot/0/stats_hard_w=1.0.log",
         "taskset": "scenaries/0_scen.log",
-        "configuration_space": "maps/c_space_5.map"
+        "configuration_space": "maps/c_space_5.map",
+        "paths_folder": "maps/paths_5/"
     },
     "display_motion": true
 }

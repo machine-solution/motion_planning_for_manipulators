@@ -1,0 +1,97 @@
+<mujoco>
+	<asset>
+		<material name="red"   rgba="1 0 0 1"/>
+		<material name="green" rgba="0 1 0 1"/>
+		<material name="blue"  rgba="0 0 1 1"/>
+		<material name="white" rgba="1 1 1 1"/>
+		<material name="gray"  rgba=".5 .5 .5 1"/>
+	</asset>
+
+    <worldbody>
+        <light diffuse=".5 .5 .5" pos="0 0 10" dir="0 0 -1"/>
+        <geom type="plane" size="2 2 0.1" rgba="1 1 1 1"/>
+
+        <body name="link 0" pos="0.5 0 0.1" euler="0 90 0">
+            <joint name="joint 0" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
+            <geom name="geom link 0" type="cylinder" size="0.05 0.5" material="red"/>
+            <body name="link 1" pos="0 0 1.0" euler="0 0 0">
+                <joint name="joint 1" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
+                <geom name="geom link 1" type="cylinder" size="0.05 0.5" material="red"/>
+                <site name="tip" size="0.1" pos="0 0 0.5"/>
+            </body>
+        </body>
+
+        <body name="link 0 shade" pos="0.5 0 0.1" euler="0 90 0">
+            <joint name="joint 0 shade" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
+            <geom name="geom link 0 shade" type="cylinder" size="0.05 0.5" material="green"/>
+            <body name="link 1 shade" pos="0 0 1.0" euler="0 0 0">
+                <joint name="joint 1 shade" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
+                <geom name="geom link 1 shade" type="cylinder" size="0.05 0.5" material="green"/>
+            </body>
+        </body>
+
+        <body name="obstacle 0">
+            <geom name="geom obstacle 0" type="sphere" size="0.09155754995403356" pos="0.8181105194033655 -0.7100825098286898 0.1" material="blue"/>
+        </body>
+        <body name="obstacle 1">
+            <geom name="geom obstacle 1" type="sphere" size="0.10576952262704495" pos="-1.1610005011550526 0.08392072669884287 0.1" material="blue"/>
+        </body>
+        <body name="obstacle 2">
+            <geom name="geom obstacle 2" type="sphere" size="0.16716003222450507" pos="-0.7792648913033293 0.8914153550871124 0.1" material="blue"/>
+        </body>
+        <body name="obstacle 3">
+            <geom name="geom obstacle 3" type="sphere" size="0.17406166086784924" pos="-1.3784533882763146 -0.1570101104322026 0.1" material="blue"/>
+        </body>
+        <body name="obstacle 4">
+            <geom name="geom obstacle 4" type="sphere" size="0.1051144145592004" pos="0.6789172825174297 0.9123774108466245 0.1" material="blue"/>
+        </body>
+        <body name="obstacle 5">
+            <geom name="geom obstacle 5" type="sphere" size="0.13602039864201368" pos="-1.117351127828064 -0.4376778510702355 0.1" material="blue"/>
+        </body>
+        <body name="obstacle 6">
+            <geom name="geom obstacle 6" type="sphere" size="0.11284059623151965" pos="-0.10053590386698552 1.3601516502228166 0.1" material="blue"/>
+        </body>
+        <body name="obstacle 7">
+            <geom name="geom obstacle 7" type="sphere" size="0.16556442138439958" pos="1.1555692409288683 -0.06214603639689242 0.1" material="blue"/>
+        </body>
+        <body name="obstacle 8">
+            <geom name="geom obstacle 8" type="sphere" size="0.16028417221759453" pos="-0.7283862947487094 1.0568147538507917 0.1" material="blue"/>
+        </body>
+        <body name="obstacle 9">
+            <geom name="geom obstacle 9" type="sphere" size="0.08726610527160886" pos="1.019468803710156 0.18449356757439084 0.1" material="blue"/>
+        </body>
+
+    </worldbody>
+
+    <contact>
+        <exclude body1="link 0 shade" body2="link 1 shade"/>
+        <exclude body1="link 0 shade" body2="link 0"/>
+        <exclude body1="link 0 shade" body2="link 1"/>
+        <exclude body1="link 1 shade" body2="link 0"/>
+        <exclude body1="link 1 shade" body2="link 1"/>
+        <exclude body1="link 0 shade" body2="obstacle 0"/>
+        <exclude body1="link 0 shade" body2="obstacle 1"/>
+        <exclude body1="link 0 shade" body2="obstacle 2"/>
+        <exclude body1="link 0 shade" body2="obstacle 3"/>
+        <exclude body1="link 0 shade" body2="obstacle 4"/>
+        <exclude body1="link 0 shade" body2="obstacle 5"/>
+        <exclude body1="link 0 shade" body2="obstacle 6"/>
+        <exclude body1="link 0 shade" body2="obstacle 7"/>
+        <exclude body1="link 0 shade" body2="obstacle 8"/>
+        <exclude body1="link 0 shade" body2="obstacle 9"/>
+        <exclude body1="link 1 shade" body2="obstacle 0"/>
+        <exclude body1="link 1 shade" body2="obstacle 1"/>
+        <exclude body1="link 1 shade" body2="obstacle 2"/>
+        <exclude body1="link 1 shade" body2="obstacle 3"/>
+        <exclude body1="link 1 shade" body2="obstacle 4"/>
+        <exclude body1="link 1 shade" body2="obstacle 5"/>
+        <exclude body1="link 1 shade" body2="obstacle 6"/>
+        <exclude body1="link 1 shade" body2="obstacle 7"/>
+        <exclude body1="link 1 shade" body2="obstacle 8"/>
+        <exclude body1="link 1 shade" body2="obstacle 9"/>
+    </contact>
+
+    <sensor>
+      <framepos objtype="site" objname="tip"/>
+    </sensor>
+</mujoco>

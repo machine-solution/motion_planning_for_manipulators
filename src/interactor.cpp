@@ -75,6 +75,7 @@ void Interactor::setUp(Config config)
     _cam.lookat[1] = arr_view[4];
     _cam.lookat[2] = arr_view[5];
 
+    _modelState.start = JointState(_dof, 0);
     _modelState.currentState = JointState(_dof, 0);
     _modelState.goal = JointState(_dof, 0);
     _modelState.action = Action(_dof, 0);
@@ -87,6 +88,7 @@ void Interactor::setUp(Config config)
     {
         _logger->prepareCspaceFile(_config.cSpaceFilename);
         _logger->printCSpace(_planner->configurationSpace());
+        _logger->preparePathsFolder(_config.pathsFolder);
     }
 
     if (_config.randomTasks)
@@ -149,7 +151,8 @@ void Interactor::setTask()
     _modelState.task = _taskset->getNextTask();
     if (_modelState.task->type() == TASK_STATE)
     {
-        _modelState.currentState = static_cast<const TaskState*>(_modelState.task)->start();
+        _modelState.start = static_cast<const TaskState*>(_modelState.task)->start();
+        _modelState.currentState = _modelState.start;
         _modelState.goal = static_cast<const TaskState*>(_modelState.task)->goal();
         // if correct task TODO remove
         if (!_planner->checkCollision(_modelState.currentState) && !_planner->checkCollision(_modelState.goal))
@@ -161,7 +164,8 @@ void Interactor::setTask()
     }
     else if (_modelState.task->type() == TASK_POSITION)
     {
-        _modelState.currentState = static_cast<const TaskPosition*>(_modelState.task)->start();
+        _modelState.start = static_cast<const TaskPosition*>(_modelState.task)->start();
+        _modelState.currentState = _modelState.start;
         // if correct task TODO remove
         if (!_planner->checkCollision(_modelState.currentState))
         {
@@ -202,6 +206,16 @@ void Interactor::solveTask()
         _logger->printStatsLog(_modelState.solution);
 
         _logger->printRuntimeLog(_modelState.solution);
+
+        if (_dof == 2)
+        {
+            _logger->printPath(
+                _planner->pathInConfigurationSpace(
+                    _modelState.start,
+                    _modelState.solution
+                )
+            );
+        }
         
         printf("progress %zu/%zu\n\n", _taskset->progress(), _taskset->size());
     }
@@ -296,6 +310,7 @@ Config Interactor::parseJSON(const string& filename)
     std::string tasksFilename = data["taskset"]["taskset_filename"];
     std::string runtimeFilename = data["output"]["profiling"];
     std::string cSpaceFilename = data["output"]["configuration_space"];
+    std::string pathsFolder = data["output"]["paths_folder"];
     bool displayMotion = data["display_motion"];
 
     return Config{
@@ -310,6 +325,7 @@ Config Interactor::parseJSON(const string& filename)
         tasksFilename,
         runtimeFilename,
         cSpaceFilename,
+        pathsFolder,
         displayMotion,
         algorithm
     };
