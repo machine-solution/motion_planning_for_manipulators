@@ -183,6 +183,9 @@ Solution astar(
     tree.addToOpen(startNode);
     SearchNode* currentNode = tree.extractBestNode();
 
+    // stats
+    solution.stats.pathPotentialCost = checker.heuristic(startPos);
+
     while (currentNode != nullptr)
     {
         if (checker.isGoal(currentNode->state()))

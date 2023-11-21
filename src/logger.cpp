@@ -194,15 +194,16 @@ void Logger::printRuntimeLog(FILE* file, const Solution& solution)
 
 void Logger::printStatsLogHeader(FILE* file)
 {
-    fprintf(file, "expansions,runtime,maxTreeSize,pathCost,pathFound,consideredEdges,evaluatedEdges\n");
+    fprintf(file, "expansions,runtime,maxTreeSize,pathCost,pathPotentialCost,pathFound,consideredEdges,evaluatedEdges\n");
 }
 void Logger::printStatsLog(FILE* file, const Solution& solution)
 {
-    fprintf(file, "%zu,%f,%zu,%f,%d,%zu,%zu\n",
+    fprintf(file, "%zu,%f,%zu,%f,%f,%d,%zu,%zu\n",
         solution.stats.expansions,
         solution.stats.runtime,
         solution.stats.maxTreeSize,
         solution.stats.pathCost,
+        solution.stats.pathPotentialCost,
         solution.stats.pathVerdict,
         solution.stats.consideredEdges,
         solution.stats.evaluatedEdges
