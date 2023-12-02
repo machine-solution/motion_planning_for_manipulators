@@ -1,6 +1,7 @@
 #pragma once
 
 #include "joint_state.h"
+#include "planner.h"
 
 #include <string>
 #include <memory>
@@ -54,7 +55,7 @@ public:
     TaskSet(size_t dof);
 
     void loadTasks(const std::string& filename, TaskType type);
-    void generateRandomTasks(size_t n, TaskType type, size_t seed = 12345);
+    void generateRandomTasks(size_t n, TaskType type, const ManipulatorPlanner& planner, size_t seed = 12345);
     void removeTasks();
     void restartTasks();
 

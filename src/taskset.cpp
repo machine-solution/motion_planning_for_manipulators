@@ -114,24 +114,37 @@ void TaskSet::loadTasks(const std::string& filename, TaskType type)
     }
     fclose(file);
 }
-void TaskSet::generateRandomTasks(size_t n, TaskType type, size_t seed)
+void TaskSet::generateRandomTasks(size_t n, TaskType type, const ManipulatorPlanner& planner, size_t seed)
 {
     srand(seed);
     if (type == TASK_STATE)
     {
-        for (size_t i = 0; i < n; ++i)
+        size_t created_tasks = 0;
+        while (created_tasks < n)
         {
-            _tasks.push_back(std::make_unique<TaskState>(randomState(_dof, g_units), randomState(_dof, g_units)));
+            JointState start = randomState(_dof, g_units);
+            JointState end = randomState(_dof, g_units);
+            if (!planner.checkCollision(start) && !planner.checkCollision(end))
+            {
+                _tasks.push_back(std::make_unique<TaskState>(start, end));
+                ++created_tasks;
+            }
         }
     }
     else if (type == TASK_POSITION)
     {
         const double bound = 2.0;
-        for (size_t i = 0; i < n; ++i)
+        size_t created_tasks = 0;
+        while (created_tasks < n)
         {
             double x = (double)rand() / RAND_MAX * 2 * bound - bound;
             double y = (double)rand() / RAND_MAX * 2 * bound - bound;
-            _tasks.push_back(std::make_unique<TaskPosition>(randomState(_dof, g_units), x, y));
+            JointState start = randomState(_dof, g_units);
+            if (!planner.checkCollision(start))
+            {
+                _tasks.push_back(std::make_unique<TaskPosition>(start, x, y));
+                ++created_tasks;
+            }
         }
     }
 }

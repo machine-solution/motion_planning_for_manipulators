@@ -67,7 +67,7 @@ $(OBJ)/logger.o: $(SRC)/logger.cpp $(INC)/logger.h $(INC)/solution.h $(INC)/glob
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/logger.cpp $(LIBS) -c -o $(OBJ)/logger.o
 
-$(OBJ)/taskset.o: $(SRC)/taskset.cpp $(INC)/taskset.h $(INC)/global_defs.h
+$(OBJ)/taskset.o: $(SRC)/taskset.cpp $(INC)/taskset.h $(INC)/global_defs.h $(INC)/planner.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/taskset.cpp $(LIBS) -c -o $(OBJ)/taskset.o
 
