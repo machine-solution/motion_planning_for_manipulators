@@ -109,7 +109,8 @@ To setup one scenario you need to describe all fields in json, even you don't us
     - 1 (A*)
     - 2 (Lazy A*)
 - **algorithm.heuristic.weight: (float)** You can set weight of heuristic using this field.
-- **taskset.use_random_tasks: (boolean)** Using this option you can turn on random generation of tasks. Set true if want generate taskset at random. In project there is constant seed and tasks not will be random at all, if you generate 2 random taskset with same other parameters, you will get same tasksets.
+- **taskset.use_random_tasks: (boolean)** Using this option you can turn on random generation of tasks. Set true if want generate taskset at random.
+- **taskset.random_seed: (integer)** Set random seed to generate random tasks.
 - **taskset.task_number: (integer)** You can set the number of generated random tasks if you want use random generated tasks. Doesn't affect if `taskset.use_random_tasks` = false
 - **taskset.task_type: (integer)** You can choose kind of task with this parameter. Set correct parameter even if you choose taskset file. Without this parameter impossible to determine the type of task in the file. Now available two options:
     -  0 (TASK_STATE). In this case goal is full configuration, it is set by n rotation angles, where n is the number of joints.
