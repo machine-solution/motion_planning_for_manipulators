@@ -93,7 +93,7 @@ void Interactor::setUp(Config config)
 
     if (_config.randomTasks)
     {
-        _taskset->generateRandomTasks(_config.taskNum, _config.taskType, *_planner);
+        _taskset->generateRandomTasks(_config.taskNum, _config.taskType, *_planner, _config.randomSeed);
     }
     else
     {
@@ -300,11 +300,12 @@ Config Interactor::parseJSON(const string& filename)
 
     std::string modelFilename = data["model_filename"];
     double timeLimit = data["algorithm"]["time_limit"];
-    double w = data["algorithm"]["weight"];
     Algorithm algorithm = data["algorithm"]["type"];
+    double w = data["algorithm"]["heuristic"]["weight"];
     int taskNum = data["taskset"]["task_number"];
     TaskType taskType = data["taskset"]["task_type"];
     bool randomTasks = data["taskset"]["use_random_tasks"];
+    size_t randomSeed = data["taskset"]["random_seed"];
     std::string scenFilename = data["output"]["taskset"];
     std::string statsFilename = data["output"]["statistics"];
     std::string tasksFilename = data["taskset"]["taskset_filename"];
@@ -327,6 +328,7 @@ Config Interactor::parseJSON(const string& filename)
         cSpaceFilename,
         pathsFolder,
         displayMotion,
-        algorithm
+        algorithm,
+        randomSeed,
     };
 }

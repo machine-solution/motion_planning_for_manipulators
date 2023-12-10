@@ -37,6 +37,7 @@ TEST_CASE("Integration test")
             "maps/paths_5/",
             true, // display motion
             ALG_LAZY_ASTAR, // algorithm type
+            12345,
         });
         interactor.doMainLoop();
     }

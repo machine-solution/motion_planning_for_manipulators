@@ -104,11 +104,11 @@ Now there is a script `jsons_generator.py` in `tools` folder. You can change cod
 To setup one scenario you need to describe all fields in json, even you don't use several of their. (This update of project have planned). Below is a description of the fields, each field is named as "part_1.part_2.part_3" where "part_1" is name of this field on the first level of json, "part_2" - on the second, etc
 
 - **model_filename: (string)** Use this parameter to choose scene - manipulator and obstacles. Write the path of file from the root of repository. In `models` folder you can find several scenes or create your xml-file of model.
-- **algorithm.time_limit: (float)** Use this parameter to set time bound. You can set the maximum time that planner may spend on one task. If algorithm is not found solution during this time, it returns PATH NOT FOUND verdict.
-- **algorithm.weight: (float)** You can set weight of heuristic using this field.
+- **algorithm.time_limit: (float)** Use this parameter to set time bound **in seconds**. You can set the maximum time that planner may spend on one task. If algorithm is not found solution during this time, it returns PATH NOT FOUND verdict.
 - **algorithm.type: (integer)** You can choose type of algorithm. Now available:
     - 1 (A*)
     - 2 (Lazy A*)
+- **algorithm.heuristic.weight: (float)** You can set weight of heuristic using this field.
 - **taskset.use_random_tasks: (boolean)** Using this option you can turn on random generation of tasks. Set true if want generate taskset at random. In project there is constant seed and tasks not will be random at all, if you generate 2 random taskset with same other parameters, you will get same tasksets.
 - **taskset.task_number: (integer)** You can set the number of generated random tasks if you want use random generated tasks. Doesn't affect if `taskset.use_random_tasks` = false
 - **taskset.task_type: (integer)** You can choose kind of task with this parameter. Set correct parameter even if you choose taskset file. Without this parameter impossible to determine the type of task in the file. Now available two options:

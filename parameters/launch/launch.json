@@ -2,12 +2,15 @@
     "model_filename": "model/2-dof/manipulator_5.xml",
     "algorithm": {
         "time_limit": 3.0,
-        "weight": 1.0,
-        "type": 2
+        "type": 2,
+        "heuristic": {
+            "weight": 1.0
+        }
     },
     "taskset": {
         "use_random_tasks": true,
         "task_number": 10000,
+        "random_seed": 12345,
         "task_type": 0,
         "taskset_filename": "scenaries/4_2-dof_pos_hard.scen"
     },
