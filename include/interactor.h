@@ -25,6 +25,7 @@ struct Config
     std::string pathsFolder;
     bool displayMotion;
     Algorithm algorithm;
+    size_t randomSeed;
 };
 
 struct ModelState

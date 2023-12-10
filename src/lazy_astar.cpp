@@ -52,6 +52,9 @@ Solution lazyAstar(
     tree.addToOpen(startNode);
     SearchNode* currentNode = tree.extractBestNode();
 
+    // stats
+    solution.stats.pathPotentialCost = checker.heuristic(startPos);
+
     while (currentNode != nullptr)
     {
         if (currentNode->isLazy())

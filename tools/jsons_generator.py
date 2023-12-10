@@ -12,12 +12,15 @@ for num in nums:
             "model_filename": f"model/2-dof/manipulator_{num}.xml",
             "algorithm": {
                 "time_limit": 3.0,
-                "weight": w,
-                "type": 1
+                "type": 1,
+                "heuristic": {
+                    "weight": w
+                }
             },
             "taskset": {
                 "use_random_tasks": True,
                 "task_number": 100,
+                "random_seed": 12345,
                 "task_type": 0,
                 "taskset_filename": "scenaries/4_2-dof_pos_hard.scen"
             },

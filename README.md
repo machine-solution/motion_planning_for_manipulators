@@ -93,7 +93,7 @@ To run project on server using nohup execute command:
 
 # Run with custom parameters
 
-## Where are parameters used for launch project
+## Where are the parameters used to run the project
 
 At the start of the project, several scenaries are run sequentially. One scenario described in one .json file. This files is located in the `parameters/launch` folder and only files in this folder will be used to launch scenaries. And foles in subfolder of `parameters/launch` will be used to run project. All files sorted by alphabet (by relative path from root of repository) and will be run in this strong order. Also there is a folder `parameters/samples`. There is an example of json-file in this folder. 
 
@@ -103,23 +103,24 @@ Now there is a script `jsons_generator.py` in `tools` folder. You can change cod
 
 To setup one scenario you need to describe all fields in json, even you don't use several of their. (This update of project have planned). Below is a description of the fields, each field is named as "part_1.part_2.part_3" where "part_1" is name of this field on the first level of json, "part_2" - on the second, etc
 
-- **model_filename:** Use this parameter to choose scene - manipulator and obstacles. Write the path of file from the root of repository. In `models` folder you can find several scenes or create your xml-file of model.
-- **algorithm.time_limit:** Use this parameter to set time bound. You can set the maximum time that planner may spend on one task. If algorithm is not found solution during this time, it returns PATH NOT FOUND verdict.
-- **algorithm.weight:** You can set weight of heuristic using this field.
-- **algorithm.type:** You can choose type of algorithm. Now available:
+- **model_filename: (string)** Use this parameter to choose scene - manipulator and obstacles. Write the path of file from the root of repository. In `models` folder you can find several scenes or create your xml-file of model.
+- **algorithm.time_limit: (float)** Use this parameter to set time bound **in seconds**. You can set the maximum time that planner may spend on one task. If algorithm is not found solution during this time, it returns PATH NOT FOUND verdict.
+- **algorithm.type: (integer)** You can choose type of algorithm. Now available:
     - 1 (A*)
     - 2 (Lazy A*)
-- **taskset.use_random_tasks:** Using this option you can turn on random generation of tasks. Set true if want generate taskset at random. In project there is constant seed and tasks not will be random at all, if you generate 2 random taskset with same other parameters, you will get same tasksets.
-- **taskset.task_number:** You can set the number of generated random tasks if you want use random generated tasks. Doesn't affect if `taskset.use_random_tasks` = false
-- **taskset.task_type:** You can choose kind of task with this parameter. Set correct parameter even if you choose taskset file. Without this parameter impossible to determine the type of task in the file. Now available two options:
+- **algorithm.heuristic.weight: (float)** You can set weight of heuristic using this field.
+- **taskset.use_random_tasks: (boolean)** Using this option you can turn on random generation of tasks. Set true if want generate taskset at random. In project there is constant seed and tasks not will be random at all, if you generate 2 random taskset with same other parameters, you will get same tasksets.
+- **taskset.task_number: (integer)** You can set the number of generated random tasks if you want use random generated tasks. Doesn't affect if `taskset.use_random_tasks` = false
+- **taskset.task_type: (integer)** You can choose kind of task with this parameter. Set correct parameter even if you choose taskset file. Without this parameter impossible to determine the type of task in the file. Now available two options:
     -  0 (TASK_STATE). In this case goal is full configuration, it is set by n rotation angles, where n is the number of joints.
     -  1 (TASK_POSITION). In this case goal is coordinates of end-effector, it is set by 2 floats. If you choose this option, the planner will find any goal with that end-effector coordinates.
-- **taskset.taskset_filename:** With this parameter you can set taskset if `taskset.use_random_tasks` = false in special format. You can generate it from csv using scripts `tools/clusterizer_state.py` and `tools/clusterizer_position.py` (see [tools description](#tools-description) for more information). Script depends of kind of task. And you have to set `taskset.task_type` which mathes the kind of tasks presented in taskset.
-- **output.profiling:** Set path for output file for profiling data for general functions of algorithm in csv format. 
-- **output.statistics:** Set path for output file for data about solutions of tasks: the number of expansions, runtime, cost of path etc in csv format.
-- **output.taskset:** Set path for output file for data about tasks: start configuration, goal, difficulty (not really good), cost of path, runtime in csv format. You can use this file and script `tools/clusterizer_*.py` to convert this data to input format of taskset. Using this output you can store random generated taskset.
-- **output.configuration_space:** Set path for output file for dump C-Space if dof = 2. Otherwise not affected.
-- **display_motion:** If true, after plannig in success case programm will show animation of manipulator movements from start position to goal. Set true for demonstration and false for measurement of algorithm indicators. 
+- **taskset.taskset_filename: (string)** With this parameter you can set taskset if `taskset.use_random_tasks` = false in special format. You can generate it from csv using scripts `tools/clusterizer_state.py` and `tools/clusterizer_position.py` (see [tools description](#tools-description) for more information). Script depends of kind of task. And you have to set `taskset.task_type` which mathes the kind of tasks presented in taskset.
+- **output.profiling: (string)** Set path for output file for profiling data for general functions of algorithm in csv format. 
+- **output.statistics: (string)** Set path for output file for data about solutions of tasks: the number of expansions, runtime, cost of path etc in csv format.
+- **output.taskset: (string)** Set path for output file for data about tasks: start configuration, goal, difficulty (not really good), cost of path, runtime in csv format. You can use this file and script `tools/clusterizer_*.py` to convert this data to input format of taskset. Using this output you can store random generated taskset.
+- **output.configuration_space: (string)** Set path for output file for dump C-Space if dof = 2. Otherwise not affected.
+- **output.paths_folder: (string)** Set folder to output found by manipulator paths on C-Space if dof = 2. In this folder will be created n files named "path_n", where n - is number of task starting from 0.
+- **display_motion: (boolean)** If true, after plannig in success case programm will show animation of manipulator movements from start position to goal. Set true for demonstration and false for measurement of algorithm indicators. 
 
 # Tools description
 
