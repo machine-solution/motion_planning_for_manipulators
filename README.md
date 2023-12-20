@@ -140,7 +140,7 @@ This script has the purpose to convert output taskset in csv format to input tas
 
 # Project description
 
-This chapter may no longer be relevant and soon I add pdf-file with description of problem and general concept of project.
+This chapter may no longer be relevant, but there is a project description in [this file](demo/Motion_Planning_for_manipulators.pdf)
 
 ## Problem description
 We have a manipulator in space with obstacles and two positions of this manipulator: start and finish. It is required to plan the actions using which the manipulator will come from the start position to the finish.
