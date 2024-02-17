@@ -29,3 +29,13 @@ bool Solution::goalAchieved() const
 {
     return _nextActionId >= _solveActions.size();
 }
+
+Solution Solution::reversed() const
+{
+    Solution reversed = Solution(_primitiveActions, _zeroAction);
+    for (int i = _solveActions.size() - 1; i >= 0; --i)
+    {
+        reversed.addAction(_primitiveActions.size() - 1 - _solveActions[i]);
+    }
+    return reversed;
+}

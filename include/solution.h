@@ -34,13 +34,15 @@ public:
 
     bool goalAchieved() const;
 
+    Solution reversed() const;
+
     Stats stats;
 
     vector<ProfileInfo> plannerProfile;
     vector<ProfileInfo> searchTreeProfile;
 
 private:
-    vector<Action> _primitiveActions;
+    vector<Action> _primitiveActions; // from Planner
     Action _zeroAction;
     vector<size_t> _solveActions; // vector id-s of primitiveActions
     size_t _nextActionId;

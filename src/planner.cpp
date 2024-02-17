@@ -272,7 +272,7 @@ Solution ManipulatorPlanner::lazyAstarPlanning(
     return solution;
 }
 
-Solution ManipulatorPlanner::preprocPlanning(const JointState &startPos, const JointState &goalPos)
+Solution ManipulatorPlanner::preprocPlanning(const JointState& startPos, const JointState& goalPos)
 {
     // TODO implement
     return Solution(_primitiveActions, _zeroAction);

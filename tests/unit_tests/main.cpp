@@ -190,3 +190,50 @@ TEST_CASE("Planner primitive actions with opposite indexes are reversed")
         CHECK(reversed);
     }
 }
+
+// test empty plane scenario
+void testReversePlanningFromTo(JointState a, JointState b, int alg)
+{
+    CHECK(a.dof() == b.dof());
+    ManipulatorPlanner planner(a.dof());
+    Solution solution = planner.planActions(b, a, alg).reversed();
+    while (!solution.goalAchieved())
+    {
+        a.apply(solution.nextAction());
+    }
+    CHECK(a == b);
+}
+
+// test row of empty plane scenarios
+void testStressReversePlanning(int dof, int alg)
+{
+    srand(57283);
+    ManipulatorPlanner planner(dof);
+    JointState a(dof, 0);
+    JointState b = randomState(dof);
+    for (size_t i = 0; i < 20; ++i)
+    {
+        Solution solution = planner.planActions(b, a, alg).reversed();
+        while (!solution.goalAchieved())
+        {
+            a.apply(solution.nextAction());
+        }
+        CHECK(a == b);
+        b = randomState(dof);
+    }
+}
+
+TEST_CASE("Planner reversed solution on empty plane")
+{
+    testReversePlanningFromTo({0, 0}, {0, 0}, ALG_LINEAR);
+    testReversePlanningFromTo({0, 0}, {1, 1}, ALG_ASTAR);
+    testReversePlanningFromTo({1, 2}, {3, -4}, ALG_LAZY_ASTAR);
+    testReversePlanningFromTo({5, -3}, {-1, -3}, ALG_LINEAR);
+    testReversePlanningFromTo({5}, {-1}, ALG_ASTAR);
+    testReversePlanningFromTo({5, 5, 5}, {-1, -1, -1}, ALG_LAZY_ASTAR);
+    testReversePlanningFromTo({5, 5, 5, 5}, {-1, -1, -1, -1}, ALG_LINEAR);
+    testStressReversePlanning(1, ALG_ASTAR);
+    testStressReversePlanning(2, ALG_LAZY_ASTAR);
+    testStressReversePlanning(3, ALG_LINEAR);
+    testStressReversePlanning(4, ALG_ASTAR);
+}
