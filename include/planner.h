@@ -3,7 +3,6 @@
 #include "astar.h"
 #include "joint_state.h"
 #include "lazy_astar.h"
-#include "preprocess.h"
 #include "solution.h"
 #include "utils.h"
 #include <mujoco/mujoco.h>
@@ -14,6 +13,13 @@ enum Algorithm
     ALG_ASTAR,
     ALG_LAZY_ASTAR,
     ALG_MAX,
+};
+
+class PreprocData
+{
+public:
+    PreprocData();
+private:
 };
 
 class ManipulatorPlanner : public Profiler
@@ -41,6 +47,8 @@ public:
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
     Solution planActions(const JointState& startPos, double goalX, double goalY, int alg = ALG_ASTAR,
         double timeLimit = 1.0, double w = 1.0);
+    
+    void preprocess();
 
     // this method used that edges of model are cylinders
     // and that manipulator has geom numbers 1 .. _dof inclusively
@@ -77,9 +85,15 @@ private:
         float weight, double timeLimit
     );
 
+    Solution preprocPlanning(
+        const JointState& startPos, const JointState& goalPos
+    );
+
     vector<Action> _primitiveActions;
     Action _zeroAction;
     size_t _dof;
+
+    PreprocData _preprocData;
 
     mutable mjModel* _model; // model for collision checks
     mutable mjData* _data; // data for collision checks and calculations

@@ -6,6 +6,9 @@
 
 #include <stdio.h>
 
+
+PreprocData::PreprocData() {}
+
 ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
 {
     _dof = dof;
@@ -141,6 +144,11 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, double goal
     }
 }
 
+void ManipulatorPlanner::preprocess()
+{
+    // TODO implement
+}
+
 double ManipulatorPlanner::modelLength() const
 {
     static double len = 0;
@@ -256,6 +264,12 @@ Solution ManipulatorPlanner::lazyAstarPlanning(
     Solution solution = astar::lazyAstar(startPos, checker, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
+}
+
+Solution ManipulatorPlanner::preprocPlanning(const JointState &startPos, const JointState &goalPos)
+{
+    // TODO implement
+    return Solution(_primitiveActions, _zeroAction);
 }
 
 // Checkers
