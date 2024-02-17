@@ -171,3 +171,22 @@ TEST_CASE("Recursively search json files in directory")
     std::vector<std::string> result = jsonFilesInDirectory("tests/unit_tests/samples/dir");
     CHECK(answer == result);
 }
+
+TEST_CASE("Planner primitive actions with opposite indexes are reversed")
+{
+    int dof = 4;
+    ManipulatorPlanner planner(dof);
+    const vector<Action>& actions = planner.getPrimitiveActions();
+    printf("size %zu\n", actions.size());
+    for (int i = 0; i < actions.size(); ++i)
+    {
+        Action current = actions[i];
+        Action opposite = actions[actions.size() - i - 1];
+        bool reversed = true;
+        for (int j = 0; j < dof; ++j)
+        {
+            reversed &= current[j] == -opposite[j];
+        }
+        CHECK(reversed);
+    }
+}

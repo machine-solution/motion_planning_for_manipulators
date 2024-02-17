@@ -178,6 +178,12 @@ std::pair<double, double> ManipulatorPlanner::sitePosition(const JointState& sta
     return {_data->site_xpos[0], _data->site_xpos[1]};
 }
 
+const vector<Action>& ManipulatorPlanner::getPrimitiveActions() const
+{
+    return _primitiveActions;
+}
+
+// opposite actions must be reversed
 void ManipulatorPlanner::initPrimitiveActions()
 {
     _zeroAction = Action(_dof, 0);
@@ -187,7 +193,7 @@ void ManipulatorPlanner::initPrimitiveActions()
     for (int i = 0; i < _dof; ++i)
     {
         _primitiveActions[i][i] = 1;
-        _primitiveActions[i + _dof][i] = -1;
+        _primitiveActions[2 * _dof - i - 1][i] = -1;
     }
 }
 
@@ -207,7 +213,7 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
             }
             else if (currentPos[i] > goalPos[i]) // - eps
             {
-                t = i + _dof;
+                t = 2 * _dof - i - 1;
             }
 
             if (checkCollisionAction(currentPos, _primitiveActions[t]))

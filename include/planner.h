@@ -62,6 +62,8 @@ public:
     const int units = g_units;
     const double eps = g_eps;
 
+    const vector<Action>& getPrimitiveActions() const;
+
 private:
     void initPrimitiveActions();
 
