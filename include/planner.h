@@ -1,8 +1,9 @@
 #pragma once
 
-#include "joint_state.h"
 #include "astar.h"
+#include "joint_state.h"
 #include "lazy_astar.h"
+#include "preprocess.h"
 #include "solution.h"
 #include "utils.h"
 #include <mujoco/mujoco.h>
@@ -114,5 +115,19 @@ private:
         ManipulatorPlanner* _planner;
         double _goalX;
         double _goalY;
+    };
+
+    class PreprocChecker : public IPreprocChecker
+    {
+    public:
+        PreprocChecker(ManipulatorPlanner* planner);
+
+        bool isCorrect(const JointState& state, const Action& action) override;
+        bool isCorrect(const JointState& state) override;
+        CostType costAction(const JointState& state, const Action& action) override;
+        const std::vector<Action>& getActions() override;
+        const Action& getZeroAction() override;
+    protected:
+        ManipulatorPlanner* _planner;
     };
 };

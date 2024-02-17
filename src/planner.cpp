@@ -365,3 +365,40 @@ CostType ManipulatorPlanner::AstarCheckerSite::heuristic(const JointState& state
         return sqrt(dx * dx + dy * dy) / _planner->maxActionLength();
     }
 }
+
+
+// checker for preprocessing
+
+
+ManipulatorPlanner::PreprocChecker::PreprocChecker(ManipulatorPlanner* planner)
+{
+    _planner = planner;
+}
+
+bool ManipulatorPlanner::PreprocChecker::isCorrect(const JointState& state, const Action& action)
+{
+    return state.applied(action).isCorrect() && (!_planner->checkCollisionAction(state, action));
+}
+bool ManipulatorPlanner::PreprocChecker::isCorrect(const JointState& state)
+{
+    return !_planner->checkCollision(state);
+}
+CostType ManipulatorPlanner::PreprocChecker::costAction(const JointState& state, const Action& action)
+{
+    if (state.lastAction() == nullptr)
+    {
+        return action.abs();
+    }
+    else
+    {
+        return action.abs() + g_weightSmoothness * manhattanDistance(action, *state.lastAction());
+    }
+}
+const std::vector<Action>& ManipulatorPlanner::PreprocChecker::getActions()
+{
+    return _planner->_primitiveActions;
+}
+const Action& ManipulatorPlanner::PreprocChecker::getZeroAction()
+{
+    return _planner->_zeroAction;
+}
