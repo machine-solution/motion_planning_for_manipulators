@@ -116,18 +116,4 @@ private:
         double _goalX;
         double _goalY;
     };
-
-    class PreprocChecker : public IPreprocChecker
-    {
-    public:
-        PreprocChecker(ManipulatorPlanner* planner);
-
-        bool isCorrect(const JointState& state, const Action& action) override;
-        bool isCorrect(const JointState& state) override;
-        CostType costAction(const JointState& state, const Action& action) override;
-        const std::vector<Action>& getActions() override;
-        const Action& getZeroAction() override;
-    protected:
-        ManipulatorPlanner* _planner;
-    };
 };
