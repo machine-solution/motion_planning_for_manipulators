@@ -5,9 +5,13 @@
 #include <time.h>
 
 #include <stdio.h>
+#include <queue>
 
 
-PreprocData::PreprocData() {}
+PreprocData::PreprocData()
+{
+    isPreprocessed = false;
+}
 
 ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
 {
@@ -104,6 +108,12 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, const Joint
 {
     clearAllProfiling(); // reset profiling
 
+    if (_dof == 2) // experiment TODO
+    {
+        preprocess();
+        return preprocPlanning(startPos, goalPos);
+    }
+
     if (checkCollision(startPos) || checkCollision(goalPos))
     {
         Solution solution(_primitiveActions, _zeroAction);
@@ -146,7 +156,53 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, double goal
 
 void ManipulatorPlanner::preprocess()
 {
-    // TODO implement
+    startProfiling();
+    if (isPreprocessed())
+    {
+        stopProfiling();
+        return;
+    }
+
+    _preprocData.homeState = sampleFreeState(10);
+    if (_preprocData.homeState.dof() != _dof)
+    {
+        stopProfiling();
+        return;
+    }
+
+    std::queue<JointState> open;
+    open.push(_preprocData.homeState);
+
+    while (!open.empty())
+    {
+        JointState state = open.front();
+        open.pop();
+        for (int i = 0; i < _primitiveActions.size(); ++i)
+        {
+            JointState newState = state.applied(_primitiveActions[i]);
+            if (
+                newState.isCorrect()
+                &&
+                _preprocData.actionsMap.find(newState) == _preprocData.actionsMap.end()
+                &&
+                !checkCollisionAction(state, _primitiveActions[i])
+            )
+            {
+                // reversed action
+                _preprocData.actionsMap[newState] = _primitiveActions.size() - 1 - i;
+                open.push(newState);
+                // printf("Size of map: %zu of %f\n", _preprocData.actionsMap.size(), pow(2 * g_units, _dof));
+            }
+        }
+    }
+    
+    _preprocData.isPreprocessed = true;
+    stopProfiling();
+}
+
+bool ManipulatorPlanner::isPreprocessed() const
+{
+    return _preprocData.isPreprocessed;
 }
 
 double ManipulatorPlanner::modelLength() const
@@ -194,6 +250,23 @@ void ManipulatorPlanner::initPrimitiveActions()
     {
         _primitiveActions[i][i] = 1;
         _primitiveActions[2 * _dof - i - 1][i] = -1;
+    }
+}
+
+JointState ManipulatorPlanner::sampleFreeState(int attempts)
+{
+    JointState state = randomState(_dof);
+    while (attempts-- > 0 && checkCollision(state))
+    {
+        state = randomState(_dof);
+    }
+    if (attempts < 0)
+    {
+        return JointState(0, 0);
+    }
+    else
+    {
+        return state;
     }
 }
 
@@ -274,8 +347,32 @@ Solution ManipulatorPlanner::lazyAstarPlanning(
 
 Solution ManipulatorPlanner::preprocPlanning(const JointState& startPos, const JointState& goalPos)
 {
-    // TODO implement
-    return Solution(_primitiveActions, _zeroAction);
+    if (!isPreprocessed())
+    {
+        return Solution(_primitiveActions, _zeroAction);
+    }
+    Solution startToHome(_primitiveActions, _zeroAction);
+    JointState state = startPos;
+    // TODO use other function
+    // TODO infinity loop
+    while (state != _preprocData.homeState)
+    {
+        size_t i = _preprocData.actionsMap[state];
+        startToHome.addAction(_preprocData.actionsMap[state]);
+        state.apply(_primitiveActions[i]);
+    }
+    Solution goalToHome(_primitiveActions, _zeroAction);
+    state = goalPos;
+    while (state != _preprocData.homeState)
+    {
+        size_t i = _preprocData.actionsMap[state];
+        goalToHome.addAction(_preprocData.actionsMap[state]);
+        state.apply(_primitiveActions[i]);
+    }
+    startToHome.add(goalToHome.reversed());
+    startToHome.stats.pathVerdict = PATH_FOUND;
+    startToHome.plannerProfile = getNamedProfileInfo();
+    return startToHome;
 }
 
 // Checkers

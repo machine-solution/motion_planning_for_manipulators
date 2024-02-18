@@ -36,6 +36,8 @@ public:
 
     Solution reversed() const;
 
+    void add(const Solution& solution);
+
     Stats stats;
 
     vector<ProfileInfo> plannerProfile;

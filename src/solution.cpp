@@ -39,3 +39,17 @@ Solution Solution::reversed() const
     }
     return reversed;
 }
+
+void Solution::add(const Solution &solution)
+{
+    // TODO implement
+    // if (_primitiveActions != solution._primitiveActions)
+    // {
+    //     printf("Solution::add: different primitive actions\n");
+    //     return;
+    // }
+    for (int i = 0; i < solution._solveActions.size(); ++i)
+    {
+        addAction(solution._solveActions[i]);
+    }
+}

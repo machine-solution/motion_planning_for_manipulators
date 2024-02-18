@@ -7,6 +7,8 @@
 #include "utils.h"
 #include <mujoco/mujoco.h>
 
+#include <map>
+
 enum Algorithm
 {
     ALG_LINEAR,
@@ -19,7 +21,10 @@ class PreprocData
 {
 public:
     PreprocData();
-private:
+
+    std::map<JointState, size_t> actionsMap; // state -> action's index
+    JointState homeState;
+    bool isPreprocessed = false;
 };
 
 class ManipulatorPlanner : public Profiler
@@ -49,6 +54,7 @@ public:
         double timeLimit = 1.0, double w = 1.0);
     
     void preprocess();
+    bool isPreprocessed() const;
 
     // this method used that edges of model are cylinders
     // and that manipulator has geom numbers 1 .. _dof inclusively
@@ -66,6 +72,8 @@ public:
 
 private:
     void initPrimitiveActions();
+
+    JointState sampleFreeState(int attempts = 0);
 
     Solution linearPlanning(const JointState& startPos, const JointState& goalPos);
 

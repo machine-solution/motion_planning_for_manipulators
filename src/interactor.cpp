@@ -46,6 +46,7 @@ void Interactor::setUp(Config config)
     mjData* dCopy = mj_makeData(mCopy);
 
     _planner = new ManipulatorPlanner(_dof, mCopy, dCopy);
+    // _planner->preprocess(); TODO return
     _logger = new Logger(_dof);
     _taskset = new TaskSet(_dof);
 

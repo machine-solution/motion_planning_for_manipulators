@@ -242,7 +242,10 @@ void JointState::setCacheXY(double x, double y) const
 
 void JointState::normalize()
 {
-    _joints[0] = trueMod(_joints[0], g_units);
+    if (_dof > 0)
+    {
+        _joints[0] = trueMod(_joints[0], g_units);
+    }
 }
 
 JointState randomState(size_t dof, int units)
