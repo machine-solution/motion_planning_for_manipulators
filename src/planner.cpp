@@ -111,6 +111,7 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, const Joint
     if (_dof == 2) // experiment TODO
     {
         preprocess();
+        printf("DEBUG LOG: start finding path by preprocessed data\n");
         return preprocPlanning(startPos, goalPos);
     }
 
