@@ -376,6 +376,8 @@ Solution ManipulatorPlanner::preprocPlanning(const JointState& startPos, const J
         state.apply(_primitiveActions[i]);
     }
 
+    printf("DEBUG LOG: preprocessed solution found\n");
+
     Solution solution(_primitiveActions, _zeroAction);
     solution.add(startToHome);
     solution.add(goalToHome.reversed());
@@ -390,6 +392,8 @@ Solution ManipulatorPlanner::preprocPlanning(const JointState& startPos, const J
     {
         solution.stats.pathCost += solution[i].abs(); // cost action crutch
     }
+
+    printf("DEBUG LOG: preprocessed solution's stats filled\n");
     return solution;
 }
 
