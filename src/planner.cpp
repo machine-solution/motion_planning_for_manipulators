@@ -108,12 +108,12 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, const Joint
 {
     clearAllProfiling(); // reset profiling
 
-    // if (_dof == 2) // experiment TODO
-    // {
-    //     preprocess();
-    //     printf("DEBUG LOG: start finding path by preprocessed data\n");
-    //     return preprocPlanning(startPos, goalPos);
-    // }
+    if (_dof == 2) // experiment TODO
+    {
+        preprocess();
+        printf("DEBUG LOG: start finding path by preprocessed data\n");
+        return preprocPlanning(startPos, goalPos);
+    }
 
     if (checkCollision(startPos) || checkCollision(goalPos))
     {
