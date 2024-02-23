@@ -53,3 +53,17 @@ void Solution::add(const Solution &solution)
         addAction(solution._solveActions[i]);
     }
 }
+
+size_t Solution::size() const
+{
+    return _solveActions.size();
+}
+
+Action Solution::operator[](size_t i) const
+{
+    if (i >= size())
+    {
+        return _zeroAction;
+    }
+    return _primitiveActions[_solveActions[i]];
+}

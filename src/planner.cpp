@@ -156,6 +156,7 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, double goal
 
 void ManipulatorPlanner::preprocess()
 {
+    printf("DEBUG LOG: preprocessing started\n");
     startProfiling();
     if (isPreprocessed())
     {
@@ -195,6 +196,7 @@ void ManipulatorPlanner::preprocess()
             }
         }
     }
+    printf("DEBUG LOG: preprocessing really comleted\n");
     
     _preprocData.isPreprocessed = true;
     stopProfiling();
@@ -351,6 +353,10 @@ Solution ManipulatorPlanner::preprocPlanning(const JointState& startPos, const J
     {
         return Solution(_primitiveActions, _zeroAction);
     }
+
+    // start timer
+    clock_t start = clock();
+
     Solution startToHome(_primitiveActions, _zeroAction);
     JointState state = startPos;
     // TODO use other function
@@ -369,10 +375,22 @@ Solution ManipulatorPlanner::preprocPlanning(const JointState& startPos, const J
         goalToHome.addAction(_preprocData.actionsMap[state]);
         state.apply(_primitiveActions[i]);
     }
-    startToHome.add(goalToHome.reversed());
-    startToHome.stats.pathVerdict = PATH_FOUND;
-    startToHome.plannerProfile = getNamedProfileInfo();
-    return startToHome;
+
+    Solution solution(_primitiveActions, _zeroAction);
+    solution.add(startToHome);
+    solution.add(goalToHome.reversed());
+
+    // end timer
+    clock_t end = clock();
+    solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+
+    solution.stats.pathVerdict = PATH_FOUND;
+    solution.plannerProfile = getNamedProfileInfo();
+    for (size_t i = 0; i < solution.size(); ++i)
+    {
+        solution.stats.pathCost += solution[i].abs(); // cost action crutch
+    }
+    return solution;
 }
 
 // Checkers

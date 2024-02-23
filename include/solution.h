@@ -38,6 +38,9 @@ public:
 
     void add(const Solution& solution);
 
+    size_t size() const;
+    Action operator[](size_t i) const;
+
     Stats stats;
 
     vector<ProfileInfo> plannerProfile;
