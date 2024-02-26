@@ -54,7 +54,7 @@ bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Act
         _data->qpos[i] = start.rad(i);
     }
 
-    int jump = 8;
+    int jump = g_unitSize / g_checkJumps;
     for (size_t t = jump; t <= g_unitSize; t += jump)
     {
         for (size_t i = 0; i < _dof; ++i)
