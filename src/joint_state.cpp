@@ -190,6 +190,12 @@ bool JointState::isCorrect() const
     return minJoint() >= -g_units && maxJoint() < g_units;
 }
 
+size_t JointState::byteSize() const
+{
+    return _joints.size() * sizeof(int) + sizeof(_dof) + sizeof(Action*) +
+           sizeof(_cacheX) + sizeof(_cacheY) + sizeof(_hasCacheXY);
+}
+
 int manhattanDistance(const JointState& state1, const JointState& state2)
 {
     int dist = 0;

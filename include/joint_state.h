@@ -61,6 +61,8 @@ public:
 
     bool isCorrect() const;
 
+    size_t byteSize() const;
+
     bool hasCacheXY() const;
     double cacheX() const;
     double cacheY() const;

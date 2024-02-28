@@ -13,6 +13,26 @@ PreprocData::PreprocData()
     isPreprocessed = false;
 }
 
+size_t PreprocData::byteSize() const
+{
+    size_t mapSize = actionsMap.size() * sizeof(size_t);
+    if (!actionsMap.empty())
+    {
+        mapSize += actionsMap.size() * actionsMap.begin()->first.byteSize();
+    }
+    return mapSize + sizeof(isPreprocessed) + homeState.byteSize();
+}
+
+size_t PreprocData::kbyteSize() const
+{
+    return byteSize() / (1024);
+}
+
+size_t PreprocData::mbyteSize() const
+{
+    return byteSize() / (1024 * 1024);
+}
+
 ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
 {
     _dof = dof;
@@ -108,10 +128,11 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, const Joint
 {
     clearAllProfiling(); // reset profiling
 
-    if (_dof == 2) // experiment TODO
+    if (true) // experiment TODO
     {
         preprocess();
         printf("DEBUG LOG: start finding path by preprocessed data\n");
+        printf("DEBUG LOG: %zu KBytes used for preproc\n", _preprocData.kbyteSize());
         return preprocPlanning(startPos, goalPos);
     }
 
@@ -386,6 +407,7 @@ Solution ManipulatorPlanner::preprocPlanning(const JointState& startPos, const J
     // end timer
     clock_t end = clock();
     solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+    solution.stats.byteSize = _preprocData.byteSize();
 
     solution.stats.pathVerdict = PATH_FOUND;
     solution.plannerProfile = getNamedProfileInfo();

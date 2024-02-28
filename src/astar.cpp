@@ -50,6 +50,11 @@ bool SearchNode::isLazy() const
     return _isLazy;
 }
 
+size_t SearchNode::byteSize() const
+{
+    return _state.byteSize() + sizeof(_g) * 3 + sizeof(_stepNum) + sizeof(_parent);
+}
+
 bool SearchNode::operator<(const SearchNode& sn)
 {
     return f() == sn.f() ? -g() < -sn.g() : f() < sn.f();
@@ -211,7 +216,7 @@ Solution astar(
         tree.addToClosed(currentNode);
         currentNode = tree.extractBestNode();
         // count statistic
-        solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
+        solution.stats.byteSize = std::max(solution.stats.byteSize, tree.size());
         ++solution.stats.expansions;
     }
 
@@ -225,6 +230,7 @@ Solution astar(
     }
     else if (solution.stats.pathVerdict == PATH_FOUND)
     {
+        solution.stats.byteSize *= currentNode->byteSize(); // max tree size * node bytes
         solution.stats.pathCost = currentNode->g();
         vector<size_t> actions;
         while (currentNode->parent() != nullptr)

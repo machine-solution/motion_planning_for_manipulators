@@ -22,6 +22,10 @@ class PreprocData
 public:
     PreprocData();
 
+    size_t byteSize() const;
+    size_t kbyteSize() const;
+    size_t mbyteSize() const;
+
     std::map<JointState, size_t> actionsMap; // state -> action's index
     JointState homeState;
     bool isPreprocessed = false;

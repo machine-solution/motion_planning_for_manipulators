@@ -35,6 +35,8 @@ public:
     void updateLazy(bool newLazy);
     bool isLazy() const;
 
+    size_t byteSize() const;
+
     // sort by priority
     bool operator<(const SearchNode& sn);
 

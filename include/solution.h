@@ -15,7 +15,7 @@ struct Stats
     size_t expansions = 0;
     CostType pathCost = 0;
     CostType pathPotentialCost = 0;
-    size_t maxTreeSize = 0;
+    size_t byteSize = 0;
     int pathVerdict = PATH_NOT_FOUND;
     size_t evaluatedEdges = 0;
     size_t consideredEdges = 0;
