@@ -92,6 +92,8 @@ void Interactor::setUp(Config config)
         _logger->preparePathsFolder(_config.pathsFolder);
     }
 
+    _planner->preprocess(_config.preprocess, _config.clusters);
+
     if (_config.randomTasks)
     {
         _taskset->generateRandomTasks(_config.taskNum, _config.taskType, *_planner, _config.randomSeed);
@@ -313,6 +315,8 @@ Config Interactor::parseJSON(const string& filename)
     std::string runtimeFilename = data["output"]["profiling"];
     std::string cSpaceFilename = data["output"]["configuration_space"];
     std::string pathsFolder = data["output"]["paths_folder"];
+    Preprocess preprocess = data["preprocess"]["type"];
+    int clusters = data["preprocess"]["clusters"];
     bool displayMotion = data["display_motion"];
 
     return Config{
@@ -330,6 +334,8 @@ Config Interactor::parseJSON(const string& filename)
         pathsFolder,
         displayMotion,
         algorithm,
+        preprocess,
+        clusters,
         randomSeed,
     };
 }

@@ -20,7 +20,7 @@ size_t PreprocData::byteSize() const
     {
         mapSize += actionsMap.size() * actionsMap.begin()->first.byteSize();
     }
-    return mapSize + sizeof(isPreprocessed) + homeState.byteSize();
+    return mapSize + sizeof(isPreprocessed) + sizeof(preprocRuntime) + homeState.byteSize();
 }
 
 size_t PreprocData::kbyteSize() const
@@ -124,17 +124,11 @@ vector<string> ManipulatorPlanner::pathInConfigurationSpace(const JointState& st
     return cSpace;
 }
 
-Solution ManipulatorPlanner::planActions(const JointState& startPos, const JointState& goalPos, int alg, double timeLimit, double w)
+Solution ManipulatorPlanner::planActions(
+    const JointState& startPos, const JointState& goalPos,
+    int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
-
-    if (true) // experiment TODO
-    {
-        preprocess();
-        printf("DEBUG LOG: start finding path by preprocessed data\n");
-        printf("DEBUG LOG: %zu KBytes used for preproc\n", _preprocData.kbyteSize());
-        return preprocPlanning(startPos, goalPos);
-    }
 
     if (checkCollision(startPos) || checkCollision(goalPos))
     {
@@ -150,12 +144,16 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, const Joint
         return astarPlanning(startPos, goalPos, w, timeLimit);
     case ALG_LAZY_ASTAR:
         return lazyAstarPlanning(startPos, goalPos, w, timeLimit);
+    case ALG_PREPROC_CLUSTERS:
+        return preprocClustersPlanning(startPos, goalPos, w, timeLimit);
     default:
         return Solution(_primitiveActions, _zeroAction);
     }
 }
 
-Solution ManipulatorPlanner::planActions(const JointState& startPos, double goalX, double goalY, int alg, double timeLimit, double w)
+Solution ManipulatorPlanner::planActions(
+    const JointState& startPos, double goalX, double goalY,
+    int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
 
@@ -176,57 +174,36 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, double goal
     }
 }
 
-void ManipulatorPlanner::preprocess()
+void ManipulatorPlanner::preprocess(int pre, int clusters)
 {
-    printf("DEBUG LOG: preprocessing started\n");
+    switch (pre)
+    {
+    case PRE_NONE:
+        return;
+    case PRE_CLUSTERS:
+        preprocessClusters(clusters);
+        return;
+    default:
+        return;
+    }
+}
+
+bool ManipulatorPlanner::isPreprocessed() const
+{
+    return _preprocData.isPreprocessed;
+}
+
+void ManipulatorPlanner::preprocessClusters(int clusters)
+{
+    // TODO implement
     startProfiling();
     if (isPreprocessed())
     {
         stopProfiling();
         return;
     }
-
-    _preprocData.homeState = sampleFreeState(10);
-    if (_preprocData.homeState.dof() != _dof)
-    {
-        stopProfiling();
-        return;
-    }
-
-    std::queue<JointState> open;
-    open.push(_preprocData.homeState);
-
-    while (!open.empty())
-    {
-        JointState state = open.front();
-        open.pop();
-        for (int i = 0; i < _primitiveActions.size(); ++i)
-        {
-            JointState newState = state.applied(_primitiveActions[i]);
-            if (
-                newState.isCorrect()
-                &&
-                _preprocData.actionsMap.find(newState) == _preprocData.actionsMap.end()
-                &&
-                !checkCollisionAction(state, _primitiveActions[i])
-            )
-            {
-                // reversed action
-                _preprocData.actionsMap[newState] = _primitiveActions.size() - 1 - i;
-                open.push(newState);
-                // printf("Size of map: %zu of %f\n", _preprocData.actionsMap.size(), pow(2 * g_units, _dof));
-            }
-        }
-    }
-    printf("DEBUG LOG: preprocessing really comleted\n");
-    
     _preprocData.isPreprocessed = true;
     stopProfiling();
-}
-
-bool ManipulatorPlanner::isPreprocessed() const
-{
-    return _preprocData.isPreprocessed;
 }
 
 double ManipulatorPlanner::modelLength() const
@@ -369,55 +346,13 @@ Solution ManipulatorPlanner::lazyAstarPlanning(
     return solution;
 }
 
-Solution ManipulatorPlanner::preprocPlanning(const JointState& startPos, const JointState& goalPos)
+Solution ManipulatorPlanner::preprocClustersPlanning(
+    const JointState& startPos, const JointState& goalPos,
+    float weight, double timeLimit
+)
 {
-    if (!isPreprocessed())
-    {
-        return Solution(_primitiveActions, _zeroAction);
-    }
-
-    // start timer
-    clock_t start = clock();
-
-    Solution startToHome(_primitiveActions, _zeroAction);
-    JointState state = startPos;
-    // TODO use other function
-    // TODO infinity loop
-    while (state != _preprocData.homeState)
-    {
-        size_t i = _preprocData.actionsMap[state];
-        startToHome.addAction(_preprocData.actionsMap[state]);
-        state.apply(_primitiveActions[i]);
-    }
-    Solution goalToHome(_primitiveActions, _zeroAction);
-    state = goalPos;
-    while (state != _preprocData.homeState)
-    {
-        size_t i = _preprocData.actionsMap[state];
-        goalToHome.addAction(_preprocData.actionsMap[state]);
-        state.apply(_primitiveActions[i]);
-    }
-
-    printf("DEBUG LOG: preprocessed solution found\n");
-
-    Solution solution(_primitiveActions, _zeroAction);
-    solution.add(startToHome);
-    solution.add(goalToHome.reversed());
-
-    // end timer
-    clock_t end = clock();
-    solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
-    solution.stats.byteSize = _preprocData.byteSize();
-
-    solution.stats.pathVerdict = PATH_FOUND;
-    solution.plannerProfile = getNamedProfileInfo();
-    for (size_t i = 0; i < solution.size(); ++i)
-    {
-        solution.stats.pathCost += solution[i].abs(); // cost action crutch
-    }
-
-    printf("DEBUG LOG: preprocessed solution's stats filled\n");
-    return solution;
+    // TODO implement
+    return lazyAstarPlanning(startPos, goalPos, weight, timeLimit);
 }
 
 // Checkers

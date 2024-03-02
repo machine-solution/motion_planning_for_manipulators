@@ -14,7 +14,15 @@ enum Algorithm
     ALG_LINEAR,
     ALG_ASTAR,
     ALG_LAZY_ASTAR,
+    ALG_PREPROC_CLUSTERS,
     ALG_MAX,
+};
+
+enum Preprocess
+{
+    PRE_NONE,
+    PRE_CLUSTERS,
+    PRE_MAX,
 };
 
 class PreprocData
@@ -29,6 +37,7 @@ public:
     std::map<JointState, size_t> actionsMap; // state -> action's index
     JointState homeState;
     bool isPreprocessed = false;
+    double preprocRuntime = 0.0;
 };
 
 class ManipulatorPlanner : public Profiler
@@ -50,15 +59,16 @@ public:
     vector<string> pathInConfigurationSpace(const JointState& start, Solution solution) const;
 
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
-    Solution planActions(const JointState& startPos, const JointState& goalPos, int alg = ALG_MAX - 1,
-        double timeLimit = 1.0, double w = 1.0);
+    Solution planActions(const JointState& startPos, const JointState& goalPos,
+        int alg = ALG_ASTAR, double timeLimit = 1.0, double w = 1.0);
     // plan path to move end-effector to (doubleX, doubleY) point
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
-    Solution planActions(const JointState& startPos, double goalX, double goalY, int alg = ALG_ASTAR,
-        double timeLimit = 1.0, double w = 1.0);
+    Solution planActions(const JointState& startPos, double goalX, double goalY,
+        int alg = ALG_ASTAR, double timeLimit = 1.0, double w = 1.0);
     
-    void preprocess();
+    void preprocess(int pre = PRE_NONE, int clusters = 0);
     bool isPreprocessed() const;
+    void preprocessClusters(int clusters);
 
     // this method used that edges of model are cylinders
     // and that manipulator has geom numbers 1 .. _dof inclusively
@@ -99,8 +109,9 @@ private:
         float weight, double timeLimit
     );
 
-    Solution preprocPlanning(
-        const JointState& startPos, const JointState& goalPos
+    Solution preprocClustersPlanning(
+        const JointState& startPos, const JointState& goalPos,
+        float weight, double timeLimit
     );
 
     vector<Action> _primitiveActions;

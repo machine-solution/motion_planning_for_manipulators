@@ -37,7 +37,9 @@ TEST_CASE("Integration test 2 dof")
             "maps/paths_0/",
             true, // display motion
             ALG_LAZY_ASTAR, // algorithm type
-            12345,
+            PRE_NONE, // preprocess type
+            0, // clusters number
+            12345, // random seed
         });
         interactor.doMainLoop();
     }
@@ -66,7 +68,9 @@ TEST_CASE("Integration test 3 dof")
             "maps/paths_0/",
             true, // display motion
             ALG_LAZY_ASTAR, // algorithm type
-            12345,
+            PRE_NONE, // preprocess type
+            0, // clusters number
+            12345, // random seed
         });
         interactor.doMainLoop();
     }

@@ -109,6 +109,10 @@ To setup one scenario you need to describe all fields in json, even you don't us
     - 1 (A*)
     - 2 (Lazy A*)
 - **algorithm.heuristic.weight: (float)** You can set weight of heuristic using this field.
+- **preprocess.type: (integer)** Type of preprocessing map for this scenario
+    - 0 (Without preprocess)
+    - 1 (With random clusters preprocess)
+- **preprocess.clusters: (integer)** The number of clusters for random cluster preprocessing (type == 1). Must be specified with this preprocess type
 - **taskset.use_random_tasks: (boolean)** Using this option you can turn on random generation of tasks. Set true if want generate taskset at random.
 - **taskset.random_seed: (integer)** Set random seed to generate random tasks.
 - **taskset.task_number: (integer)** You can set the number of generated random tasks if you want use random generated tasks. Doesn't affect if `taskset.use_random_tasks` = false
