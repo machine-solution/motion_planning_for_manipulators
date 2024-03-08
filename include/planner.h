@@ -25,6 +25,25 @@ enum Preprocess
     PRE_MAX,
 };
 
+class Cluster
+{
+public:
+    Cluster(const JointState& center);
+
+    int dist(const JointState& state) const;
+
+    void setCenter(const JointState& center);
+    JointState getCenter() const;
+
+    void setSolution(const Solution& solution);
+    Solution getSolution() const;
+
+    size_t byteSize() const;
+private:
+    JointState _center;
+    Solution _solution;
+};
+
 class PreprocData
 {
 public:
@@ -34,7 +53,7 @@ public:
     size_t kbyteSize() const;
     size_t mbyteSize() const;
 
-    std::map<JointState, size_t> actionsMap; // state -> action's index
+    std::vector<Cluster> clusters;
     JointState homeState;
     bool isPreprocessed = false;
     double preprocRuntime = 0.0;

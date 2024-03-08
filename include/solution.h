@@ -48,6 +48,8 @@ public:
     vector<ProfileInfo> plannerProfile;
     vector<ProfileInfo> searchTreeProfile;
 
+    size_t byteSize() const;
+
 private:
     vector<Action> _primitiveActions; // from Planner
     Action _zeroAction;

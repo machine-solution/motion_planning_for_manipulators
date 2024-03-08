@@ -52,6 +52,12 @@ void Solution::add(const Solution &solution)
     {
         addAction(solution._solveActions[i]);
     }
+    stats.expansions += solution.stats.expansions;
+    stats.consideredEdges += solution.stats.consideredEdges;
+    stats.evaluatedEdges += solution.stats.evaluatedEdges;
+    stats.pathCost += solution.stats.pathCost;
+    stats.pathPotentialCost += stats.pathPotentialCost;
+    stats.byteSize = std::max(stats.byteSize, solution.stats.byteSize);
 }
 
 size_t Solution::size() const
@@ -66,4 +72,10 @@ Action Solution::operator[](size_t i) const
         return _zeroAction;
     }
     return _primitiveActions[_solveActions[i]];
+}
+
+size_t Solution::byteSize() const
+{
+    return _zeroAction.byteSize() * (1 + _primitiveActions.size())
+    + sizeof(_nextActionId) * (1 + _solveActions.size());
 }

@@ -14,6 +14,32 @@
 #include <string.h>
 #include <fstream>
 
+
+TEST_CASE("Preprocessing 2 dof")
+{
+    Interactor interactor;
+    interactor.setUp({
+        "tests/integration_tests/manipulator_2.xml", // model filename
+        3.0, // time
+        1.0, // w
+        2, // the number of random tests
+        TASK_STATE, // kind of task
+        false, // random test generation
+        "scenaries/test_scen.log",
+        "pyplot/0/test_stats_w=1.0.log",
+        "tests/integration_tests/2-dof_example.scen",
+        "pyplot/0/test_runtime_w=1.0.log",
+        "maps/c_space_0.map",
+        "maps/paths_0/",
+        true, // display motion
+        ALG_PREPROC_CLUSTERS, // algorithm type
+        PRE_CLUSTERS, // preprocess type
+        5, // clusters number
+        12345, // random seed
+    });
+    interactor.doMainLoop();
+}
+
 TEST_CASE("Integration test 2 dof")
 {
     std::vector<double> ws = {1.0, 100.0};

@@ -8,6 +8,41 @@
 #include <queue>
 
 
+Cluster::Cluster(const JointState &center)
+{
+    _center = center;
+}
+
+int Cluster::dist(const JointState &state) const
+{
+    return manhattanDistance(_center, state);
+}
+
+void Cluster::setCenter(const JointState &center)
+{
+    _center = center;
+}
+
+JointState Cluster::getCenter() const
+{
+    return _center;
+}
+
+void Cluster::setSolution(const Solution &solution)
+{
+    _solution = solution;
+}
+
+Solution Cluster::getSolution() const
+{
+    return _solution;
+}
+
+size_t Cluster::byteSize() const
+{
+    return _center.byteSize() + _solution.byteSize();
+}
+
 PreprocData::PreprocData()
 {
     isPreprocessed = false;
@@ -15,12 +50,12 @@ PreprocData::PreprocData()
 
 size_t PreprocData::byteSize() const
 {
-    size_t mapSize = actionsMap.size() * sizeof(size_t);
-    if (!actionsMap.empty())
+    size_t clusterSize = 0;
+    for (int i = 0; i < clusters.size(); ++i)
     {
-        mapSize += actionsMap.size() * actionsMap.begin()->first.byteSize();
+        clusterSize += clusters[i].byteSize();
     }
-    return mapSize + sizeof(isPreprocessed) + sizeof(preprocRuntime) + homeState.byteSize();
+    return clusterSize + sizeof(isPreprocessed) + sizeof(preprocRuntime) + homeState.byteSize();
 }
 
 size_t PreprocData::kbyteSize() const
@@ -195,13 +230,51 @@ bool ManipulatorPlanner::isPreprocessed() const
 
 void ManipulatorPlanner::preprocessClusters(int clusters)
 {
-    // TODO implement
     startProfiling();
     if (isPreprocessed())
     {
         stopProfiling();
         return;
     }
+
+    // start timer
+    clock_t start = clock();
+
+    _preprocData.homeState = sampleFreeState(10);
+    if (_preprocData.homeState.dof() == 0)
+    {
+        stopProfiling();
+        return;
+    }
+
+    // sample centers
+    while (_preprocData.clusters.size() < clusters)
+    {
+        JointState center = sampleFreeState(10);
+        if (center.dof() == 0)
+        {
+            continue;
+        }
+        _preprocData.clusters.push_back(
+            Cluster(center)
+        );
+    }
+
+    for (int i = 0; i < clusters; ++i)
+    {
+        Solution solution = planActions(
+            _preprocData.clusters[i].getCenter(),
+            _preprocData.homeState,
+            ALG_LAZY_ASTAR,
+            600.0,
+            100.0
+        );
+        _preprocData.clusters[i].setSolution(solution);
+    }
+    // end timer
+    clock_t end = clock();
+    _preprocData.preprocRuntime = (double)(end - start) / CLOCKS_PER_SEC;
+
     _preprocData.isPreprocessed = true;
     stopProfiling();
 }
@@ -351,7 +424,77 @@ Solution ManipulatorPlanner::preprocClustersPlanning(
     float weight, double timeLimit
 )
 {
-    // TODO implement
+    if (_preprocData.clusters.size() == 0)
+    {
+        return Solution(_primitiveActions, _zeroAction);
+    }
+
+    // start timer
+    clock_t start = clock();
+
+    size_t startIdx = 0;
+    int startDistance = INT32_MAX;
+    size_t goalIdx = 0;
+    int goalDistance = INT32_MAX;
+    for (int i = 0; i < _preprocData.clusters.size(); ++i)
+    {
+        int newStartDst = _preprocData.clusters[i].dist(startPos);
+        int newGoalDst  = _preprocData.clusters[i].dist(goalPos);
+
+        if (newStartDst < startDistance)
+        {
+            startIdx = i;
+            startDistance = newStartDst;
+        }
+        if (newGoalDst < goalDistance)
+        {
+            goalIdx = i;
+            goalDistance = newGoalDst;
+        }
+    }
+
+    clock_t middle = clock();
+    double middle_runtime = (double)(middle - start) / CLOCKS_PER_SEC;
+
+    Solution startToCluster = planActions(
+        startPos, _preprocData.clusters[startIdx].getCenter(),
+        ALG_LAZY_ASTAR, weight, (timeLimit - middle_runtime) / 2
+    );
+    if (startToCluster.stats.pathVerdict != PATH_FOUND)
+    {
+        clock_t end = clock();
+        startToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+        startToCluster.stats.pathVerdict = PATH_NOT_FOUND;
+        return startToCluster;
+    }
+    Solution goalToCluster = planActions(
+        goalPos, _preprocData.clusters[goalIdx].getCenter(),
+        ALG_LAZY_ASTAR, weight, (timeLimit - middle_runtime) / 2
+    );
+    if (goalToCluster.stats.pathVerdict != PATH_FOUND)
+    {
+        clock_t end = clock();
+        goalToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+        goalToCluster.stats.byteSize = std::max(
+            goalToCluster.stats.byteSize,
+            startToCluster.stats.byteSize
+        );
+        goalToCluster.stats.pathVerdict = PATH_NOT_FOUND;
+        return goalToCluster;
+    }
+
+    startToCluster.add(_preprocData.clusters[startIdx].getSolution());
+    startToCluster.add(_preprocData.clusters[goalIdx].getSolution().reversed());
+    startToCluster.add(goalToCluster.reversed());
+
+
+    // end timer
+    clock_t end = clock();
+    startToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+    startToCluster.stats.pathVerdict = PATH_FOUND;
+    startToCluster.stats.preprocByteSize = _preprocData.byteSize();
+    startToCluster.stats.preprocRuntime = _preprocData.preprocRuntime;
+
     return lazyAstarPlanning(startPos, goalPos, weight, timeLimit);
 }
 

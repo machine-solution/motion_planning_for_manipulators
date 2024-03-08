@@ -58,6 +58,10 @@ int Action::abs() const
     return len;
 }
 
+size_t Action::byteSize() const
+{
+    return sizeof(_dof) + sizeof(int) * _joints.size();
+}
 
 JointState::JointState(size_t dof, int value)
 {

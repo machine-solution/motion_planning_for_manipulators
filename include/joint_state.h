@@ -20,6 +20,8 @@ public:
     int& operator[](size_t i);
     int abs() const;
 
+    size_t byteSize() const;
+
 private:
     vector<int> _joints;
     size_t _dof;

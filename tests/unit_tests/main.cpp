@@ -94,6 +94,7 @@ TEST_CASE("lazy A* planner on empty plane")
     testPlanningFromTo({5, -3}, {-1, -3}, ALG_LAZY_ASTAR);
     testPlanningFromTo({5}, {-1}, ALG_LAZY_ASTAR);
     testPlanningFromTo({5, 5, 5}, {-1, -1, -1}, ALG_LAZY_ASTAR);
+    testPlanningFromTo({96, 24, -40}, {0, 0, 0}, ALG_LAZY_ASTAR);
     testPlanningFromTo({5, 5, 5, 5}, {-1, -1, -1, -1}, ALG_LAZY_ASTAR);
     testStressPlanning(1, ALG_LAZY_ASTAR);
     testStressPlanning(2, ALG_LAZY_ASTAR);
@@ -177,7 +178,6 @@ TEST_CASE("Planner primitive actions with opposite indexes are reversed")
     int dof = 4;
     ManipulatorPlanner planner(dof);
     const vector<Action>& actions = planner.getPrimitiveActions();
-    printf("size %zu\n", actions.size());
     for (int i = 0; i < actions.size(); ++i)
     {
         Action current = actions[i];
@@ -236,4 +236,30 @@ TEST_CASE("Planner reversed solution on empty plane")
     testStressReversePlanning(2, ALG_LAZY_ASTAR);
     testStressReversePlanning(3, ALG_LINEAR);
     testStressReversePlanning(4, ALG_ASTAR);
+}
+
+void testPreprocessPlanning(int dof)
+{
+    srand(57283);
+    ManipulatorPlanner planner(dof);
+    planner.preprocess(1, 5);
+    JointState a(dof, 0);
+    JointState b = randomState(dof);
+    for (size_t i = 0; i < 20; ++i)
+    {
+        Solution solution = planner.planActions(a, b, ALG_PREPROC_CLUSTERS, 10.0);
+        while (!solution.goalAchieved())
+        {
+            a.apply(solution.nextAction());
+        }
+        CHECK(a == b);
+        b = randomState(dof);
+    }
+}
+
+TEST_CASE("Planner preprocess")
+{
+    testPreprocessPlanning(2);
+    testPreprocessPlanning(3);
+    testPreprocessPlanning(4);
 }
