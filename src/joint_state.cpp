@@ -58,6 +58,10 @@ int Action::abs() const
     return len;
 }
 
+size_t Action::byteSize() const
+{
+    return sizeof(_dof) + sizeof(int) * _joints.size();
+}
 
 JointState::JointState(size_t dof, int value)
 {
@@ -190,6 +194,12 @@ bool JointState::isCorrect() const
     return minJoint() >= -g_units && maxJoint() < g_units;
 }
 
+size_t JointState::byteSize() const
+{
+    return _joints.size() * sizeof(int) + sizeof(_dof) + sizeof(Action*) +
+           sizeof(_cacheX) + sizeof(_cacheY) + sizeof(_hasCacheXY);
+}
+
 int manhattanDistance(const JointState& state1, const JointState& state2)
 {
     int dist = 0;
@@ -242,7 +252,10 @@ void JointState::setCacheXY(double x, double y) const
 
 void JointState::normalize()
 {
-    _joints[0] = trueMod(_joints[0], g_units);
+    if (_dof > 0)
+    {
+        _joints[0] = trueMod(_joints[0], g_units);
+    }
 }
 
 JointState randomState(size_t dof, int units)

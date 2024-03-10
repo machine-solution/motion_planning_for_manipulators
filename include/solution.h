@@ -15,12 +15,14 @@ struct Stats
     size_t expansions = 0;
     CostType pathCost = 0;
     CostType pathPotentialCost = 0;
-    size_t maxTreeSize = 0;
+    size_t byteSize = 0;
+    size_t preprocByteSize = 0;
     int pathVerdict = PATH_NOT_FOUND;
     size_t evaluatedEdges = 0;
     size_t consideredEdges = 0;
 
     double runtime = 0.0;
+    double preprocRuntime = 0.0;
 };
 
 class Solution
@@ -34,13 +36,22 @@ public:
 
     bool goalAchieved() const;
 
+    Solution reversed() const;
+
+    void add(const Solution& solution);
+
+    size_t size() const;
+    Action operator[](size_t i) const;
+
     Stats stats;
 
     vector<ProfileInfo> plannerProfile;
     vector<ProfileInfo> searchTreeProfile;
 
+    size_t byteSize() const;
+
 private:
-    vector<Action> _primitiveActions;
+    vector<Action> _primitiveActions; // from Planner
     Action _zeroAction;
     vector<size_t> _solveActions; // vector id-s of primitiveActions
     size_t _nextActionId;

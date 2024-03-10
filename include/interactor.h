@@ -25,6 +25,8 @@ struct Config
     std::string pathsFolder;
     bool displayMotion;
     Algorithm algorithm;
+    Preprocess preprocess;
+    int clusters;
     size_t randomSeed;
 };
 

@@ -96,7 +96,7 @@ Solution lazyAstar(
         tree.addToClosed(currentNode);
         currentNode = tree.extractBestNode();
         // count statistic
-        solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
+        solution.stats.byteSize = std::max(solution.stats.byteSize, tree.size());
         ++solution.stats.expansions;
     }
 
@@ -110,6 +110,7 @@ Solution lazyAstar(
     }
     else if (solution.stats.pathVerdict == PATH_FOUND)
     {
+        solution.stats.byteSize *= currentNode->byteSize(); // max tree size * node bytes
         solution.stats.pathCost = currentNode->g();
         vector<size_t> actions;
         while (currentNode->parent() != nullptr)

@@ -29,3 +29,53 @@ bool Solution::goalAchieved() const
 {
     return _nextActionId >= _solveActions.size();
 }
+
+Solution Solution::reversed() const
+{
+    Solution reversed = Solution(_primitiveActions, _zeroAction);
+    for (int i = _solveActions.size() - 1; i >= 0; --i)
+    {
+        reversed.addAction(_primitiveActions.size() - 1 - _solveActions[i]);
+    }
+    return reversed;
+}
+
+void Solution::add(const Solution &solution)
+{
+    // TODO implement
+    // if (_primitiveActions != solution._primitiveActions)
+    // {
+    //     printf("Solution::add: different primitive actions\n");
+    //     return;
+    // }
+    for (int i = 0; i < solution._solveActions.size(); ++i)
+    {
+        addAction(solution._solveActions[i]);
+    }
+    stats.expansions += solution.stats.expansions;
+    stats.consideredEdges += solution.stats.consideredEdges;
+    stats.evaluatedEdges += solution.stats.evaluatedEdges;
+    stats.pathCost += solution.stats.pathCost;
+    stats.pathPotentialCost += stats.pathPotentialCost;
+    stats.byteSize = std::max(stats.byteSize, solution.stats.byteSize);
+}
+
+size_t Solution::size() const
+{
+    return _solveActions.size();
+}
+
+Action Solution::operator[](size_t i) const
+{
+    if (i >= size())
+    {
+        return _zeroAction;
+    }
+    return _primitiveActions[_solveActions[i]];
+}
+
+size_t Solution::byteSize() const
+{
+    return _zeroAction.byteSize() * (1 + _primitiveActions.size())
+    + sizeof(_nextActionId) * (1 + _solveActions.size());
+}
