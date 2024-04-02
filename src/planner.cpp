@@ -209,8 +209,9 @@ Solution ManipulatorPlanner::planActions(
     }
 }
 
-void ManipulatorPlanner::preprocess(int pre, int clusters)
+void ManipulatorPlanner::preprocess(int pre, int clusters, size_t seed)
 {
+    srand(seed);
     switch (pre)
     {
     case PRE_NONE:
@@ -255,26 +256,26 @@ void ManipulatorPlanner::preprocessClusters(int clusters)
         {
             continue;
         }
-        _preprocData.clusters.push_back(
-            Cluster(center)
-        );
-    }
-
-    for (int i = 0; i < clusters; ++i)
-    {
         Solution solution = planActions(
-            _preprocData.clusters[i].getCenter(),
+            center,
             _preprocData.homeState,
             ALG_LAZY_ASTAR,
             600.0,
             100.0
         );
-        _preprocData.clusters[i].setSolution(solution);
+        if (solution.stats.pathVerdict != PATH_FOUND)
+        {
+            continue;
+        }
+        _preprocData.clusters.push_back(
+            Cluster(center)
+        );
+        _preprocData.clusters.back().setSolution(solution);
     }
+
     // end timer
     clock_t end = clock();
     _preprocData.preprocRuntime = (double)(end - start) / CLOCKS_PER_SEC;
-
     _preprocData.isPreprocessed = true;
     stopProfiling();
 }
@@ -458,7 +459,7 @@ Solution ManipulatorPlanner::preprocClustersPlanning(
 
     Solution startToCluster = planActions(
         startPos, _preprocData.clusters[startIdx].getCenter(),
-        ALG_LAZY_ASTAR, weight, (timeLimit - middle_runtime) / 2
+        ALG_LAZY_ASTAR, (timeLimit - middle_runtime), weight 
     );
     if (startToCluster.stats.pathVerdict != PATH_FOUND)
     {
@@ -467,9 +468,12 @@ Solution ManipulatorPlanner::preprocClustersPlanning(
         startToCluster.stats.pathVerdict = PATH_NOT_FOUND;
         return startToCluster;
     }
+    middle = clock();
+    middle_runtime = (double)(middle - start) / CLOCKS_PER_SEC;
+
     Solution goalToCluster = planActions(
         goalPos, _preprocData.clusters[goalIdx].getCenter(),
-        ALG_LAZY_ASTAR, weight, (timeLimit - middle_runtime) / 2
+        ALG_LAZY_ASTAR, (timeLimit - middle_runtime), weight 
     );
     if (goalToCluster.stats.pathVerdict != PATH_FOUND)
     {
@@ -487,7 +491,6 @@ Solution ManipulatorPlanner::preprocClustersPlanning(
     startToCluster.add(_preprocData.clusters[goalIdx].getSolution().reversed());
     startToCluster.add(goalToCluster.reversed());
 
-
     // end timer
     clock_t end = clock();
     startToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
@@ -495,7 +498,7 @@ Solution ManipulatorPlanner::preprocClustersPlanning(
     startToCluster.stats.preprocByteSize = _preprocData.byteSize();
     startToCluster.stats.preprocRuntime = _preprocData.preprocRuntime;
 
-    return lazyAstarPlanning(startPos, goalPos, weight, timeLimit);
+    return startToCluster;
 }
 
 // Checkers

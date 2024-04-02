@@ -36,8 +36,10 @@ public:
 
     bool goalAchieved() const;
 
+    // save stats, not save profiling
     Solution reversed() const;
 
+    // merge some stats
     void add(const Solution& solution);
 
     size_t size() const;

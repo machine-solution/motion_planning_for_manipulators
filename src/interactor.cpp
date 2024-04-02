@@ -92,7 +92,7 @@ void Interactor::setUp(Config config)
         _logger->preparePathsFolder(_config.pathsFolder);
     }
 
-    _planner->preprocess(_config.preprocess, _config.clusters);
+    _planner->preprocess(_config.preprocess, _config.clusters, _config.randomSeed);
 
     if (_config.randomTasks)
     {

@@ -85,7 +85,7 @@ public:
     Solution planActions(const JointState& startPos, double goalX, double goalY,
         int alg = ALG_ASTAR, double timeLimit = 1.0, double w = 1.0);
     
-    void preprocess(int pre = PRE_NONE, int clusters = 0);
+    void preprocess(int pre = PRE_NONE, int clusters = 0, size_t seed = 12345);
     bool isPreprocessed() const;
     void preprocessClusters(int clusters);
 

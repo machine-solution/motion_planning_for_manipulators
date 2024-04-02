@@ -121,7 +121,6 @@ void Logger::printPath(const vector<string>& cSpacePath, int number)
     }
     std::string pathFilename = _pathsFolder + "path_" + strNumber + ".map";
     FILE* pathFile = fopen(pathFilename.c_str(), "w+");
-
     printCspace(pathFile, cSpacePath);
     fclose(pathFile);
 }
