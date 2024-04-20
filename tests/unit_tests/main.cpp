@@ -104,8 +104,8 @@ TEST_CASE("lazy A* planner on empty plane")
 
 TEST_CASE("A* Nodes has operators")
 {
-    astar::SearchNode node1(1, 0, JointState(1, 0));
-    astar::SearchNode node2(2, 0, JointState(1, 0));
+    astar::SearchNode node1(1, 0, 1, JointState(1, 0));
+    astar::SearchNode node2(2, 0, 1, JointState(1, 0));
     CHECK(node1 < node2);
     astar::SearchNode* p1 = &node1;
     astar::SearchNode* p2 = &node2;
@@ -115,10 +115,10 @@ TEST_CASE("A* Nodes has operators")
 TEST_CASE("A* Search Tree")
 {
     astar::SearchTree tree;
-    astar::SearchNode* n1 = new astar::SearchNode(1, 0, JointState({1, 0})); // same state as 2
-    astar::SearchNode* n2 = new astar::SearchNode(2, 0, JointState({1, 0}));
-    astar::SearchNode* n3 = new astar::SearchNode(1, 0, JointState({1, 1})); // same state as 4
-    astar::SearchNode* n4 = new astar::SearchNode(2, 0, JointState({1, 1}));
+    astar::SearchNode* n1 = new astar::SearchNode(1, 0, 1, JointState({1, 0})); // same state as 2
+    astar::SearchNode* n2 = new astar::SearchNode(2, 0, 1, JointState({1, 0}));
+    astar::SearchNode* n3 = new astar::SearchNode(1, 0, 1, JointState({1, 1})); // same state as 4
+    astar::SearchNode* n4 = new astar::SearchNode(2, 0, 1, JointState({1, 1}));
     tree.addToOpen(n1);
     tree.addToOpen(n2);
     tree.addToOpen(n3);

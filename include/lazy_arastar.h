@@ -12,59 +12,6 @@ using std::multiset;
 namespace astar
 {
 
-class SearchNode
-{
-public:
-    SearchNode(
-        CostType g,
-        CostType h,
-        CostType w,
-        const JointState& state,
-        int stepNum = -1,
-        SearchNode* parent = nullptr,
-        bool isLazy = false
-    );
-
-    CostType g() const;
-    CostType h() const;
-    CostType f() const;
-    int stepNum() const;
-    const JointState& state() const;
-    SearchNode* parent();
-
-    // set _isLazy
-    void updateLazy(bool newLazy);
-    bool isLazy() const;
-
-    void updateWeight(CostType w);
-
-    size_t byteSize() const;
-
-    // sort by priority
-    bool operator<(const SearchNode& sn);
-
-protected:
-    CostType _g, _h, _w;
-    // number of step, which change parent.state() -> this.state(). -1 if have no parent
-    int _stepNum;
-    JointState _state;
-    SearchNode* _parent;
-
-    // True if node has unfinished checks
-    bool _isLazy;
-};
-
-class CmpByState
-{
-public:
-    bool operator()(SearchNode* a, SearchNode* b) const;
-};
-class CmpByPriority
-{
-public:
-    bool operator()(SearchNode* a, SearchNode* b) const;
-};
-
 /*
 This is a container and data structure for A* algorithm.
 A* relies on this Tree in deletation nodes.

@@ -1,5 +1,5 @@
 {
-    "model_filename": "model/2-dof/manipulator_12.xml",
+    "model_filename": "model/4-dof/manipulator_12.xml",
     "algorithm": {
         "time_limit": 3.0,
         "type": 3,

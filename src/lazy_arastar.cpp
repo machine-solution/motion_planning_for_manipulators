@@ -1,5 +1,5 @@
 #include "astar.h"
-#include "lazy_astar.h"
+#include "lazy_arastar.h"
 
 namespace astar {
 
@@ -21,8 +21,7 @@ vector<SearchNode*> lazyGenerateSuccessors(
         result.push_back(
             new SearchNode(
                 node->g() + checker.costAction(node->state(), action),
-                checker.heuristic(newState),
-                weight,
+                checker.heuristic(newState) * weight,
                 newState,
                 i,
                 node,
@@ -49,7 +48,7 @@ Solution lazyAstar(
 
     // init search tree
     SearchTree tree;
-    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos);
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos) * weight, startPos);
     tree.addToOpen(startNode);
     SearchNode* currentNode = tree.extractBestNode();
 
