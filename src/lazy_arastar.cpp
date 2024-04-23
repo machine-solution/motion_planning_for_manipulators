@@ -1,41 +1,152 @@
 #include "astar.h"
+#include "lazy_astar.h"
 #include "lazy_arastar.h"
 
 namespace astar {
 
-vector<SearchNode*> lazyGenerateSuccessors(
-    SearchNode* node,
-    IAstarChecker& checker,
-    double weight
-)
+SearchTreeARA::SearchTreeARA() {}
+SearchTreeARA::~SearchTreeARA()
 {
-    vector<SearchNode*> result;
-    for (size_t i = 0; i < checker.getActions().size(); ++i)
-    {
-        Action action = checker.getActions()[i];
-        JointState newState = node->state().applied(action);
-        if (!newState.isCorrect())
-        {
-            continue;
-        }
-        result.push_back(
-            new SearchNode(
-                node->g() + checker.costAction(node->state(), action),
-                checker.heuristic(newState) * weight,
-                newState,
-                i,
-                node,
-                true
-            )
-        );
-    }
-
-    return result;
+    clearOpen();
+    clearClosed();
+    clearIncons();
 }
 
-Solution lazyAstar(
+void SearchTreeARA::addToOpen(SearchNode* node)
+{
+    startProfiling();
+    _open.insert(node);
+    stopProfiling();
+}
+void SearchTreeARA::addToClosed(SearchNode* node)
+{
+    startProfiling();
+    _closed.insert(node);
+    stopProfiling();
+}
+
+void SearchTreeARA::addToIncons(SearchNode *node)
+{
+    startProfiling();
+    auto iter = _incons.find(node);
+    if (iter == _incons.end())
+    {
+        _incons.insert(node);
+        stopProfiling();
+        return;
+    }
+    SearchNode* best = *iter;
+    if (best->g() > node->g())
+    {
+        _incons.erase(best);
+        delete best;
+        _incons.insert(node);
+        stopProfiling();
+        return;
+    }
+    delete node;
+    stopProfiling();
+    return;
+}
+
+void SearchTreeARA::clearOpen()
+{
+    while (!_open.empty())
+    {
+        SearchNode* node = *_open.begin();
+        _open.erase(_open.begin());
+        delete node;
+    }
+}
+
+void SearchTreeARA::clearClosed()
+{
+    while (!_closed.empty())
+    {
+        SearchNode* node = *_closed.begin();
+        _closed.erase(_closed.begin());
+        delete node;
+    }
+}
+
+void SearchTreeARA::clearIncons()
+{
+    while (!_incons.empty())
+    {
+        SearchNode* node = *_incons.begin();
+        _incons.erase(_incons.begin());
+        delete node;
+    }
+}
+
+SearchNode* SearchTreeARA::extractBestNode()
+{
+    startProfiling();
+    while (!_open.empty())
+    {
+        SearchNode* best = *_open.begin();
+        _open.erase(_open.begin());
+        if (wasExpanded(best))
+        {
+            // we must delete this node
+            delete best;
+        }
+        else
+        {
+            stopProfiling();
+            return best;
+        }
+    }
+    stopProfiling();
+    return nullptr;
+}
+
+size_t SearchTreeARA::size() const
+{
+    return _open.size() + _closed.size();
+}
+size_t SearchTreeARA::sizeOpen() const
+{
+    return _open.size();
+}
+
+bool SearchTreeARA::wasExpanded(SearchNode* node) const
+{
+    startProfiling();
+    bool res = _closed.count(node);
+    stopProfiling();
+    return res;
+}
+
+void SearchTreeARA::updateOpen(CostType w)
+{
+    startProfiling();
+    multiset<SearchNode*, CmpByPriority> _newOpen;
+
+    while (!_open.empty())
+    {
+        SearchNode* node = *_open.begin();
+        _open.erase(_open.begin());
+        node->updateWeight(w);
+        _newOpen.insert(node);
+    }
+    while (!_incons.empty())
+    {
+        SearchNode* node = *_incons.begin();
+        _incons.erase(_incons.begin());
+        node->updateWeight(w);
+        _newOpen.insert(node);
+    }
+    _open = _newOpen;
+    stopProfiling();
+}
+
+
+Solution improveSolution(
     const JointState& startPos,
     IAstarChecker& checker,
+    SearchTreeARA& tree,
+    CostType goalF,
     double weight,
     double timeLimit
 )
@@ -46,14 +157,7 @@ Solution lazyAstar(
     // start timer
     clock_t start = clock();
 
-    // init search tree
-    SearchTree tree;
-    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos) * weight, startPos);
-    tree.addToOpen(startNode);
     SearchNode* currentNode = tree.extractBestNode();
-
-    // stats
-    solution.stats.pathPotentialCost = checker.heuristic(startPos);
 
     while (currentNode != nullptr)
     {
@@ -85,11 +189,27 @@ Solution lazyAstar(
             solution.stats.pathVerdict = PATH_NOT_FOUND;
             break;
         }
+
+        // if f() more than previous
+        if (goalF <= currentNode->f())
+        {
+            tree.addToOpen(currentNode);
+            solution.stats.pathVerdict = PATH_NOT_FOUND;
+            break;
+        }
+
         // expand current node
         vector<astar::SearchNode*> successors = lazyGenerateSuccessors(currentNode, checker, weight);
         for (auto successor : successors)
         {
-            tree.addToOpen(successor);
+            if (!tree.wasExpanded(successor))
+            {
+                tree.addToOpen(successor);
+            }
+            else
+            {
+                tree.addToIncons(successor);
+            }
             solution.stats.consideredEdges++;
         }
         // retake node from tree
@@ -106,7 +226,7 @@ Solution lazyAstar(
 
     if (currentNode == nullptr)
     {
-        solution.stats.pathVerdict = PATH_NOT_EXISTS;
+        solution.stats.pathVerdict = PATH_NOT_FOUND;
     }
     else if (solution.stats.pathVerdict == PATH_FOUND)
     {
@@ -128,6 +248,72 @@ Solution lazyAstar(
     }
 
     solution.searchTreeProfile = tree.getNamedProfileInfo();
+    return solution;
+}
+
+Solution lazyARAstar(
+    const JointState& startPos,
+    IAstarChecker& checker,
+    double weight,
+    double timeLimit
+)
+{
+    Solution solution(checker.getActions(), checker.getZeroAction());
+    clock_t clockTimeLimit = timeLimit * CLOCKS_PER_SEC;
+    double currentWeight = weight;
+    double mult = 0.9;
+
+    // start timer
+    clock_t start = clock();
+
+    // init search tree
+    SearchTreeARA tree;
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos);
+    tree.addToOpen(startNode);
+    CostType goalF = INFINITY;
+
+    // stats
+    solution.stats.pathPotentialCost = checker.heuristic(startPos);
+
+    while (tree.sizeOpen() > 0)
+    {
+        if (currentWeight < 1.0)
+        {
+            break;
+        }
+        clock_t middle = clock();
+        double middle_runtime = (double)(middle - start) / CLOCKS_PER_SEC;
+        if (middle - start > clockTimeLimit)
+        {
+            break;
+        }
+        Solution nextSolution = improveSolution(
+            startPos,
+            checker,
+            tree,
+            goalF,
+            currentWeight,
+            (timeLimit - middle_runtime)
+        );
+        if (nextSolution.stats.pathVerdict == PATH_FOUND)
+        {
+            solution = nextSolution;
+            goalF = solution.stats.pathCost;
+        }
+        else if (nextSolution.stats.pathVerdict == PATH_NOT_FOUND)
+        {
+        }
+        else
+        {
+            solution = nextSolution;
+            break;
+        }
+        currentWeight *= mult;
+    }
+
+    // end timer
+    clock_t end = clock();
+    solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
     return solution;
 }
 

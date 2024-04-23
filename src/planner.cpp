@@ -181,6 +181,8 @@ Solution ManipulatorPlanner::planActions(
         return lazyAstarPlanning(startPos, goalPos, w, timeLimit);
     case ALG_PREPROC_CLUSTERS:
         return preprocClustersPlanning(startPos, goalPos, w, timeLimit);
+    case ALG_ARASTAR:
+        return lazyARAstarPlanning(startPos, goalPos, w, timeLimit);
     default:
         return Solution(_primitiveActions, _zeroAction);
     }
@@ -416,6 +418,17 @@ Solution ManipulatorPlanner::lazyAstarPlanning(
 {
     AstarCheckerSite checker(this, goalX, goalY);
     Solution solution = astar::lazyAstar(startPos, checker, weight, timeLimit);
+    solution.plannerProfile = getNamedProfileInfo();
+    return solution;
+}
+
+Solution ManipulatorPlanner::lazyARAstarPlanning(
+    const JointState& startPos, const JointState& goalPos,
+    float weight, double timeLimit
+)
+{
+    AstarChecker checker(this, goalPos);
+    Solution solution = astar::lazyARAstar(startPos, checker, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }

@@ -3,6 +3,7 @@
 #include "astar.h"
 #include "joint_state.h"
 #include "lazy_astar.h"
+#include "lazy_arastar.h"
 #include "solution.h"
 #include "utils.h"
 #include <mujoco/mujoco.h>
@@ -15,6 +16,7 @@ enum Algorithm
     ALG_ASTAR,
     ALG_LAZY_ASTAR,
     ALG_PREPROC_CLUSTERS,
+    ALG_ARASTAR,
     ALG_MAX,
 };
 
@@ -125,6 +127,11 @@ private:
     );
     Solution lazyAstarPlanning(
         const JointState& startPos, double goalX, double goalY,
+        float weight, double timeLimit
+    );
+
+    Solution lazyARAstarPlanning(
+        const JointState& startPos, const JointState& goalPos,
         float weight, double timeLimit
     );
 

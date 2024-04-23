@@ -2,13 +2,13 @@
     "model_filename": "model/4-dof/manipulator_12.xml",
     "algorithm": {
         "time_limit": 3.0,
-        "type": 3,
+        "type": 4,
         "heuristic": {
-            "weight": 1.0
+            "weight": 100.0
         }
     },
     "preprocess": {
-        "type": 1,
+        "type": 0,
         "clusters": 10
     },
     "taskset": {
