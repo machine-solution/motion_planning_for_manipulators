@@ -26,7 +26,7 @@ CostType SearchNode::h() const
 }
 CostType SearchNode::f() const
 {
-    return _g + _h * _w;
+    return g() + h();
 }
 int SearchNode::stepNum() const
 {

@@ -9,6 +9,7 @@ SearchTreeARA::~SearchTreeARA()
 {
     clearOpen();
     clearClosed();
+    clearHistory();
     clearIncons();
 }
 
@@ -65,7 +66,7 @@ void SearchTreeARA::clearClosed()
     {
         SearchNode* node = *_closed.begin();
         _closed.erase(_closed.begin());
-        delete node;
+        _history.push_back(node);
     }
 }
 
@@ -79,6 +80,16 @@ void SearchTreeARA::clearIncons()
     }
 }
 
+void SearchTreeARA::clearHistory()
+{
+    while (!_history.empty())
+    {
+        SearchNode* node = _history.back();
+        _history.pop_back();
+        delete node;
+    }
+}
+
 SearchNode* SearchTreeARA::extractBestNode()
 {
     startProfiling();
@@ -88,8 +99,8 @@ SearchNode* SearchTreeARA::extractBestNode()
         _open.erase(_open.begin());
         if (wasExpanded(best))
         {
-            // we must delete this node
-            delete best;
+            // we must use it as incons
+            addToIncons(best);
         }
         else
         {
@@ -138,6 +149,7 @@ void SearchTreeARA::updateOpen(CostType w)
         _newOpen.insert(node);
     }
     _open = _newOpen;
+    clearClosed();
     stopProfiling();
 }
 
@@ -212,14 +224,17 @@ Solution improveSolution(
             }
             solution.stats.consideredEdges++;
         }
-        // retake node from tree
+        // add node to closed and incons
         tree.addToClosed(currentNode);
+        SearchNode* copyNode = new SearchNode(*currentNode);
+        tree.addToIncons(copyNode);
+
+        // retake node from tree
         currentNode = tree.extractBestNode();
         // count statistic
         solution.stats.byteSize = std::max(solution.stats.byteSize, tree.size());
         ++solution.stats.expansions;
     }
-
     // end timer
     clock_t end = clock();
     solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
@@ -261,6 +276,7 @@ Solution lazyARAstar(
     Solution solution(checker.getActions(), checker.getZeroAction());
     clock_t clockTimeLimit = timeLimit * CLOCKS_PER_SEC;
     double currentWeight = weight;
+    bool optimalFound = false;
     double mult = 0.9;
 
     // start timer
@@ -277,9 +293,14 @@ Solution lazyARAstar(
 
     while (tree.sizeOpen() > 0)
     {
-        if (currentWeight < 1.0)
+        if (optimalFound)
         {
             break;
+        }
+        if (currentWeight < 1.0)
+        {
+            currentWeight = 1.0;
+            optimalFound = true;
         }
         clock_t middle = clock();
         double middle_runtime = (double)(middle - start) / CLOCKS_PER_SEC;
@@ -309,6 +330,7 @@ Solution lazyARAstar(
             break;
         }
         currentWeight *= mult;
+        tree.updateOpen(currentWeight);
     }
 
     // end timer

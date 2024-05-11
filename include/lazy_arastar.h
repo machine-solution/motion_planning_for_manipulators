@@ -30,8 +30,10 @@ public:
     void addToIncons(SearchNode* node);
 
     void clearOpen();
+    // actually do not delete nodes, only pushes to _history
     void clearClosed();
     void clearIncons();
+    void clearHistory();
 
     bool wasExpanded(SearchNode* node) const;
 
@@ -50,6 +52,7 @@ private:
     set<SearchNode*, CmpByState> _closed;
     // sort by state
     set<SearchNode*, CmpByState> _incons;
+    vector<SearchNode*> _history;
 };
 
 Solution lazyARAstar(
