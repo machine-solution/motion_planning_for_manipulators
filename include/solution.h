@@ -32,6 +32,7 @@ public:
     Solution(const vector<Action>& primitiveActions, const Action& zeroAction);
 
     Action& nextAction();
+    int thisActionId() const;
     void addAction(size_t stepId);
 
     bool goalAchieved() const;

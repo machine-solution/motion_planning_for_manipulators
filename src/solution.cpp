@@ -20,6 +20,16 @@ Action& Solution::nextAction()
     }
     return _primitiveActions[_solveActions[_nextActionId++]];
 }
+
+int Solution::thisActionId() const
+{
+    if (_nextActionId >= _solveActions.size())
+    {
+        return -1;
+    }
+    return _solveActions[_nextActionId];
+}
+
 void Solution::addAction(size_t stepId)
 {
     _solveActions.push_back(stepId);

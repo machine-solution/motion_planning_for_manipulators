@@ -266,14 +266,16 @@ Solution improveSolution(
     return solution;
 }
 
-Solution lazyARAstar(
+Solution improveSolutionCycle(
     const JointState& startPos,
     IAstarChecker& checker,
+    SearchTreeARA& tree,
+    Solution solution, // copy value
+    CostType goalF,
     double weight,
     double timeLimit
 )
 {
-    Solution solution(checker.getActions(), checker.getZeroAction());
     clock_t clockTimeLimit = timeLimit * CLOCKS_PER_SEC;
     double currentWeight = weight;
     bool optimalFound = false;
@@ -281,15 +283,6 @@ Solution lazyARAstar(
 
     // start timer
     clock_t start = clock();
-
-    // init search tree
-    SearchTreeARA tree;
-    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos);
-    tree.addToOpen(startNode);
-    CostType goalF = INFINITY;
-
-    // stats
-    solution.stats.pathPotentialCost = checker.heuristic(startPos);
 
     while (tree.sizeOpen() > 0)
     {
@@ -337,6 +330,75 @@ Solution lazyARAstar(
     clock_t end = clock();
     solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
     return solution;
+}
+
+Solution lazyARAstar(
+    const JointState &startPos,
+    IAstarChecker &checker,
+    double weight,
+    double timeLimit)
+{
+    Solution solution(checker.getActions(), checker.getZeroAction());
+    solution.stats.pathPotentialCost = checker.heuristic(startPos);
+
+    // init search tree
+    SearchTreeARA tree;
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos);
+    tree.addToOpen(startNode);
+
+    return improveSolutionCycle(
+        startPos,
+        checker,
+        tree,
+        solution,
+        INFINITY,
+        weight,
+        timeLimit
+    );
+}
+
+Solution lazyARAstar(const JointState &startPos, IAstarChecker &checker, Solution &startSolution, double weight, double timeLimit)
+{
+    // start timer
+    clock_t start = clock();
+
+    SearchTreeARA tree;
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos);
+    tree.addToOpen(startNode);
+
+    Solution solution(startSolution);
+    solution.stats.pathPotentialCost = checker.heuristic(startPos);
+
+    JointState currentState(startPos);
+    CostType g = 0;
+    SearchNode* parent = nullptr;
+    while (!startSolution.goalAchieved())
+    {
+        int stepId = startSolution.thisActionId();
+        Action action = startSolution.nextAction();
+        g += checker.costAction(currentState, action);
+        currentState.applied(action);
+        SearchNode* current = new SearchNode(
+            g, checker.heuristic(currentState), weight, currentState, stepId, parent, false
+        );
+        tree.addToOpen(
+            current
+        );
+        parent = current;
+    }
+
+    // end timer
+    clock_t end = clock();
+
+    return improveSolutionCycle(
+        startPos,
+        checker,
+        tree,
+        solution,
+        g,
+        weight,
+        timeLimit - (double)(end - start) / CLOCKS_PER_SEC
+    );
 }
 
 } // namespace astar

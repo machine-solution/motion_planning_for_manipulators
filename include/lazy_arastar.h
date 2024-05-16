@@ -62,4 +62,12 @@ Solution lazyARAstar(
     double timeLimit
 );
 
+Solution lazyARAstar(
+    const JointState& startPos,
+    IAstarChecker& checker,
+    Solution& startSolution,
+    double weight,
+    double timeLimit
+);
+
 } // namespace astar

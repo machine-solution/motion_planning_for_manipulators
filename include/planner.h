@@ -17,6 +17,7 @@ enum Algorithm
     ALG_LAZY_ASTAR,
     ALG_PREPROC_CLUSTERS,
     ALG_ARASTAR,
+    ALG_PREPROC_ARASTAR,
     ALG_MAX,
 };
 
@@ -136,6 +137,11 @@ private:
     );
 
     Solution preprocClustersPlanning(
+        const JointState& startPos, const JointState& goalPos,
+        float weight, double timeLimit
+    );
+
+    Solution preprocARAstarPlanning(
         const JointState& startPos, const JointState& goalPos,
         float weight, double timeLimit
     );
