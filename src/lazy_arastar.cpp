@@ -387,6 +387,11 @@ Solution lazyARAstar(const JointState &startPos, IAstarChecker &checker, Solutio
         parent = current;
     }
 
+    if (startSolution.stats.pathVerdict != PATH_FOUND)
+    {
+        g = INFINITY;
+    }
+
     // end timer
     clock_t end = clock();
 

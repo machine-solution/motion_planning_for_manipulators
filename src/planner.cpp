@@ -264,7 +264,7 @@ void ManipulatorPlanner::preprocessClusters(int clusters)
             center,
             _preprocData.homeState,
             ALG_LAZY_ASTAR,
-            600.0,
+            60.0,
             100.0
         );
         if (solution.stats.pathVerdict != PATH_FOUND)
@@ -518,15 +518,23 @@ Solution ManipulatorPlanner::preprocClustersPlanning(
 
 Solution ManipulatorPlanner::preprocARAstarPlanning(const JointState &startPos, const JointState &goalPos, float weight, double timeLimit)
 {
+    const float PREPROC_WEIGHT = 1000000.0;
     // start timer
     clock_t start = clock();
 
+    printf("DEBUG LOG. dof = %zu, tl = %f\n", startPos.dof(), timeLimit);
+
+    double preprocTimeLimit = std::min(timeLimit * 0.5, 2.5);
+    printf("DEBUG LOG. For preprocess wew use %fs time limit\n", preprocTimeLimit);
+
     Solution startSolution = preprocClustersPlanning(
-        startPos, goalPos, weight, timeLimit
+        startPos, goalPos, PREPROC_WEIGHT, preprocTimeLimit
     );
 
     // end timer
     clock_t end = clock();
+
+    printf("DEBUG LOG. During finding preproc solution we spent %f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
 
     AstarChecker checker(this, goalPos);
     Solution solution = astar::lazyARAstar(
