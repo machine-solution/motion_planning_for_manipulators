@@ -18,6 +18,7 @@ public:
     SearchNode(
         CostType g,
         CostType h,
+        CostType w,
         const JointState& state,
         int stepNum = -1,
         SearchNode* parent = nullptr,
@@ -35,11 +36,15 @@ public:
     void updateLazy(bool newLazy);
     bool isLazy() const;
 
+    void updateWeight(CostType w);
+
+    size_t byteSize() const;
+
     // sort by priority
     bool operator<(const SearchNode& sn);
 
 protected:
-    CostType _g, _h, _f;
+    CostType _g, _h, _w;
     // number of step, which change parent.state() -> this.state(). -1 if have no parent
     int _stepNum;
     JointState _state;

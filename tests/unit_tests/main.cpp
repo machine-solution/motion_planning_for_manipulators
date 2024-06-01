@@ -94,6 +94,7 @@ TEST_CASE("lazy A* planner on empty plane")
     testPlanningFromTo({5, -3}, {-1, -3}, ALG_LAZY_ASTAR);
     testPlanningFromTo({5}, {-1}, ALG_LAZY_ASTAR);
     testPlanningFromTo({5, 5, 5}, {-1, -1, -1}, ALG_LAZY_ASTAR);
+    testPlanningFromTo({96, 24, -40}, {0, 0, 0}, ALG_LAZY_ASTAR);
     testPlanningFromTo({5, 5, 5, 5}, {-1, -1, -1, -1}, ALG_LAZY_ASTAR);
     testStressPlanning(1, ALG_LAZY_ASTAR);
     testStressPlanning(2, ALG_LAZY_ASTAR);
@@ -101,10 +102,26 @@ TEST_CASE("lazy A* planner on empty plane")
     testStressPlanning(4, ALG_LAZY_ASTAR);
 }
 
+TEST_CASE("lazy ARA* planner on empty plane")
+{
+    testPlanningFromTo({0, 0}, {0, 0}, ALG_ARASTAR);
+    testPlanningFromTo({0, 0}, {1, 1}, ALG_ARASTAR);
+    testPlanningFromTo({1, 2}, {3, -4}, ALG_ARASTAR);
+    testPlanningFromTo({5, -3}, {-1, -3}, ALG_ARASTAR);
+    testPlanningFromTo({5}, {-1}, ALG_ARASTAR);
+    testPlanningFromTo({5, 5, 5}, {-1, -1, -1}, ALG_ARASTAR);
+    testPlanningFromTo({96, 24, -40}, {0, 0, 0}, ALG_ARASTAR);
+    testPlanningFromTo({5, 5, 5, 5}, {-1, -1, -1, -1}, ALG_ARASTAR);
+    testStressPlanning(1, ALG_ARASTAR);
+    testStressPlanning(2, ALG_ARASTAR);
+    testStressPlanning(3, ALG_ARASTAR);
+    testStressPlanning(4, ALG_ARASTAR);
+}
+
 TEST_CASE("A* Nodes has operators")
 {
-    astar::SearchNode node1(1, 0, JointState(1, 0));
-    astar::SearchNode node2(2, 0, JointState(1, 0));
+    astar::SearchNode node1(1, 0, 1, JointState(1, 0));
+    astar::SearchNode node2(2, 0, 1, JointState(1, 0));
     CHECK(node1 < node2);
     astar::SearchNode* p1 = &node1;
     astar::SearchNode* p2 = &node2;
@@ -114,10 +131,10 @@ TEST_CASE("A* Nodes has operators")
 TEST_CASE("A* Search Tree")
 {
     astar::SearchTree tree;
-    astar::SearchNode* n1 = new astar::SearchNode(1, 0, JointState({1, 0})); // same state as 2
-    astar::SearchNode* n2 = new astar::SearchNode(2, 0, JointState({1, 0}));
-    astar::SearchNode* n3 = new astar::SearchNode(1, 0, JointState({1, 1})); // same state as 4
-    astar::SearchNode* n4 = new astar::SearchNode(2, 0, JointState({1, 1}));
+    astar::SearchNode* n1 = new astar::SearchNode(1, 0, 1, JointState({1, 0})); // same state as 2
+    astar::SearchNode* n2 = new astar::SearchNode(2, 0, 1, JointState({1, 0}));
+    astar::SearchNode* n3 = new astar::SearchNode(1, 0, 1, JointState({1, 1})); // same state as 4
+    astar::SearchNode* n4 = new astar::SearchNode(2, 0, 1, JointState({1, 1}));
     tree.addToOpen(n1);
     tree.addToOpen(n2);
     tree.addToOpen(n3);
@@ -170,4 +187,95 @@ TEST_CASE("Recursively search json files in directory")
     };
     std::vector<std::string> result = jsonFilesInDirectory("tests/unit_tests/samples/dir");
     CHECK(answer == result);
+}
+
+TEST_CASE("Planner primitive actions with opposite indexes are reversed")
+{
+    int dof = 4;
+    ManipulatorPlanner planner(dof);
+    const vector<Action>& actions = planner.getPrimitiveActions();
+    for (int i = 0; i < actions.size(); ++i)
+    {
+        Action current = actions[i];
+        Action opposite = actions[actions.size() - i - 1];
+        bool reversed = true;
+        for (int j = 0; j < dof; ++j)
+        {
+            reversed &= current[j] == -opposite[j];
+        }
+        CHECK(reversed);
+    }
+}
+
+// test empty plane scenario
+void testReversePlanningFromTo(JointState a, JointState b, int alg)
+{
+    CHECK(a.dof() == b.dof());
+    ManipulatorPlanner planner(a.dof());
+    Solution solution = planner.planActions(b, a, alg).reversed();
+    while (!solution.goalAchieved())
+    {
+        a.apply(solution.nextAction());
+    }
+    CHECK(a == b);
+}
+
+// test row of empty plane scenarios
+void testStressReversePlanning(int dof, int alg)
+{
+    srand(57283);
+    ManipulatorPlanner planner(dof);
+    JointState a(dof, 0);
+    JointState b = randomState(dof);
+    for (size_t i = 0; i < 20; ++i)
+    {
+        Solution solution = planner.planActions(b, a, alg).reversed();
+        while (!solution.goalAchieved())
+        {
+            a.apply(solution.nextAction());
+        }
+        CHECK(a == b);
+        b = randomState(dof);
+    }
+}
+
+TEST_CASE("Planner reversed solution on empty plane")
+{
+    testReversePlanningFromTo({0, 0}, {0, 0}, ALG_LINEAR);
+    testReversePlanningFromTo({0, 0}, {1, 1}, ALG_ASTAR);
+    testReversePlanningFromTo({1, 2}, {3, -4}, ALG_LAZY_ASTAR);
+    testReversePlanningFromTo({5, -3}, {-1, -3}, ALG_LINEAR);
+    testReversePlanningFromTo({5}, {-1}, ALG_ASTAR);
+    testReversePlanningFromTo({5, 5, 5}, {-1, -1, -1}, ALG_LAZY_ASTAR);
+    testReversePlanningFromTo({5, 5, 5, 5}, {-1, -1, -1, -1}, ALG_LINEAR);
+    testStressReversePlanning(1, ALG_ASTAR);
+    testStressReversePlanning(2, ALG_LAZY_ASTAR);
+    testStressReversePlanning(3, ALG_LINEAR);
+    testStressReversePlanning(4, ALG_ASTAR);
+}
+
+void testPreprocessPlanning(int dof)
+{
+    srand(57283);
+    ManipulatorPlanner planner(dof);
+    planner.preprocess(1, 5);
+    JointState a(dof, 0);
+    JointState b = randomState(dof);
+    for (size_t i = 0; i < 20; ++i)
+    {
+        Solution solution = planner.planActions(a, b, ALG_PREPROC_CLUSTERS, 10.0);
+        while (!solution.goalAchieved())
+        {
+            a.apply(solution.nextAction());
+        }
+        CHECK(a == b);
+        b = randomState(dof);
+    }
+}
+
+TEST_CASE("Planner preprocess")
+{
+    testPreprocessPlanning(2);
+    testPreprocessPlanning(3);
+    testPreprocessPlanning(4);
 }

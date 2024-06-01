@@ -6,8 +6,8 @@ SRC = src
 INC = include
 TARGET = simulator
 
-SOURCES = $(OBJ)/utils.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/solution.o $(OBJ)/interactor.o $(OBJ)/logger.o $(OBJ)/taskset.o $(OBJ)/light_mujoco.o $(OBJ)/lazy_astar.o
-INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $(INC)/solution.h $(INC)/interactor.h $(INC)/logger.h $(INC)/taskset.h $(INC)/light_mujoco.h $(INC)/global_defs.h $(INC)/doctest.h $(INC)/lazy_astar.h
+SOURCES = $(OBJ)/utils.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/solution.o $(OBJ)/interactor.o $(OBJ)/logger.o $(OBJ)/taskset.o $(OBJ)/light_mujoco.o $(OBJ)/lazy_astar.o $(OBJ)/lazy_arastar.o
+INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $(INC)/solution.h $(INC)/interactor.h $(INC)/logger.h $(INC)/taskset.h $(INC)/light_mujoco.h $(INC)/global_defs.h $(INC)/doctest.h $(INC)/lazy_astar.h $(INC)/lazy_arastar.h
 
 .PHONY: all clean unit_testing integration_testing simulator 
 
@@ -50,6 +50,10 @@ $(OBJ)/astar.o: $(SRC)/astar.cpp $(INC)/astar.h $(INC)/utils.h $(INC)/global_def
 $(OBJ)/lazy_astar.o: $(SRC)/lazy_astar.cpp $(INC)/lazy_astar.h $(INC)/utils.h $(INC)/global_defs.h $(INC)/astar.h $(INC)/solution.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/lazy_astar.cpp $(LIBS) -c -o $(OBJ)/lazy_astar.o
+
+$(OBJ)/lazy_arastar.o: $(SRC)/lazy_arastar.cpp $(INC)/lazy_arastar.h $(SRC)/lazy_astar.cpp $(INC)/lazy_astar.h $(INC)/utils.h $(INC)/global_defs.h $(INC)/astar.h $(INC)/solution.h
+	mkdir -p $(OBJ)
+	$(CXX) $(FLAGS) $(SRC)/lazy_arastar.cpp $(LIBS) -c -o $(OBJ)/lazy_arastar.o
 
 $(OBJ)/solution.o: $(SRC)/solution.cpp $(INC)/solution.h $(INC)/utils.h $(INC)/global_defs.h
 	mkdir -p $(OBJ)

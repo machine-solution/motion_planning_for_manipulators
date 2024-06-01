@@ -17,6 +17,10 @@ for num in nums:
                     "weight": w
                 }
             },
+            "preprocess": {
+                "type": 0,
+                "clusters": 0,
+            },
             "taskset": {
                 "use_random_tasks": True,
                 "task_number": 100,

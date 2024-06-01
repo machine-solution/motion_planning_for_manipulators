@@ -121,7 +121,6 @@ void Logger::printPath(const vector<string>& cSpacePath, int number)
     }
     std::string pathFilename = _pathsFolder + "path_" + strNumber + ".map";
     FILE* pathFile = fopen(pathFilename.c_str(), "w+");
-
     printCspace(pathFile, cSpacePath);
     fclose(pathFile);
 }
@@ -130,10 +129,10 @@ void Logger::printMainLog(FILE* file, const Solution& solution)
 {
     std::string yn[] = {"PATH FOUND", "PATH NOT FOUND", "PATH DOES NOT EXIST"};
 
-    fprintf(file, "path verdict: %s\nexpansions: %zu\nmax tree size: %zu\ncost of path: %f\nruntime: %.3fs\n",
+    fprintf(file, "path verdict: %s\nexpansions: %zu\nbyte size: %zu\ncost of path: %f\nruntime: %.3fs\n",
         yn[solution.stats.pathVerdict].c_str(),
         solution.stats.expansions,
-        solution.stats.maxTreeSize,
+        solution.stats.byteSize,
         solution.stats.pathCost,
         solution.stats.runtime
     );
@@ -194,14 +193,16 @@ void Logger::printRuntimeLog(FILE* file, const Solution& solution)
 
 void Logger::printStatsLogHeader(FILE* file)
 {
-    fprintf(file, "expansions,runtime,maxTreeSize,pathCost,pathPotentialCost,pathFound,consideredEdges,evaluatedEdges\n");
+    fprintf(file, "expansions,runtime,preprocRuntime,byteSize,preprocByteSize,pathCost,pathPotentialCost,pathFound,consideredEdges,evaluatedEdges\n");
 }
 void Logger::printStatsLog(FILE* file, const Solution& solution)
 {
-    fprintf(file, "%zu,%f,%zu,%f,%f,%d,%zu,%zu\n",
+    fprintf(file, "%zu,%f,%f,%zu,%zu,%f,%f,%d,%zu,%zu\n",
         solution.stats.expansions,
         solution.stats.runtime,
-        solution.stats.maxTreeSize,
+        solution.stats.preprocRuntime,
+        solution.stats.byteSize,
+        solution.stats.preprocByteSize,
         solution.stats.pathCost,
         solution.stats.pathPotentialCost,
         solution.stats.pathVerdict,

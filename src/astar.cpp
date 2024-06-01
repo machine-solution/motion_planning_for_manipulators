@@ -5,11 +5,11 @@
 
 namespace astar {
 
-SearchNode::SearchNode(CostType g, CostType h, const JointState& state, int stepNum, SearchNode* parent, bool isLazy)
+SearchNode::SearchNode(CostType g, CostType h, CostType w, const JointState& state, int stepNum, SearchNode* parent, bool isLazy)
 {
     _g = g;
     _h = h;
-    _f = _g + _h;
+    _w = w;
     _state = state;
     _stepNum = stepNum;
     _parent = parent;
@@ -22,11 +22,11 @@ CostType SearchNode::g() const
 }
 CostType SearchNode::h() const
 {
-    return _h;
+    return _h * _w;
 }
 CostType SearchNode::f() const
 {
-    return _f;
+    return g() + h();
 }
 int SearchNode::stepNum() const
 {
@@ -48,6 +48,16 @@ void SearchNode::updateLazy(bool newLazy)
 bool SearchNode::isLazy() const
 {
     return _isLazy;
+}
+
+void SearchNode::updateWeight(CostType w)
+{
+    _w = w;
+}
+
+size_t SearchNode::byteSize() const
+{
+    return _state.byteSize() + sizeof(_g) * 3 + sizeof(_stepNum) + sizeof(_parent);
 }
 
 bool SearchNode::operator<(const SearchNode& sn)
@@ -153,7 +163,8 @@ vector<SearchNode*> generateSuccessors(
         result.push_back(
             new SearchNode(
                 node->g() + checker.costAction(node->state(), action),
-                checker.heuristic(newState) * weight,
+                checker.heuristic(newState),
+                weight,
                 newState,
                 i,
                 node
@@ -179,7 +190,7 @@ Solution astar(
 
     // init search tree
     SearchTree tree;
-    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos) * weight, startPos);
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos);
     tree.addToOpen(startNode);
     SearchNode* currentNode = tree.extractBestNode();
 
@@ -211,7 +222,7 @@ Solution astar(
         tree.addToClosed(currentNode);
         currentNode = tree.extractBestNode();
         // count statistic
-        solution.stats.maxTreeSize = std::max(solution.stats.maxTreeSize, tree.size());
+        solution.stats.byteSize = std::max(solution.stats.byteSize, tree.size());
         ++solution.stats.expansions;
     }
 
@@ -225,6 +236,7 @@ Solution astar(
     }
     else if (solution.stats.pathVerdict == PATH_FOUND)
     {
+        solution.stats.byteSize *= currentNode->byteSize(); // max tree size * node bytes
         solution.stats.pathCost = currentNode->g();
         vector<size_t> actions;
         while (currentNode->parent() != nullptr)

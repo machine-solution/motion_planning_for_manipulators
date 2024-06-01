@@ -5,6 +5,68 @@
 #include <time.h>
 
 #include <stdio.h>
+#include <queue>
+
+
+Cluster::Cluster(const JointState &center)
+{
+    _center = center;
+}
+
+int Cluster::dist(const JointState &state) const
+{
+    return manhattanDistance(_center, state);
+}
+
+void Cluster::setCenter(const JointState &center)
+{
+    _center = center;
+}
+
+JointState Cluster::getCenter() const
+{
+    return _center;
+}
+
+void Cluster::setSolution(const Solution &solution)
+{
+    _solution = solution;
+}
+
+Solution Cluster::getSolution() const
+{
+    return _solution;
+}
+
+size_t Cluster::byteSize() const
+{
+    return _center.byteSize() + _solution.byteSize();
+}
+
+PreprocData::PreprocData()
+{
+    isPreprocessed = false;
+}
+
+size_t PreprocData::byteSize() const
+{
+    size_t clusterSize = 0;
+    for (int i = 0; i < clusters.size(); ++i)
+    {
+        clusterSize += clusters[i].byteSize();
+    }
+    return clusterSize + sizeof(isPreprocessed) + sizeof(preprocRuntime) + homeState.byteSize();
+}
+
+size_t PreprocData::kbyteSize() const
+{
+    return byteSize() / (1024);
+}
+
+size_t PreprocData::mbyteSize() const
+{
+    return byteSize() / (1024 * 1024);
+}
 
 ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
 {
@@ -47,7 +109,7 @@ bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Act
         _data->qpos[i] = start.rad(i);
     }
 
-    int jump = 8;
+    int jump = g_unitSize / g_checkJumps;
     for (size_t t = jump; t <= g_unitSize; t += jump)
     {
         for (size_t i = 0; i < _dof; ++i)
@@ -97,7 +159,9 @@ vector<string> ManipulatorPlanner::pathInConfigurationSpace(const JointState& st
     return cSpace;
 }
 
-Solution ManipulatorPlanner::planActions(const JointState& startPos, const JointState& goalPos, int alg, double timeLimit, double w)
+Solution ManipulatorPlanner::planActions(
+    const JointState& startPos, const JointState& goalPos,
+    int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
 
@@ -115,12 +179,20 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, const Joint
         return astarPlanning(startPos, goalPos, w, timeLimit);
     case ALG_LAZY_ASTAR:
         return lazyAstarPlanning(startPos, goalPos, w, timeLimit);
+    case ALG_PREPROC_CLUSTERS:
+        return preprocClustersPlanning(startPos, goalPos, w, timeLimit);
+    case ALG_ARASTAR:
+        return lazyARAstarPlanning(startPos, goalPos, w, timeLimit);
+    case ALG_PREPROC_ARASTAR:
+        return preprocARAstarPlanning(startPos, goalPos, w, timeLimit);
     default:
         return Solution(_primitiveActions, _zeroAction);
     }
 }
 
-Solution ManipulatorPlanner::planActions(const JointState& startPos, double goalX, double goalY, int alg, double timeLimit, double w)
+Solution ManipulatorPlanner::planActions(
+    const JointState& startPos, double goalX, double goalY,
+    int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
 
@@ -139,6 +211,77 @@ Solution ManipulatorPlanner::planActions(const JointState& startPos, double goal
     default:
         return Solution(_primitiveActions, _zeroAction);
     }
+}
+
+void ManipulatorPlanner::preprocess(int pre, int clusters, size_t seed)
+{
+    srand(seed);
+    switch (pre)
+    {
+    case PRE_NONE:
+        return;
+    case PRE_CLUSTERS:
+        preprocessClusters(clusters);
+        return;
+    default:
+        return;
+    }
+}
+
+bool ManipulatorPlanner::isPreprocessed() const
+{
+    return _preprocData.isPreprocessed;
+}
+
+void ManipulatorPlanner::preprocessClusters(int clusters)
+{
+    startProfiling();
+    if (isPreprocessed())
+    {
+        stopProfiling();
+        return;
+    }
+
+    // start timer
+    clock_t start = clock();
+
+    _preprocData.homeState = sampleFreeState(10);
+    if (_preprocData.homeState.dof() == 0)
+    {
+        stopProfiling();
+        return;
+    }
+
+    // sample centers
+    while (_preprocData.clusters.size() < clusters)
+    {
+        JointState center = sampleFreeState(10);
+        if (center.dof() == 0)
+        {
+            continue;
+        }
+        Solution solution = planActions(
+            center,
+            _preprocData.homeState,
+            ALG_LAZY_ASTAR,
+            60.0,
+            100.0
+        );
+        if (solution.stats.pathVerdict != PATH_FOUND)
+        {
+            continue;
+        }
+        _preprocData.clusters.push_back(
+            Cluster(center)
+        );
+        _preprocData.clusters.back().setSolution(solution);
+    }
+
+    // end timer
+    clock_t end = clock();
+    _preprocData.preprocRuntime = (double)(end - start) / CLOCKS_PER_SEC;
+    _preprocData.isPreprocessed = true;
+    stopProfiling();
 }
 
 double ManipulatorPlanner::modelLength() const
@@ -170,6 +313,12 @@ std::pair<double, double> ManipulatorPlanner::sitePosition(const JointState& sta
     return {_data->site_xpos[0], _data->site_xpos[1]};
 }
 
+const vector<Action>& ManipulatorPlanner::getPrimitiveActions() const
+{
+    return _primitiveActions;
+}
+
+// opposite actions must be reversed
 void ManipulatorPlanner::initPrimitiveActions()
 {
     _zeroAction = Action(_dof, 0);
@@ -179,7 +328,24 @@ void ManipulatorPlanner::initPrimitiveActions()
     for (int i = 0; i < _dof; ++i)
     {
         _primitiveActions[i][i] = 1;
-        _primitiveActions[i + _dof][i] = -1;
+        _primitiveActions[2 * _dof - i - 1][i] = -1;
+    }
+}
+
+JointState ManipulatorPlanner::sampleFreeState(int attempts)
+{
+    JointState state = randomState(_dof);
+    while (attempts-- > 0 && checkCollision(state))
+    {
+        state = randomState(_dof);
+    }
+    if (attempts < 0)
+    {
+        return JointState(0, 0);
+    }
+    else
+    {
+        return state;
     }
 }
 
@@ -199,7 +365,7 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
             }
             else if (currentPos[i] > goalPos[i]) // - eps
             {
-                t = i + _dof;
+                t = 2 * _dof - i - 1;
             }
 
             if (checkCollisionAction(currentPos, _primitiveActions[t]))
@@ -254,6 +420,130 @@ Solution ManipulatorPlanner::lazyAstarPlanning(
 {
     AstarCheckerSite checker(this, goalX, goalY);
     Solution solution = astar::lazyAstar(startPos, checker, weight, timeLimit);
+    solution.plannerProfile = getNamedProfileInfo();
+    return solution;
+}
+
+Solution ManipulatorPlanner::lazyARAstarPlanning(
+    const JointState& startPos, const JointState& goalPos,
+    float weight, double timeLimit
+)
+{
+    AstarChecker checker(this, goalPos);
+    Solution solution = astar::lazyARAstar(startPos, checker, weight, timeLimit);
+    solution.plannerProfile = getNamedProfileInfo();
+    return solution;
+}
+
+Solution ManipulatorPlanner::preprocClustersPlanning(
+    const JointState& startPos, const JointState& goalPos,
+    float weight, double timeLimit
+)
+{
+    if (_preprocData.clusters.size() == 0)
+    {
+        return Solution(_primitiveActions, _zeroAction);
+    }
+
+    // start timer
+    clock_t start = clock();
+
+    size_t startIdx = 0;
+    int startDistance = INT32_MAX;
+    size_t goalIdx = 0;
+    int goalDistance = INT32_MAX;
+    for (int i = 0; i < _preprocData.clusters.size(); ++i)
+    {
+        int newStartDst = _preprocData.clusters[i].dist(startPos);
+        int newGoalDst  = _preprocData.clusters[i].dist(goalPos);
+
+        if (newStartDst < startDistance)
+        {
+            startIdx = i;
+            startDistance = newStartDst;
+        }
+        if (newGoalDst < goalDistance)
+        {
+            goalIdx = i;
+            goalDistance = newGoalDst;
+        }
+    }
+
+    clock_t middle = clock();
+    double middle_runtime = (double)(middle - start) / CLOCKS_PER_SEC;
+
+    Solution startToCluster = planActions(
+        startPos, _preprocData.clusters[startIdx].getCenter(),
+        ALG_LAZY_ASTAR, (timeLimit - middle_runtime), weight 
+    );
+    if (startToCluster.stats.pathVerdict != PATH_FOUND)
+    {
+        clock_t end = clock();
+        startToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+        startToCluster.stats.pathVerdict = PATH_NOT_FOUND;
+        return startToCluster;
+    }
+    middle = clock();
+    middle_runtime = (double)(middle - start) / CLOCKS_PER_SEC;
+
+    Solution goalToCluster = planActions(
+        goalPos, _preprocData.clusters[goalIdx].getCenter(),
+        ALG_LAZY_ASTAR, (timeLimit - middle_runtime), weight 
+    );
+    if (goalToCluster.stats.pathVerdict != PATH_FOUND)
+    {
+        clock_t end = clock();
+        goalToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+        goalToCluster.stats.byteSize = std::max(
+            goalToCluster.stats.byteSize,
+            startToCluster.stats.byteSize
+        );
+        goalToCluster.stats.pathVerdict = PATH_NOT_FOUND;
+        return goalToCluster;
+    }
+
+    startToCluster.add(_preprocData.clusters[startIdx].getSolution());
+    startToCluster.add(_preprocData.clusters[goalIdx].getSolution().reversed());
+    startToCluster.add(goalToCluster.reversed());
+
+    // end timer
+    clock_t end = clock();
+    startToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+    startToCluster.stats.pathVerdict = PATH_FOUND;
+    startToCluster.stats.preprocByteSize = _preprocData.byteSize();
+    startToCluster.stats.preprocRuntime = _preprocData.preprocRuntime;
+
+    return startToCluster;
+}
+
+Solution ManipulatorPlanner::preprocARAstarPlanning(const JointState &startPos, const JointState &goalPos, float weight, double timeLimit)
+{
+    const float PREPROC_WEIGHT = 1000000.0;
+    // start timer
+    clock_t start = clock();
+
+    printf("DEBUG LOG. dof = %zu, tl = %f\n", startPos.dof(), timeLimit);
+
+    double preprocTimeLimit = std::min(timeLimit * 0.5, 2.5);
+    printf("DEBUG LOG. For preprocess wew use %fs time limit\n", preprocTimeLimit);
+
+    Solution startSolution = preprocClustersPlanning(
+        startPos, goalPos, PREPROC_WEIGHT, preprocTimeLimit
+    );
+
+    // end timer
+    clock_t end = clock();
+
+    printf("DEBUG LOG. During finding preproc solution we spent %f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+
+    AstarChecker checker(this, goalPos);
+    Solution solution = astar::lazyARAstar(
+        startPos,
+        checker,
+        startSolution,
+        weight,
+        timeLimit - (double)(end - start) / CLOCKS_PER_SEC
+    );
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }
