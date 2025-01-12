@@ -32,43 +32,22 @@
 
         <body name="link 0-0 shade" pos="-0.5 0 0.1" euler="0 90 0">
             <joint name="joint 0-0 shade" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
-            <geom name="geom link 0-0 shade" type="cylinder" size="0.02 0.5" material="green"/>
+            <geom name="geom link 0-0 shade" type="cylinder" size="0.02 0.5" material="green" contype="0" conaffinity="0" />
             <body name="link 0-1 shade" pos="0 0 1.0" euler="0 0 0">
                 <joint name="joint 0-1 shade" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
-                <geom name="geom link 0-1 shade" type="cylinder" size="0.02 0.5" material="green"/>
+                <geom name="geom link 0-1 shade" type="cylinder" size="0.02 0.5" material="green" contype="0" conaffinity="0" />
             </body>
         </body>
 
         <body name="link 1-0 shade" pos="1.5 0 0.1" euler="0 90 0">
             <joint name="joint 1-0 shade" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
-            <geom name="geom link 1-0 shade" type="cylinder" size="0.02 0.5" material="green"/>
+            <geom name="geom link 1-0 shade" type="cylinder" size="0.02 0.5" material="green" contype="0" conaffinity="0" />
             <body name="link 1-1 shade" pos="0 0 1.0" euler="0 0 0">
                 <joint name="joint 1-1 shade" type="hinge" axis="-1 0 0" pos="0 0 -0.5"/>
-                <geom name="geom link 1-1 shade" type="cylinder" size="0.02 0.5" material="green"/>
+                <geom name="geom link 1-1 shade" type="cylinder" size="0.02 0.5" material="green" contype="0" conaffinity="0" />
             </body>
         </body>
 
 
     </worldbody>
-
-    <contact>
-        <exclude body1="link 0-0 shade" body2="link 0-1 shade"/>
-        <exclude body1="link 1-0 shade" body2="link 1-1 shade"/>
-        <exclude body1="link 0-0 shade" body2="link 0-0"/>
-        <exclude body1="link 0-0 shade" body2="link 0-1"/>
-        <exclude body1="link 0-1 shade" body2="link 0-0"/>
-        <exclude body1="link 0-1 shade" body2="link 0-1"/>
-        <exclude body1="link 0-0 shade" body2="link 1-0"/>
-        <exclude body1="link 0-0 shade" body2="link 1-1"/>
-        <exclude body1="link 0-1 shade" body2="link 1-0"/>
-        <exclude body1="link 0-1 shade" body2="link 1-1"/>
-        <exclude body1="link 1-0 shade" body2="link 0-0"/>
-        <exclude body1="link 1-0 shade" body2="link 0-1"/>
-        <exclude body1="link 1-1 shade" body2="link 0-0"/>
-        <exclude body1="link 1-1 shade" body2="link 0-1"/>
-        <exclude body1="link 1-0 shade" body2="link 1-0"/>
-        <exclude body1="link 1-0 shade" body2="link 1-1"/>
-        <exclude body1="link 1-1 shade" body2="link 1-0"/>
-        <exclude body1="link 1-1 shade" body2="link 1-1"/>
-    </contact>
 </mujoco>

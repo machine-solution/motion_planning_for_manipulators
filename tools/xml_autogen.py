@@ -119,7 +119,7 @@ pos=\"{f"0 0 {prev_half_len + current_half_len}"}\" euler={euler}>\n'
 axis=\"-1 0 0\" pos=\"{f"0 0 {-current_half_len}"}\"/>\n'
 
         output_prefix += f'{current_space + offset4}<geom name=\"geom link {num}-{i} shade\" \
-type=\"cylinder\" size=\"{f"0.02 {current_half_len}"}\" material=\"green\"/>\n'
+type=\"cylinder\" size=\"{f"0.02 {current_half_len}"}\" material=\"green\" contype=\"0\" conaffinity=\"0\" />\n'
 
         output_suffix.append(f'{current_space}</body>\n')
         current_space += offset4
@@ -166,9 +166,9 @@ with open(path_to_result, "w+") as f:
         f.write(manipulator_shade_autogen(num, joints, lengths, base))
     f.write(gen_obstacles['obstacles'])
     f.write('\n')
-    f.write('    </worldbody>\n\n')
-    f.write('    <contact>\n')
-    f.write(collision_section(joints, arms, gen_obstacles['obstacles_counter']))    
-    f.write('    </contact>\n')
+    f.write('    </worldbody>\n')
+    # f.write('    <contact>\n')
+    # f.write(collision_section(joints, arms, gen_obstacles['obstacles_counter']))    
+    # f.write('    </contact>\n')
     # f.write(footer_gen(arms))
     f.write(open(path_to_footer, 'r').read())

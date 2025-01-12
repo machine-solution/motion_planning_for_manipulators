@@ -302,7 +302,7 @@ Config Interactor::parseJSON(const string& filename)
     std::ifstream fin(filename);
     json data = json::parse(fin);
 
-    std::string modelFilename = data["model_filename"];
+    std::string modelFilename = data["model"]["filename"];
     double timeLimit = data["algorithm"]["time_limit"];
     Algorithm algorithm = data["algorithm"]["type"];
     double w = data["algorithm"]["heuristic"]["weight"];

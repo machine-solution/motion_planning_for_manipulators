@@ -1,5 +1,9 @@
 {
-    "model_filename": "model/2-arm/2-dof/manipulator_0.xml",
+    "model": {
+        "filename": "model/2-arm/2-dof/manipulator_0.xml",
+        "dof": 2,
+        "arms": 2
+    },
     "algorithm": {
         "time_limit": 3.0,
         "type": 4,

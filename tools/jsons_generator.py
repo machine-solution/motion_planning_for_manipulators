@@ -4,12 +4,19 @@ output_folder = 'parameters/launch/'
 # ws = [1.0, 1.1, 1.2, 1.5, 2.0, 4.0, 10.0, 30.0, 100.0]
 nums = range(4, 12)
 
+dof = 2
+arms = 2
+
 w = 1.0
 # for w in ws:
 for num in nums:
     with open(output_folder + f'config_{num}.json', "w+") as outfile:
         config = {
-            "model_filename": f"model/2-dof/manipulator_{num}.xml",
+            "model": {
+                "filename": f"model/{arms}-arm/{dof}-dof/manipulator_{num}.xml",
+                "dof": dof,
+                "arms": arms,
+            },
             "algorithm": {
                 "time_limit": 3.0,
                 "type": 1,
