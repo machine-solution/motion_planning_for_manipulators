@@ -4,6 +4,7 @@
 
 #include <external/json.h>
 
+#include <iostream>
 #include <fstream>
 #include <stdexcept>
 

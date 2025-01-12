@@ -1,5 +1,6 @@
 #include "taskset.h"
 
+#include <iostream>
 #include <cstdio>
 #include <stdexcept>
 
@@ -129,6 +130,13 @@ void TaskSet::generateRandomTasks(size_t n, TaskType type, const ManipulatorPlan
                 _tasks.push_back(std::make_unique<TaskState>(start, end));
                 ++created_tasks;
             }
+            std::cout << planner.checkCollision(start) << " " << planner.checkCollision(end) << std::endl;
+            std::cout << _dof << std::endl;
+            for (int i = 0; i < _dof; ++i)
+            {
+                std::cout << start[i] << " ";
+            }
+            std::cout << std::endl;
         }
     }
     else if (type == TASK_POSITION)
