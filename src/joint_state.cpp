@@ -267,3 +267,116 @@ JointState randomState(size_t dof, int units)
     }
     return state;
 }
+
+MultiAction::MultiAction(size_t dof, size_t arms, int value)
+{
+    _dof = dof;
+    _arms = arms;
+    _actions = std::vector(_arms, Action(_dof, value));
+}
+
+MultiAction::MultiAction(std::vector<Action> actions)
+{
+    _arms = actions.size();
+    _dof = 2;
+    if (_arms > 0)
+    {
+        _dof = actions[0].dof();
+    }
+    _actions = actions;
+}
+
+size_t MultiAction::dof() const
+{
+    return _dof;
+}
+
+size_t MultiAction::arms() const
+{
+    return _arms;
+}
+
+Action MultiAction::operator[](size_t i) const
+{
+    return _actions.at(i);
+}
+
+Action &MultiAction::operator[](size_t i)
+{
+    return _actions.at(i);
+}
+
+MultiState::MultiState(size_t dof, size_t arms, int value)
+{
+    _dof = dof;
+    _arms = arms;
+    _states = std::vector<JointState>(arms, JointState(dof, value));
+}
+
+MultiState::MultiState(std::vector<JointState> states)
+{
+    _arms = states.size();
+    _dof = 2;
+    if (_arms > 0)
+    {
+        _dof = states[0].dof();
+    }
+    _states = states;
+}
+
+size_t MultiState::dof() const
+{
+    return _dof;
+}
+
+size_t MultiState::arms() const
+{
+    return _dof;
+}
+
+JointState MultiState::operator[](size_t i) const
+{
+    return _states.at(i);
+}
+
+JointState& MultiState::operator[](size_t i)
+{
+    return _states.at(i);
+}
+
+MultiState& MultiState::apply(const MultiAction &action)
+{
+    if (_dof != action.dof())
+    {
+        throw std::runtime_error("JointState::apply: dofs of operands are not equal");
+    }
+    if (_arms != action.arms())
+    {
+        throw std::runtime_error("JointState::apply: arms of operands are not equal");
+    }
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        _states[a].apply(action[a]);
+    }
+    return *this;
+}
+
+MultiState MultiState::applied(const MultiAction &action) const
+{
+    MultiState result = *this;
+    return result.apply(action);
+}
+
+MultiState &MultiState::operator=(const MultiState &other)
+{
+    _dof = other._dof;
+    _arms = other._arms;
+
+    _states.resize(_arms);
+
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        _states[a] = other[a];
+    }
+    return *this;
+}

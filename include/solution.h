@@ -59,3 +59,28 @@ private:
     vector<size_t> _solveActions; // vector id-s of primitiveActions
     size_t _nextActionId;
 };
+
+
+class MultiSolution
+{
+public:
+    MultiSolution();
+    MultiSolution(const vector<Action>& primitiveActions, const Action& zeroAction, size_t dof, size_t arms);
+
+    size_t arms() const;
+    Solution& operator[](size_t i);
+
+    MultiAction nextAction();
+
+    bool goalAchieved() const;
+
+    Stats stats;
+private:
+    vector<Action> _primitiveActions; // from Planner
+    Action _zeroAction;
+
+    vector<Solution> _solutions; // solutions for every arm
+    size_t _dof;
+    size_t _arms;
+    size_t _nextActionId = 0;
+};

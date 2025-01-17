@@ -1,6 +1,7 @@
 #pragma once
 
 #include "astar.h"
+#include "constraint.h"
 #include "joint_state.h"
 #include "lazy_astar.h"
 #include "lazy_arastar.h"
@@ -65,28 +66,41 @@ public:
 class ManipulatorPlanner : public Profiler
 {
 public:
-    ManipulatorPlanner(size_t dof, mjModel* model = nullptr, mjData* data = nullptr);
+    ManipulatorPlanner(size_t dof, size_t arms, mjModel* model = nullptr, mjData* data = nullptr);
 
     size_t dof() const;
+    size_t arms() const;
 
-    bool checkCollision(const JointState& position) const;
-    bool checkCollisionAction(const JointState& start, const Action& action) const;
+    bool checkCollision(size_t armNum, const JointState& position) const;
+    bool checkMultiCollision(const MultiState& positions) const;
+    bool checkCollisionAction(
+        size_t armNum, const JointState& start, size_t stepNum, const Action& action,
+        const vector<IConstraint>& constraints) const;
+    bool checkMultiCollisionAction(
+        const MultiState& start, size_t stepNum, const MultiAction& action,
+        const vector<vector<IConstraint>>& constraints) const;
 
     // return C-Space as strings where @ an obstacle, . - is not
-    // only for _dof = 2 now
+    // only for _dof * _arms = 2 now
     vector<string> configurationSpace() const;
 
     // On C-Space print start as 'A', end as 'B', path as '+'
     // Make copy of solution to call nextStep()
     vector<string> pathInConfigurationSpace(const JointState& start, Solution solution) const;
 
+    MultiSolution planMultiActions(
+        const MultiState& startPos, const MultiState& goalPos, int alg = ALG_ASTAR,
+        double timeLimit = 1.0, double w = 1.0);
+
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
-    Solution planActions(const JointState& startPos, const JointState& goalPos,
-        int alg = ALG_ASTAR, double timeLimit = 1.0, double w = 1.0);
+    Solution planActions(size_t armNum, const JointState& startPos, const JointState& goalPos,
+        const vector<IConstraint>& constraints, int alg = ALG_ASTAR,
+        double timeLimit = 1.0, double w = 1.0);
     // plan path to move end-effector to (doubleX, doubleY) point
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
-    Solution planActions(const JointState& startPos, double goalX, double goalY,
-        int alg = ALG_ASTAR, double timeLimit = 1.0, double w = 1.0);
+    Solution planActions(size_t armNum, const JointState& startPos, double goalX, double goalY,
+        const vector<IConstraint>& constraints, int alg = ALG_ASTAR,
+        double timeLimit = 1.0, double w = 1.0);
     
     void preprocess(int pre = PRE_NONE, int clusters = 0, size_t seed = 12345);
     bool isPreprocessed() const;
@@ -99,7 +113,7 @@ public:
     // calculate answer only 1 time
     double maxActionLength() const;
     // return coords of site by state of joints
-    std::pair<double, double> sitePosition(const JointState& state) const;
+    std::pair<double, double> sitePosition(size_t armNum, const JointState& state) const;
 
     const int units = g_units;
     const double eps = g_eps;
@@ -114,25 +128,30 @@ private:
     Solution linearPlanning(const JointState& startPos, const JointState& goalPos);
 
     Solution astarPlanning(
-        const JointState& startPos, const JointState& goalPos,
+        size_t armNum, const JointState& startPos, const JointState& goalPos,
+        const vector<IConstraint>& constraints,
         float weight, double timeLimit
     );
     Solution astarPlanning(
-        const JointState& startPos, double goalX, double goalY,
+        size_t armNum, const JointState& startPos, double goalX, double goalY,
+        const vector<IConstraint>& constraints,
         float weight, double timeLimit
     );
 
     Solution lazyAstarPlanning(
-        const JointState& startPos, const JointState& goalPos,
+        size_t armNum, const JointState& startPos, const JointState& goalPos,
+        const vector<IConstraint>& constraints,
         float weight, double timeLimit
     );
     Solution lazyAstarPlanning(
-        const JointState& startPos, double goalX, double goalY,
+        size_t armNum, const JointState& startPos, double goalX, double goalY,
+        const vector<IConstraint>& constraints,
         float weight, double timeLimit
     );
 
     Solution lazyARAstarPlanning(
-        const JointState& startPos, const JointState& goalPos,
+        size_t armNum, const JointState& startPos, const JointState& goalPos,
+        const vector<IConstraint>& constraints,
         float weight, double timeLimit
     );
 
@@ -146,9 +165,10 @@ private:
         float weight, double timeLimit
     );
 
-    vector<Action> _primitiveActions;
-    Action _zeroAction;
-    size_t _dof;
+    vector<Action> _primitiveActions; // actions of one manipulator
+    Action _zeroAction; // vector of zeroes
+    size_t _dof; // dof of one manipulator
+    size_t _arms; // the number of manipulators
 
     PreprocData _preprocData;
 
@@ -158,9 +178,9 @@ private:
     class AstarChecker : public astar::IAstarChecker
     {
     public:
-        AstarChecker(ManipulatorPlanner* planner, const JointState& goal);
+        AstarChecker(ManipulatorPlanner* planner, size_t armNum, const JointState& goal, const vector<IConstraint>& constraints);
 
-        bool isCorrect(const JointState& state, const Action& action) override;
+        bool isCorrect(const JointState& state, size_t stepNum, const Action& action) override;
         bool isGoal(const JointState& state) override;
         CostType costAction(const JointState& state, const Action& action) override;
         const std::vector<Action>& getActions() override;
@@ -168,15 +188,17 @@ private:
         CostType heuristic(const JointState& state) override;
     protected:
         ManipulatorPlanner* _planner;
+        size_t _armNum;
         const JointState& _goal;
+        const vector<IConstraint>& _constraints;
     };
 
     class AstarCheckerSite : public astar::IAstarChecker
     {
     public:
-        AstarCheckerSite(ManipulatorPlanner* planner, double goalX, double goalY);
+        AstarCheckerSite(ManipulatorPlanner* planner, size_t armNum, double goalX, double goalY, const vector<IConstraint>& constraints);
 
-        bool isCorrect(const JointState& state, const Action& action) override;
+        bool isCorrect(const JointState& state, size_t stepNum, const Action& action) override;
         bool isGoal(const JointState& state) override;
         CostType costAction(const JointState& state, const Action& action) override;
         const std::vector<Action>& getActions() override;
@@ -184,6 +206,8 @@ private:
         CostType heuristic(const JointState& state) override;
     protected:
         ManipulatorPlanner* _planner;
+        size_t _armNum;
+        const vector<IConstraint>& _constraints;
         double _goalX;
         double _goalY;
     };

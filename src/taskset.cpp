@@ -4,19 +4,21 @@
 #include <cstdio>
 #include <stdexcept>
 
-TaskState::TaskState(const JointState& startPos, const JointState& goalPos)
+TaskState::TaskState(const MultiState &startPoses, const MultiState &goalPoses, size_t dof, size_t arms)
 {
-    _start = startPos;
-    _goal = goalPos;
+    _starts = startPoses;
+    _goals = goalPoses;
+    _arms = arms;
+    _dof = dof;
 }
 
-const JointState& TaskState::start() const
+const MultiState& TaskState::start() const
 {
-    return _start;
+    return _starts;
 }
-const JointState& TaskState::goal() const
+const MultiState& TaskState::goal() const
 {
-    return _goal;
+    return _goals;
 }
 
 TaskType TaskState::type() const
@@ -24,24 +26,31 @@ TaskType TaskState::type() const
     return TASK_STATE;
 }
 
-TaskPosition::TaskPosition(const JointState& startPos, double goalX, double goalY)
+size_t TaskState::arms() const
 {
-    _start = startPos;
-    _goalX = goalX;
-    _goalY = goalY;
+    return _arms;
 }
 
-const JointState& TaskPosition::start() const
+TaskPosition::TaskPosition(const MultiState& startPoses, vector<double> goalXs, vector<double> goalYs, size_t dof, size_t arms)
 {
-    return _start;
+    _starts = startPoses;
+    _goalXs = goalXs;
+    _goalYs = goalYs;
+    _arms = arms;
+    _dof = dof;
 }
-double TaskPosition::goalX() const
+
+const MultiState& TaskPosition::start() const
 {
-    return _goalX;
+    return _starts;
 }
-double TaskPosition::goalY() const
+double TaskPosition::goalX(size_t i) const
 {
-    return _goalY;
+    return _goalXs.at(i);
+}
+double TaskPosition::goalY(size_t i) const
+{
+    return _goalYs.at(i);
 }
 
 TaskType TaskPosition::type() const
@@ -49,11 +58,17 @@ TaskType TaskPosition::type() const
     return TASK_POSITION;
 }
 
+size_t TaskPosition::arms() const
+{
+    return _arms;
+}
+
 // TaskSet
 
-TaskSet::TaskSet(size_t dof)
+TaskSet::TaskSet(size_t dof, size_t arms)
 {
     _dof = dof;
+    _arms = arms;
     _nextTaskId = 0;
 }
 
@@ -65,31 +80,42 @@ void TaskSet::loadTasks(const std::string& filename, TaskType type)
         throw std::runtime_error("TaskSet::loadTasks: Could not open file " + filename);
     }
     int dof;
-    fscanf(file, "%d", &dof);
+    int arms;
+    fscanf(file, "%d %d", &dof, &arms);
     if (dof != _dof)
     {
         throw std::runtime_error("TaskSet::loadTasks: dof in taskfile and in class are not same");
+    }
+    if (arms != _arms)
+    {
+        throw std::runtime_error("TaskSet::loadTasks: arms in taskfile and in class are not same");
     }
     if (type == TASK_STATE)
     {
         while (!feof(file))
         {
-            JointState start(dof);
-            JointState goal(dof);
+            MultiState starts(arms, dof);
+            MultiState goals(arms, dof);
             int counter_scanned = 0;
-            for (size_t i = 0; i < dof; ++i)
+            for (size_t a = 0; a < arms; ++a)
             {
-                counter_scanned += fscanf(file, "%d", &start[i]);
+                for (size_t i = 0; i < dof; ++i)
+                {
+                    counter_scanned += fscanf(file, "%d", &starts[a][i]);
+                }
             }
-            for (size_t i = 0; i < dof; ++i)
+            for (size_t a = 0; a < arms; ++a)
             {
-                counter_scanned += fscanf(file, "%d", &goal[i]);
+                for (size_t i = 0; i < dof; ++i)
+                {
+                    counter_scanned += fscanf(file, "%d", &goals[a][i]);
+                }
             }
             float optimal;
             counter_scanned += fscanf(file, "%f", &optimal); // it is really unused now
-            if (counter_scanned == (2 * dof + 1))
+            if (counter_scanned == (2 * dof * arms + 1))
             {
-                _tasks.push_back(std::make_unique<TaskState>(start, goal));
+                _tasks.push_back(std::make_unique<TaskState>(starts, goals, dof, arms));
             }
         }
     }
@@ -97,19 +123,25 @@ void TaskSet::loadTasks(const std::string& filename, TaskType type)
     {
         while (!feof(file))
         {
-            JointState start(dof);
+            MultiState starts(arms, dof);
             int counter_scanned = 0;
-            for (size_t i = 0; i < dof; ++i)
+            for (size_t a = 0; a < arms; ++a)
             {
-                counter_scanned += fscanf(file, "%d", &start[i]);
+                for (size_t i = 0; i < dof; ++i)
+                {
+                    counter_scanned += fscanf(file, "%d", &starts[a][i]);
+                }
             }
-            double goalX, goalY;
-            counter_scanned += fscanf(file, "%lf%lf", &goalX, &goalY);
+            std::vector<double> goalXs(arms), goalYs(arms);
+            for (size_t a = 0; a < arms; ++a)
+            {
+                counter_scanned += fscanf(file, "%lf%lf", &goalXs[a], &goalYs[a]);
+            }
             float optimal;
             counter_scanned += fscanf(file, "%f", &optimal); // it is really unused now
-            if (counter_scanned == (dof + 3))
+            if (counter_scanned == ((dof + 2) * arms + 1))
             {
-                _tasks.push_back(std::make_unique<TaskPosition>(start, goalX, goalY));
+                _tasks.push_back(std::make_unique<TaskPosition>(starts, goalXs, goalYs, dof, arms));
             }
         }
     }
@@ -123,20 +155,18 @@ void TaskSet::generateRandomTasks(size_t n, TaskType type, const ManipulatorPlan
         size_t created_tasks = 0;
         while (created_tasks < n)
         {
-            JointState start = randomState(_dof, g_units);
-            JointState end = randomState(_dof, g_units);
-            if (!planner.checkCollision(start) && !planner.checkCollision(end))
+            MultiState starts(_dof, _arms);
+            MultiState ends(_dof, _arms);
+            for (size_t a = 0; a < _arms; ++a)
             {
-                _tasks.push_back(std::make_unique<TaskState>(start, end));
+                starts[a] = randomState(_dof, g_units);
+                ends[a] = randomState(_dof, g_units);
+            }
+            if (!planner.checkMultiCollision(starts) && !planner.checkMultiCollision(ends))
+            {
+                _tasks.push_back(std::make_unique<TaskState>(starts, ends, _dof, _arms));
                 ++created_tasks;
             }
-            std::cout << planner.checkCollision(start) << " " << planner.checkCollision(end) << std::endl;
-            std::cout << _dof << std::endl;
-            for (int i = 0; i < _dof; ++i)
-            {
-                std::cout << start[i] << " ";
-            }
-            std::cout << std::endl;
         }
     }
     else if (type == TASK_POSITION)
@@ -145,12 +175,17 @@ void TaskSet::generateRandomTasks(size_t n, TaskType type, const ManipulatorPlan
         size_t created_tasks = 0;
         while (created_tasks < n)
         {
-            double x = (double)rand() / RAND_MAX * 2 * bound - bound;
-            double y = (double)rand() / RAND_MAX * 2 * bound - bound;
-            JointState start = randomState(_dof, g_units);
-            if (!planner.checkCollision(start))
+            MultiState starts;
+            std::vector<double> xs(_arms), ys(_arms);
+            for (size_t a = 0; a < _arms; ++a)
             {
-                _tasks.push_back(std::make_unique<TaskPosition>(start, x, y));
+                xs[a] = (double)rand() / RAND_MAX * 2 * bound - bound;
+                ys[a] = (double)rand() / RAND_MAX * 2 * bound - bound;
+                starts[a] = randomState(_dof, g_units);
+            }
+            if (!planner.checkMultiCollision(starts))
+            {
+                _tasks.push_back(std::make_unique<TaskPosition>(starts, xs, ys, _dof, _arms));
                 ++created_tasks;
             }
         }

@@ -91,3 +91,49 @@ size_t Solution::byteSize() const
     return _zeroAction.byteSize() * (1 + _primitiveActions.size())
     + sizeof(_nextActionId) * (1 + _solveActions.size());
 }
+
+MultiSolution::MultiSolution()
+{
+    
+}
+
+MultiSolution::MultiSolution(const vector<Action> &primitiveActions, const Action &zeroAction, size_t dof, size_t arms)
+{
+    _dof = dof;
+    _arms = arms;
+    _primitiveActions = primitiveActions;
+    _zeroAction = zeroAction;
+    _solutions = std::vector<Solution>(_arms, Solution(primitiveActions, zeroAction));
+}
+
+size_t MultiSolution::arms() const
+{
+    return _arms;
+}
+
+Solution& MultiSolution::operator[](size_t i)
+{
+    return _solutions.at(i);
+}
+
+MultiAction MultiSolution::nextAction()
+{
+    vector<Action> actions(_arms, Action(_dof));
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        actions[a] = _solutions[a].nextAction();
+    }
+    return MultiAction(actions);
+}
+
+bool MultiSolution::goalAchieved() const
+{
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        if (!_solutions[a].goalAchieved())
+        {
+            return false;
+        }
+    }
+    return true;
+}

@@ -5,13 +5,13 @@
 
 namespace astar {
 
-SearchNode::SearchNode(CostType g, CostType h, CostType w, const JointState& state, int stepNum, SearchNode* parent, bool isLazy)
+SearchNode::SearchNode(CostType g, CostType h, CostType w, const JointState& state, size_t stepNum, int actionNum, SearchNode* parent, bool isLazy)
 {
     _g = g;
     _h = h;
     _w = w;
     _state = state;
-    _stepNum = stepNum;
+    _actionNum = actionNum;
     _parent = parent;
     _isLazy = isLazy;
 }
@@ -28,11 +28,15 @@ CostType SearchNode::f() const
 {
     return g() + h();
 }
-int SearchNode::stepNum() const
+int SearchNode::actionNum() const
+{
+    return _actionNum;
+}
+size_t SearchNode::stepNum() const
 {
     return _stepNum;
 }
-const JointState& SearchNode::state() const
+const JointState &SearchNode::state() const
 {
     return _state;
 }
@@ -57,7 +61,7 @@ void SearchNode::updateWeight(CostType w)
 
 size_t SearchNode::byteSize() const
 {
-    return _state.byteSize() + sizeof(_g) * 3 + sizeof(_stepNum) + sizeof(_parent);
+    return _state.byteSize() + sizeof(_g) * 3 + sizeof(_actionNum) + sizeof(_parent);
 }
 
 bool SearchNode::operator<(const SearchNode& sn)
@@ -67,7 +71,7 @@ bool SearchNode::operator<(const SearchNode& sn)
 
 bool CmpByState::operator()(SearchNode* a, SearchNode* b) const
 {
-    return a->state() < b->state();
+    return std::pair<JointState, size_t>({a->state(), a->stepNum()}) < std::pair<JointState, size_t>({b->state(), b->stepNum()});
 }
 bool CmpByPriority::operator()(SearchNode* a, SearchNode* b) const
 {
@@ -156,7 +160,7 @@ vector<SearchNode*> generateSuccessors(
     {
         Action action = checker.getActions()[i];
         JointState newState = node->state().applied(action);
-        if (!checker.isCorrect(node->state(), action))
+        if (!checker.isCorrect(node->state(), node->stepNum(), action))
         {
             continue;
         }
@@ -166,6 +170,7 @@ vector<SearchNode*> generateSuccessors(
                 checker.heuristic(newState),
                 weight,
                 newState,
+                node->stepNum() + 1,
                 i,
                 node
             )
@@ -190,7 +195,7 @@ Solution astar(
 
     // init search tree
     SearchTree tree;
-    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos);
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos, 0);
     tree.addToOpen(startNode);
     SearchNode* currentNode = tree.extractBestNode();
 
@@ -241,7 +246,7 @@ Solution astar(
         vector<size_t> actions;
         while (currentNode->parent() != nullptr)
         {
-            actions.push_back(currentNode->stepNum());
+            actions.push_back(currentNode->actionNum());
             currentNode = currentNode->parent();
         }
         solution.stats.pathPotentialCost = checker.heuristic(startPos);

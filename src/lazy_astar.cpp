@@ -24,6 +24,7 @@ vector<SearchNode*> lazyGenerateSuccessors(
                 checker.heuristic(newState),
                 weight,
                 newState,
+                node->stepNum() + 1,
                 i,
                 node,
                 true
@@ -49,7 +50,7 @@ Solution lazyAstar(
 
     // init search tree
     SearchTree tree;
-    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos);
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos, 0);
     tree.addToOpen(startNode);
     SearchNode* currentNode = tree.extractBestNode();
 
@@ -61,8 +62,8 @@ Solution lazyAstar(
         if (currentNode->isLazy())
         {
             solution.stats.evaluatedEdges++;
-            const Action& lastAction = checker.getActions()[currentNode->stepNum()];
-            if (!checker.isCorrect(currentNode->parent()->state(), lastAction))
+            const Action& lastAction = checker.getActions()[currentNode->actionNum()];
+            if (!checker.isCorrect(currentNode->parent()->state(), currentNode->stepNum(), lastAction))
             {
                 delete currentNode;
                 currentNode = tree.extractBestNode();
@@ -116,7 +117,7 @@ Solution lazyAstar(
         vector<size_t> actions;
         while (currentNode->parent() != nullptr)
         {
-            actions.push_back(currentNode->stepNum());
+            actions.push_back(currentNode->actionNum());
             currentNode = currentNode->parent();
         }
         solution.stats.pathPotentialCost = checker.heuristic(startPos);

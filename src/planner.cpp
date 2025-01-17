@@ -68,9 +68,10 @@ size_t PreprocData::mbyteSize() const
     return byteSize() / (1024 * 1024);
 }
 
-ManipulatorPlanner::ManipulatorPlanner(size_t dof, mjModel* model, mjData* data)
+ManipulatorPlanner::ManipulatorPlanner(size_t dof, size_t arms, mjModel* model, mjData* data)
 {
     _dof = dof;
+    _arms = arms;
     _model = model;
     _data = data;
     initPrimitiveActions();
@@ -81,21 +82,45 @@ size_t ManipulatorPlanner::dof() const
     return _dof;
 }
 
-bool ManipulatorPlanner::checkCollision(const JointState& position) const
+size_t ManipulatorPlanner::arms() const
+{
+    return _arms;
+}
+
+bool ManipulatorPlanner::checkCollision(size_t armNum, const JointState& position) const
 {
     if (_model == nullptr || _data == nullptr) // if we have not data for check
     {
         return false;
     }
 
+    size_t armIdxShift = armNum * _dof;
+
     for (size_t i = 0; i < _dof; ++i)
     {
-        _data->qpos[i] = position.rad(i);
+        _data->qpos[i + armIdxShift] = position.rad(i);
     }
     return mj_light_collision(_model, _data);
 }
 
-bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Action& action) const
+bool ManipulatorPlanner::checkMultiCollision(const MultiState &positions) const
+{
+    if (_model == nullptr || _data == nullptr) // if we have not data for check
+    {
+        return false;
+    }
+
+    for (size_t armNum = 0; armNum < _arms; ++armNum)
+    {
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            _data->qpos[i + armNum * _dof] = positions[armNum].rad(i);
+        }
+    }
+    return mj_light_collision(_model, _data);
+}
+
+bool ManipulatorPlanner::checkCollisionAction(size_t armNum, const JointState& start, size_t stepNum, const Action& action, const vector<IConstraint>& constraints) const
 {
     startProfiling();
     if (_model == nullptr || _data == nullptr) // if we have not data for check
@@ -104,9 +129,11 @@ bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Act
         return false;
     }
 
+    size_t armIdxShift = armNum * _dof;
+
     for (size_t i = 0; i < _dof; ++i)
     {
-        _data->qpos[i] = start.rad(i);
+        _data->qpos[i + armIdxShift] = start.rad(i);
     }
 
     int jump = g_unitSize / g_checkJumps;
@@ -114,7 +141,44 @@ bool ManipulatorPlanner::checkCollisionAction(const JointState& start, const Act
     {
         for (size_t i = 0; i < _dof; ++i)
         {
-            _data->qpos[i] = start.rad(i) + g_worldEps * action[i] * t; // temporary we use global constant here for speed
+            _data->qpos[i + armIdxShift] = start.rad(i) + g_worldEps * action[i] * t; // temporary we use global constant here for speed
+        }
+        if (mj_light_collision(_model, _data))
+        {
+            stopProfiling();
+            return true;
+        }
+    }
+    stopProfiling();
+    return false;
+}
+
+bool ManipulatorPlanner::checkMultiCollisionAction(const MultiState &start, size_t stepNum, const MultiAction &action, const vector<vector<IConstraint>> &constraints) const
+{
+    startProfiling();
+    if (_model == nullptr || _data == nullptr) // if we have not data for check
+    {
+        stopProfiling();
+        return false;
+    }
+
+    for (size_t armNum = 0; armNum < _arms; ++armNum)
+    {
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            _data->qpos[i + armNum * _dof] = start[armNum].rad(i);
+        }
+    }
+
+    int jump = g_unitSize / g_checkJumps;
+    for (size_t t = jump; t <= g_unitSize; t += jump)
+    {
+        for (size_t armNum = 0; armNum < _arms; ++armNum)
+        {
+            for (size_t i = 0; i < _dof; ++i)
+            {
+                _data->qpos[i + armNum * _dof] = start[armNum].rad(i) + g_worldEps * action[armNum][i] * t; // temporary we use global constant here for speed
+            }
         }
         if (mj_light_collision(_model, _data))
         {
@@ -138,7 +202,7 @@ vector<string> ManipulatorPlanner::configurationSpace() const
     {
         for (int j = -g_units; j < g_units; ++j)
         {
-            if (checkCollision({i, j}))
+            if (checkCollision(0, {i, j}))
                 putSymbol(cSpace, i, j, '@');
         }
     }
@@ -159,13 +223,18 @@ vector<string> ManipulatorPlanner::pathInConfigurationSpace(const JointState& st
     return cSpace;
 }
 
+MultiSolution ManipulatorPlanner::planMultiActions(const MultiState &startPos, const MultiState &goalPos, int alg, double timeLimit, double w)
+{
+    return MultiSolution(_primitiveActions, _zeroAction, _dof, _arms);
+}
+
 Solution ManipulatorPlanner::planActions(
-    const JointState& startPos, const JointState& goalPos,
-    int alg, double timeLimit, double w)
+    size_t armNum, const JointState& startPos, const JointState& goalPos,
+    const vector<IConstraint>& constraints, int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
 
-    if (checkCollision(startPos) || checkCollision(goalPos))
+    if (checkCollision(armNum, startPos) || checkCollision(armNum, goalPos))
     {
         Solution solution(_primitiveActions, _zeroAction);
         solution.stats.pathVerdict = PATH_NOT_EXISTS; // incorrect aim
@@ -173,17 +242,17 @@ Solution ManipulatorPlanner::planActions(
     }
     switch (alg)
     {
-    case ALG_LINEAR:
+    case ALG_LINEAR: // does not work actually
         return linearPlanning(startPos, goalPos);
     case ALG_ASTAR:
-        return astarPlanning(startPos, goalPos, w, timeLimit);
+        return astarPlanning(armNum, startPos, goalPos, constraints, w, timeLimit);
     case ALG_LAZY_ASTAR:
-        return lazyAstarPlanning(startPos, goalPos, w, timeLimit);
+        return lazyAstarPlanning(armNum, startPos, goalPos, constraints, w, timeLimit);
     case ALG_PREPROC_CLUSTERS:
         return preprocClustersPlanning(startPos, goalPos, w, timeLimit);
     case ALG_ARASTAR:
-        return lazyARAstarPlanning(startPos, goalPos, w, timeLimit);
-    case ALG_PREPROC_ARASTAR:
+        return lazyARAstarPlanning(armNum, startPos, goalPos, constraints, w, timeLimit);
+    case ALG_PREPROC_ARASTAR: // does not work actually
         return preprocARAstarPlanning(startPos, goalPos, w, timeLimit);
     default:
         return Solution(_primitiveActions, _zeroAction);
@@ -191,12 +260,12 @@ Solution ManipulatorPlanner::planActions(
 }
 
 Solution ManipulatorPlanner::planActions(
-    const JointState& startPos, double goalX, double goalY,
-    int alg, double timeLimit, double w)
+    size_t armNum, const JointState& startPos, double goalX, double goalY,
+    const vector<IConstraint>& constraints, int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
 
-    if (checkCollision(startPos))
+    if (checkCollision(armNum, startPos))
     {
         Solution solution(_primitiveActions, _zeroAction);
         solution.stats.pathVerdict = PATH_NOT_EXISTS; // incorrect aim
@@ -205,9 +274,9 @@ Solution ManipulatorPlanner::planActions(
     switch (alg)
     {
     case ALG_ASTAR:
-        return astarPlanning(startPos, goalX, goalY, w, timeLimit);
+        return astarPlanning(armNum, startPos, goalX, goalY, constraints, w, timeLimit);
     case ALG_LAZY_ASTAR:
-        return lazyAstarPlanning(startPos, goalX, goalY, w, timeLimit);
+        return lazyAstarPlanning(armNum, startPos, goalX, goalY, constraints, w, timeLimit);
     default:
         return Solution(_primitiveActions, _zeroAction);
     }
@@ -242,46 +311,47 @@ void ManipulatorPlanner::preprocessClusters(int clusters)
         return;
     }
 
-    // start timer
-    clock_t start = clock();
+    // // start timer
+    // clock_t start = clock();
 
-    _preprocData.homeState = sampleFreeState(10);
-    if (_preprocData.homeState.dof() == 0)
-    {
-        stopProfiling();
-        return;
-    }
+    // _preprocData.homeState = sampleFreeState(10);
+    // if (_preprocData.homeState.dof() == 0)
+    // {
+    //     stopProfiling();
+    //     return;
+    // }
 
-    // sample centers
-    while (_preprocData.clusters.size() < clusters)
-    {
-        JointState center = sampleFreeState(10);
-        if (center.dof() == 0)
-        {
-            continue;
-        }
-        Solution solution = planActions(
-            center,
-            _preprocData.homeState,
-            ALG_LAZY_ASTAR,
-            60.0,
-            100.0
-        );
-        if (solution.stats.pathVerdict != PATH_FOUND)
-        {
-            continue;
-        }
-        _preprocData.clusters.push_back(
-            Cluster(center)
-        );
-        _preprocData.clusters.back().setSolution(solution);
-    }
+    // // sample centers
+    // while (_preprocData.clusters.size() < clusters)
+    // {
+    //     JointState center = sampleFreeState(10);
+    //     if (center.dof() == 0)
+    //     {
+    //         continue;
+    //     }
+    //     Solution solution = planActions(
+    //         center,
+    //         _preprocData.homeState,
+    //         ALG_LAZY_ASTAR,
+    //         60.0,
+    //         100.0
+    //     );
+    //     if (solution.stats.pathVerdict != PATH_FOUND)
+    //     {
+    //         continue;
+    //     }
+    //     _preprocData.clusters.push_back(
+    //         Cluster(center)
+    //     );
+    //     _preprocData.clusters.back().setSolution(solution);
+    // }
 
-    // end timer
-    clock_t end = clock();
-    _preprocData.preprocRuntime = (double)(end - start) / CLOCKS_PER_SEC;
-    _preprocData.isPreprocessed = true;
+    // // end timer
+    // clock_t end = clock();
+    // _preprocData.preprocRuntime = (double)(end - start) / CLOCKS_PER_SEC;
+    // _preprocData.isPreprocessed = true;
     stopProfiling();
+    return;
 }
 
 double ManipulatorPlanner::modelLength() const
@@ -301,12 +371,12 @@ double ManipulatorPlanner::maxActionLength() const
     static double maxAction = sin(g_eps / 2) * modelLength() * 2;
     return maxAction;
 }
-std::pair<double, double> ManipulatorPlanner::sitePosition(const JointState& state) const
+std::pair<double, double> ManipulatorPlanner::sitePosition(size_t armNum, const JointState& state) const
 {
     startProfiling();
     for (size_t i = 0; i < _dof; ++i)
     {
-        _data->qpos[i] = state.rad(i);
+        _data->qpos[i + armNum * _dof] = state.rad(i);
     }
     mj_forward(_model, _data);
     stopProfiling();
@@ -335,18 +405,19 @@ void ManipulatorPlanner::initPrimitiveActions()
 JointState ManipulatorPlanner::sampleFreeState(int attempts)
 {
     JointState state = randomState(_dof);
-    while (attempts-- > 0 && checkCollision(state))
-    {
-        state = randomState(_dof);
-    }
-    if (attempts < 0)
-    {
-        return JointState(0, 0);
-    }
-    else
-    {
-        return state;
-    }
+    return state;
+    // while (attempts-- > 0 && checkCollision(state))
+    // {
+    //     state = randomState(_dof);
+    // }
+    // if (attempts < 0)
+    // {
+    //     return JointState(0, 0);
+    // }
+    // else
+    // {
+    //     return state;
+    // }
 }
 
 Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const JointState& goalPos)
@@ -368,7 +439,7 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
                 t = 2 * _dof - i - 1;
             }
 
-            if (checkCollisionAction(currentPos, _primitiveActions[t]))
+            if (checkCollisionAction(0, currentPos, 0, _primitiveActions[t], {}))
             {
                 solution.stats.pathVerdict = PATH_NOT_FOUND;
                 return solution; // we temporary need to give up : TODO
@@ -383,53 +454,58 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
 }
 
 Solution ManipulatorPlanner::astarPlanning(
-    const JointState& startPos, const JointState& goalPos,
+    size_t armNum, const JointState& startPos, const JointState& goalPos,
+    const vector<IConstraint>& constraints,
     float weight, double timeLimit
 )
 {
-    AstarChecker checker(this, goalPos);
+    AstarChecker checker(this, armNum, goalPos, constraints);
     Solution solution = astar::astar(startPos, checker, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }
 Solution ManipulatorPlanner::astarPlanning(
-    const JointState& startPos, double goalX, double goalY,
+    size_t armNum, const JointState& startPos, double goalX, double goalY,
+    const vector<IConstraint>& constraints,
     float weight, double timeLimit
 )
 {
-    AstarCheckerSite checker(this, goalX, goalY);
+    AstarCheckerSite checker(this, armNum, goalX, goalY, constraints);
     Solution solution = astar::astar(startPos, checker, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }
 
 Solution ManipulatorPlanner::lazyAstarPlanning(
-    const JointState& startPos, const JointState& goalPos,
+    size_t armNum, const JointState& startPos, const JointState& goalPos,
+    const vector<IConstraint>& constraints,
     float weight, double timeLimit
 )
 {
-    AstarChecker checker(this, goalPos);
+    AstarChecker checker(this, armNum, goalPos, constraints);
     Solution solution = astar::lazyAstar(startPos, checker, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }
 Solution ManipulatorPlanner::lazyAstarPlanning(
-    const JointState& startPos, double goalX, double goalY,
+    size_t armNum, const JointState& startPos, double goalX, double goalY,
+    const vector<IConstraint>& constraints,
     float weight, double timeLimit
 )
 {
-    AstarCheckerSite checker(this, goalX, goalY);
+    AstarCheckerSite checker(this, armNum, goalX, goalY, constraints);
     Solution solution = astar::lazyAstar(startPos, checker, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }
 
 Solution ManipulatorPlanner::lazyARAstarPlanning(
-    const JointState& startPos, const JointState& goalPos,
+    size_t armNum, const JointState& startPos, const JointState& goalPos,
+    const vector<IConstraint>& constraints,
     float weight, double timeLimit
 )
 {
-    AstarChecker checker(this, goalPos);
+    AstarChecker checker(this, armNum, goalPos, constraints);
     Solution solution = astar::lazyARAstar(startPos, checker, weight, timeLimit);
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
@@ -444,120 +520,126 @@ Solution ManipulatorPlanner::preprocClustersPlanning(
     {
         return Solution(_primitiveActions, _zeroAction);
     }
+    return Solution(_primitiveActions, _zeroAction);
 
-    // start timer
-    clock_t start = clock();
+    // // start timer
+    // clock_t start = clock();
 
-    size_t startIdx = 0;
-    int startDistance = INT32_MAX;
-    size_t goalIdx = 0;
-    int goalDistance = INT32_MAX;
-    for (int i = 0; i < _preprocData.clusters.size(); ++i)
-    {
-        int newStartDst = _preprocData.clusters[i].dist(startPos);
-        int newGoalDst  = _preprocData.clusters[i].dist(goalPos);
+    // size_t startIdx = 0;
+    // int startDistance = INT32_MAX;
+    // size_t goalIdx = 0;
+    // int goalDistance = INT32_MAX;
+    // for (int i = 0; i < _preprocData.clusters.size(); ++i)
+    // {
+    //     int newStartDst = _preprocData.clusters[i].dist(startPos);
+    //     int newGoalDst  = _preprocData.clusters[i].dist(goalPos);
 
-        if (newStartDst < startDistance)
-        {
-            startIdx = i;
-            startDistance = newStartDst;
-        }
-        if (newGoalDst < goalDistance)
-        {
-            goalIdx = i;
-            goalDistance = newGoalDst;
-        }
-    }
+    //     if (newStartDst < startDistance)
+    //     {
+    //         startIdx = i;
+    //         startDistance = newStartDst;
+    //     }
+    //     if (newGoalDst < goalDistance)
+    //     {
+    //         goalIdx = i;
+    //         goalDistance = newGoalDst;
+    //     }
+    // }
 
-    clock_t middle = clock();
-    double middle_runtime = (double)(middle - start) / CLOCKS_PER_SEC;
+    // clock_t middle = clock();
+    // double middle_runtime = (double)(middle - start) / CLOCKS_PER_SEC;
 
-    Solution startToCluster = planActions(
-        startPos, _preprocData.clusters[startIdx].getCenter(),
-        ALG_LAZY_ASTAR, (timeLimit - middle_runtime), weight 
-    );
-    if (startToCluster.stats.pathVerdict != PATH_FOUND)
-    {
-        clock_t end = clock();
-        startToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
-        startToCluster.stats.pathVerdict = PATH_NOT_FOUND;
-        return startToCluster;
-    }
-    middle = clock();
-    middle_runtime = (double)(middle - start) / CLOCKS_PER_SEC;
+    // Solution startToCluster = planActions(
+    //     startPos, _preprocData.clusters[startIdx].getCenter(),
+    //     ALG_LAZY_ASTAR, (timeLimit - middle_runtime), weight 
+    // );
+    // if (startToCluster.stats.pathVerdict != PATH_FOUND)
+    // {
+    //     clock_t end = clock();
+    //     startToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+    //     startToCluster.stats.pathVerdict = PATH_NOT_FOUND;
+    //     return startToCluster;
+    // }
+    // middle = clock();
+    // middle_runtime = (double)(middle - start) / CLOCKS_PER_SEC;
 
-    Solution goalToCluster = planActions(
-        goalPos, _preprocData.clusters[goalIdx].getCenter(),
-        ALG_LAZY_ASTAR, (timeLimit - middle_runtime), weight 
-    );
-    if (goalToCluster.stats.pathVerdict != PATH_FOUND)
-    {
-        clock_t end = clock();
-        goalToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
-        goalToCluster.stats.byteSize = std::max(
-            goalToCluster.stats.byteSize,
-            startToCluster.stats.byteSize
-        );
-        goalToCluster.stats.pathVerdict = PATH_NOT_FOUND;
-        return goalToCluster;
-    }
+    // Solution goalToCluster = planActions(
+    //     goalPos, _preprocData.clusters[goalIdx].getCenter(),
+    //     ALG_LAZY_ASTAR, (timeLimit - middle_runtime), weight 
+    // );
+    // if (goalToCluster.stats.pathVerdict != PATH_FOUND)
+    // {
+    //     clock_t end = clock();
+    //     goalToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+    //     goalToCluster.stats.byteSize = std::max(
+    //         goalToCluster.stats.byteSize,
+    //         startToCluster.stats.byteSize
+    //     );
+    //     goalToCluster.stats.pathVerdict = PATH_NOT_FOUND;
+    //     return goalToCluster;
+    // }
 
-    startToCluster.add(_preprocData.clusters[startIdx].getSolution());
-    startToCluster.add(_preprocData.clusters[goalIdx].getSolution().reversed());
-    startToCluster.add(goalToCluster.reversed());
+    // startToCluster.add(_preprocData.clusters[startIdx].getSolution());
+    // startToCluster.add(_preprocData.clusters[goalIdx].getSolution().reversed());
+    // startToCluster.add(goalToCluster.reversed());
 
-    // end timer
-    clock_t end = clock();
-    startToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
-    startToCluster.stats.pathVerdict = PATH_FOUND;
-    startToCluster.stats.preprocByteSize = _preprocData.byteSize();
-    startToCluster.stats.preprocRuntime = _preprocData.preprocRuntime;
+    // // end timer
+    // clock_t end = clock();
+    // startToCluster.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+    // startToCluster.stats.pathVerdict = PATH_FOUND;
+    // startToCluster.stats.preprocByteSize = _preprocData.byteSize();
+    // startToCluster.stats.preprocRuntime = _preprocData.preprocRuntime;
 
-    return startToCluster;
+    // return startToCluster;
 }
 
 Solution ManipulatorPlanner::preprocARAstarPlanning(const JointState &startPos, const JointState &goalPos, float weight, double timeLimit)
 {
-    const float PREPROC_WEIGHT = 1000000.0;
-    // start timer
-    clock_t start = clock();
+    // const float PREPROC_WEIGHT = 1000000.0;
+    // // start timer
+    // clock_t start = clock();
 
-    printf("DEBUG LOG. dof = %zu, tl = %f\n", startPos.dof(), timeLimit);
+    // printf("DEBUG LOG. dof = %zu, tl = %f\n", startPos.dof(), timeLimit);
 
-    double preprocTimeLimit = std::min(timeLimit * 0.5, 2.5);
-    printf("DEBUG LOG. For preprocess wew use %fs time limit\n", preprocTimeLimit);
+    // double preprocTimeLimit = std::min(timeLimit * 0.5, 2.5);
+    // printf("DEBUG LOG. For preprocess wew use %fs time limit\n", preprocTimeLimit);
 
-    Solution startSolution = preprocClustersPlanning(
-        startPos, goalPos, PREPROC_WEIGHT, preprocTimeLimit
-    );
+    // Solution startSolution = preprocClustersPlanning(
+    //     startPos, goalPos, PREPROC_WEIGHT, preprocTimeLimit
+    // );
 
-    // end timer
-    clock_t end = clock();
+    // // end timer
+    // clock_t end = clock();
 
-    printf("DEBUG LOG. During finding preproc solution we spent %f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+    // printf("DEBUG LOG. During finding preproc solution we spent %f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
 
-    AstarChecker checker(this, goalPos);
-    Solution solution = astar::lazyARAstar(
-        startPos,
-        checker,
-        startSolution,
-        weight,
-        timeLimit - (double)(end - start) / CLOCKS_PER_SEC
-    );
-    solution.plannerProfile = getNamedProfileInfo();
-    return solution;
+    // AstarChecker checker(this, goalPos);
+    // Solution solution = astar::lazyARAstar(
+    //     startPos,
+    //     checker,
+    //     startSolution,
+    //     weight,
+    //     timeLimit - (double)(end - start) / CLOCKS_PER_SEC
+    // );
+    // solution.plannerProfile = getNamedProfileInfo();
+    // return solution;
+    return Solution(_primitiveActions, _zeroAction);
 }
 
 // Checkers
 
-ManipulatorPlanner::AstarChecker::AstarChecker(ManipulatorPlanner* planner, const JointState& goal) : _goal(goal)
+ManipulatorPlanner::AstarChecker::AstarChecker(
+    ManipulatorPlanner* planner, size_t armNum, const JointState& goal,
+    const vector<IConstraint>& constraints)
+    : _goal(goal), _constraints(constraints)
 {
+    _armNum = armNum;
     _planner = planner;
 }
 
-bool ManipulatorPlanner::AstarChecker::isCorrect(const JointState& state, const Action& action)
+bool ManipulatorPlanner::AstarChecker::isCorrect(const JointState& state, size_t stepNum, const Action& action)
 {
-    return state.applied(action).isCorrect() && (!_planner->checkCollisionAction(state, action));
+    return state.applied(action).isCorrect() && (!_planner->checkCollisionAction(_armNum, state, stepNum, action, _constraints));
 }
 bool ManipulatorPlanner::AstarChecker::isGoal(const JointState& state)
 {
@@ -590,16 +672,20 @@ CostType ManipulatorPlanner::AstarChecker::heuristic(const JointState& state)
 // checker for site goal
 
 
-ManipulatorPlanner::AstarCheckerSite::AstarCheckerSite(ManipulatorPlanner* planner, double goalX, double goalY)
+ManipulatorPlanner::AstarCheckerSite::AstarCheckerSite(
+    ManipulatorPlanner* planner, size_t armNum, double goalX, double goalY,
+    const vector<IConstraint>& constraints)
+    : _constraints(constraints)
 {
+    _armNum = armNum;
     _planner = planner;
     _goalX = goalX;
     _goalY = goalY;
 }
 
-bool ManipulatorPlanner::AstarCheckerSite::isCorrect(const JointState& state, const Action& action)
+bool ManipulatorPlanner::AstarCheckerSite::isCorrect(const JointState& state, size_t stepNum, const Action& action)
 {
-    return state.applied(action).isCorrect() && (!_planner->checkCollisionAction(state, action));
+    return state.applied(action).isCorrect() && (!_planner->checkCollisionAction(_armNum, state, stepNum, action, _constraints));
 }
 bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
 {
@@ -612,7 +698,7 @@ bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
     }
     else
     {
-        std::pair<double, double> xy = _planner->sitePosition(state);
+        std::pair<double, double> xy = _planner->sitePosition(_armNum, state);
         state.setCacheXY(xy.first, xy.second);
         double dx = xy.first - _goalX;
         double dy = xy.second - _goalY;
@@ -648,7 +734,7 @@ CostType ManipulatorPlanner::AstarCheckerSite::heuristic(const JointState& state
     }
     else
     {
-        std::pair<double, double> xy = _planner->sitePosition(state);
+        std::pair<double, double> xy = _planner->sitePosition(_armNum, state);
         state.setCacheXY(xy.first, xy.second);
         double dx = xy.first - _goalX;
         double dy = xy.second - _goalY;

@@ -12,6 +12,8 @@
 struct Config
 {
     std::string modelFilename;
+    size_t dof;
+    size_t arms;
     double timeLimit;
     double w;
     int taskNum;
@@ -35,12 +37,12 @@ struct ModelState
     int counter = 0;
     int partOfMove = 0;
     bool haveToPlan = false;
-    Solution solution;
+    MultiSolution solution;
 
-    JointState start;
-    JointState currentState;
-    JointState goal;
-    Action action;
+    MultiState start;
+    MultiState currentState;
+    MultiState goal;
+    MultiAction action;
     const ITask* task;
 };
 
@@ -53,12 +55,12 @@ public:
     void setUp(Config config);
     void setUp(const string& filename);
 
-    void setManipulatorState(const JointState& state);
-    void setGoalState(const JointState& state);
+    void setManipulatorState(const MultiState& state);
+    void setGoalState(const MultiState& state);
     // simulate action in currentState
     // at end stage aplies action to currentState
     // return next stage
-    size_t simulateAction(JointState& currentState, const Action& action, size_t stage);
+    size_t simulateAction(MultiState& currentState, const MultiAction& action, size_t stage);
 
     void setTask();
     void solveTask();
@@ -88,6 +90,7 @@ private:
     TaskSet* _taskset;
 
     size_t _dof;
+    size_t _arms;
 
     bool _shouldClose = false;
 

@@ -41,15 +41,16 @@ void Interactor::setUp(Config config)
     if (!_model)
         mju_error_s("Load model error: %s", error); // exception in constructor - bad idea TODO
     _data = mj_makeData(_model);
-    _dof = _model->nq / 2;
+    _dof = _config.dof;
+    _arms = config.arms;
 
     mjModel* mCopy = mj_copyModel(NULL, _model);
     mjData* dCopy = mj_makeData(mCopy);
 
-    _planner = new ManipulatorPlanner(_dof, mCopy, dCopy);
+    _planner = new ManipulatorPlanner(_dof, _arms, mCopy, dCopy);
     // _planner->preprocess(); TODO return
     _logger = new Logger(_dof);
-    _taskset = new TaskSet(_dof);
+    _taskset = new TaskSet(_dof, _arms);
 
     // init GLFW
     if (!glfwInit())
@@ -77,20 +78,20 @@ void Interactor::setUp(Config config)
     _cam.lookat[1] = arr_view[4];
     _cam.lookat[2] = arr_view[5];
 
-    _modelState.start = JointState(_dof, 0);
-    _modelState.currentState = JointState(_dof, 0);
-    _modelState.goal = JointState(_dof, 0);
-    _modelState.action = Action(_dof, 0);
+    _modelState.start = MultiState(_dof, _arms, 0);
+    _modelState.currentState = MultiState(_dof, _arms, 0);
+    _modelState.goal = MultiState(_dof, _arms, 0);
+    _modelState.action = MultiAction(_dof, _arms, 0);
 
     _logger->prepareMainFile("");
     _logger->prepareScenFile(_config.scenFilename);
     _logger->prepareStatsFile(_config.statsFilename);
     _logger->prepareRuntimeFile(_config.runtimeFilename);
-    if (_dof == 2)
+    if (_dof == 2 && _arms == 1)
     {
-        _logger->prepareCspaceFile(_config.cSpaceFilename);
+        // _logger->prepareCspaceFile(_config.cSpaceFilename);
         _logger->printCSpace(_planner->configurationSpace());
-        _logger->preparePathsFolder(_config.pathsFolder);
+        // _logger->preparePathsFolder(_config.pathsFolder);
     }
 
     _planner->preprocess(_config.preprocess, _config.clusters, _config.randomSeed);
@@ -112,21 +113,27 @@ void Interactor::setUp(const string& filename)
     setUp(parseJSON(filename));
 }
 
-void Interactor::setManipulatorState(const JointState& state)
+void Interactor::setManipulatorState(const MultiState& state)
 {
-    for (size_t i = 0; i < _dof; ++i)
+    for (size_t a = 0; a < _arms; ++a)
     {
-        _data->qpos[i] = state.rad(i);
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            _data->qpos[i + a * _dof] = state[a].rad(i);
+        }
     }
 }
-void Interactor::setGoalState(const JointState& state)
+void Interactor::setGoalState(const MultiState& state)
 {
-    for (size_t i = 0; i < _dof; ++i)
+    for (size_t a = 0; a < _arms; ++a)
     {
-        _data->qpos[i + _dof] = state.rad(i);
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            _data->qpos[i + a * _dof + _arms * _dof] = state[a].rad(i);
+        }
     }
 }
-size_t Interactor::simulateAction(JointState& currentState, const Action& action, size_t stage)
+size_t Interactor::simulateAction(MultiState& currentState, const MultiAction& action, size_t stage)
 {
     if (stage == g_unitSize - 1)
     {
@@ -136,9 +143,12 @@ size_t Interactor::simulateAction(JointState& currentState, const Action& action
     }
     else
     {
-        for (size_t i = 0; i < _dof; ++i)
+        for (size_t a = 0; a < _arms; ++a)
         {
-            _data->qpos[i] += action[i] * g_worldEps;
+            for (size_t i = 0; i < _dof; ++i)
+            {
+                _data->qpos[i + a * _dof] += action[a][i] * g_worldEps;
+            }
         }
         return stage + 1;
     }
@@ -159,7 +169,7 @@ void Interactor::setTask()
         _modelState.currentState = _modelState.start;
         _modelState.goal = static_cast<const TaskState*>(_modelState.task)->goal();
         // if correct task TODO remove
-        if (!_planner->checkCollision(_modelState.currentState) && !_planner->checkCollision(_modelState.goal))
+        if (!_planner->checkMultiCollision(_modelState.currentState) && !_planner->checkMultiCollision(_modelState.goal))
         {
             setManipulatorState(_modelState.currentState);
             setGoalState(_modelState.goal);
@@ -171,7 +181,7 @@ void Interactor::setTask()
         _modelState.start = static_cast<const TaskPosition*>(_modelState.task)->start();
         _modelState.currentState = _modelState.start;
         // if correct task TODO remove
-        if (!_planner->checkCollision(_modelState.currentState))
+        if (!_planner->checkMultiCollision(_modelState.currentState))
         {
             setManipulatorState(_modelState.currentState);
             _modelState.haveToPlan = true;
@@ -187,38 +197,38 @@ void Interactor::solveTask()
         _modelState.counter = 0;
         if (_modelState.task->type() == TASK_STATE)
         {
-            _modelState.solution = _planner->planActions(_modelState.currentState, _modelState.goal,
+            _modelState.solution = _planner->planMultiActions(_modelState.currentState, _modelState.goal,
                 _config.algorithm, _config.timeLimit, _config.w);
 
-            _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
+            // _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
         }
         else if (_modelState.task->type() == TASK_POSITION)
         {
-            _modelState.solution = _planner->planActions(_modelState.currentState,
-                static_cast<const TaskPosition*>(_modelState.task)->goalX(),
-                static_cast<const TaskPosition*>(_modelState.task)->goalY(),
-                _config.algorithm, _config.timeLimit, _config.w);
+            // _modelState.solution = _planner->planActions(_modelState.currentState,
+            //     static_cast<const TaskPosition*>(_modelState.task)->goalX(),
+            //     static_cast<const TaskPosition*>(_modelState.task)->goalY(),
+            //     _config.algorithm, _config.timeLimit, _config.w);
 
-            _logger->printScenLog(_modelState.solution, _modelState.currentState, 
-                static_cast<const TaskPosition*>(_modelState.task)->goalX(),
-                static_cast<const TaskPosition*>(_modelState.task)->goalY());
+            // _logger->printScenLog(_modelState.solution, _modelState.currentState, 
+            //     static_cast<const TaskPosition*>(_modelState.task)->goalX(),
+            //     static_cast<const TaskPosition*>(_modelState.task)->goalY());
         }
         _modelState.haveToPlan = false;
 
-        _logger->printMainLog(_modelState.solution);
+        // _logger->printMainLog(_modelState.solution);
         
-        _logger->printStatsLog(_modelState.solution);
+        // _logger->printStatsLog(_modelState.solution);
 
-        _logger->printRuntimeLog(_modelState.solution);
+        // _logger->printRuntimeLog(_modelState.solution);
 
         if (_dof == 2)
         {
-            _logger->printPath(
-                _planner->pathInConfigurationSpace(
-                    _modelState.start,
-                    _modelState.solution
-                )
-            );
+            // _logger->printPath(
+            //     _planner->pathInConfigurationSpace(
+            //         _modelState.start,
+            //         _modelState.solution
+            //     )
+            // );
         }
         
         printf("progress %zu/%zu\n\n", _taskset->progress(), _taskset->size());
@@ -229,7 +239,7 @@ void Interactor::step()
 {
     if (!_config.displayMotion || _modelState.solution.goalAchieved())
     {
-        _modelState.action = Action(_dof, 0);
+        _modelState.action = MultiAction(_dof, _arms, 0);
         if (!_modelState.haveToPlan)
         {
             setTask();
@@ -303,6 +313,8 @@ Config Interactor::parseJSON(const string& filename)
     json data = json::parse(fin);
 
     std::string modelFilename = data["model"]["filename"];
+    size_t dof = data["model"]["dof"];
+    size_t arms = data["model"]["arms"];
     double timeLimit = data["algorithm"]["time_limit"];
     Algorithm algorithm = data["algorithm"]["type"];
     double w = data["algorithm"]["heuristic"]["weight"];
@@ -322,6 +334,8 @@ Config Interactor::parseJSON(const string& filename)
 
     return Config{
         modelFilename,
+        dof,
+        arms,
         timeLimit,
         w,
         taskNum,
