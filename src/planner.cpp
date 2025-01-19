@@ -225,7 +225,12 @@ vector<string> ManipulatorPlanner::pathInConfigurationSpace(const JointState& st
 
 MultiSolution ManipulatorPlanner::planMultiActions(const MultiState &startPos, const MultiState &goalPos, int alg, double timeLimit, double w)
 {
-    return MultiSolution(_primitiveActions, _zeroAction, _dof, _arms);
+    MultiSolution multiSolution(_primitiveActions, _zeroAction, _dof, _arms);
+    for (size_t armNum = 0; armNum < _arms; ++armNum)
+    {
+        multiSolution[armNum] = planActions(armNum, startPos[armNum], goalPos[armNum], {}, alg, 60.0, 1.0);
+    }
+    return multiSolution;
 }
 
 Solution ManipulatorPlanner::planActions(

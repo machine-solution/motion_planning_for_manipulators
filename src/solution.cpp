@@ -1,6 +1,8 @@
 #include "solution.h"
 #include "utils.h"
 
+#include <iostream>
+
 Solution::Solution()
 {
     _nextActionId = 0;
@@ -94,7 +96,6 @@ size_t Solution::byteSize() const
 
 MultiSolution::MultiSolution()
 {
-    
 }
 
 MultiSolution::MultiSolution(const vector<Action> &primitiveActions, const Action &zeroAction, size_t dof, size_t arms)

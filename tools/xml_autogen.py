@@ -14,7 +14,7 @@ manipulators = [
 arms = len(manipulators) # do not change
 joints = len(manipulators[0][0]) # do not change
 
-path_to_obstacles = 'maps/free_0.txt'
+path_to_obstacles = 'maps/free_1.txt'
 path_to_result = f'model/{arms}-arm/{joints}-dof/manipulator_0.xml'
 
 

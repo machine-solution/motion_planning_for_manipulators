@@ -199,6 +199,7 @@ void Interactor::solveTask()
         {
             _modelState.solution = _planner->planMultiActions(_modelState.currentState, _modelState.goal,
                 _config.algorithm, _config.timeLimit, _config.w);
+            _modelState.emptySolution = false;
 
             // _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
         }
@@ -237,12 +238,20 @@ void Interactor::solveTask()
 
 void Interactor::step()
 {
-    if (!_config.displayMotion || _modelState.solution.goalAchieved())
+    if (!_config.displayMotion || _modelState.emptySolution || _modelState.solution.goalAchieved())
     {
         _modelState.action = MultiAction(_dof, _arms, 0);
         if (!_modelState.haveToPlan)
         {
-            setTask();
+            if (_config.displayMotion && _modelState.freezeCounter++ < 256)
+            {
+                
+            }
+            else
+            {
+                setTask();
+                _modelState.freezeCounter = 0;
+            }
         }
         else if (_modelState.haveToPlan)
         {

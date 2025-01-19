@@ -21,6 +21,7 @@ int main(int argc, const char** argv)
     {
         Interactor interactor;
         interactor.setUp(pathJSON);
+        std::cerr << "Starting main loop" << std::endl;
         interactor.doMainLoop();
     }
 

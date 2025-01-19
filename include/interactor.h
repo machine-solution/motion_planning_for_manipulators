@@ -36,7 +36,9 @@ struct ModelState
 {
     int counter = 0;
     int partOfMove = 0;
+    int freezeCounter = 0;
     bool haveToPlan = false;
+    bool emptySolution = true;
     MultiSolution solution;
 
     MultiState start;
