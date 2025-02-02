@@ -5,10 +5,10 @@
         "arms": 2
     },
     "algorithm": {
-        "time_limit": 3.0,
+        "time_limit": 20.0,
         "type": 4,
         "heuristic": {
-            "weight": 100.0
+            "weight": 2.0
         }
     },
     "preprocess": {
@@ -17,7 +17,7 @@
     },
     "taskset": {
         "use_random_tasks": true,
-        "task_number": 10000,
+        "task_number": 100,
         "random_seed": 12345,
         "task_type": 0,
         "taskset_filename": "scenaries/4_2-dof_pos_hard.scen"

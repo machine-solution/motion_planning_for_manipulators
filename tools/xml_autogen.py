@@ -14,13 +14,14 @@ manipulators = [
 arms = len(manipulators) # do not change
 joints = len(manipulators[0][0]) # do not change
 
-path_to_obstacles = 'maps/free_1.txt'
+path_to_obstacles = 'maps/free_0.txt'
 path_to_result = f'model/{arms}-arm/{joints}-dof/manipulator_0.xml'
 
 
 offset4 = ' ' * 4 # do not change
 offset8 = ' ' * 8 # do not change
 path_to_header = 'tools/const/header.txt' # do not change
+path_to_sphere = 'tools/const/sphere.txt' # do not change
 path_to_footer = 'tools/const/footer.txt' # do not change
 
 
@@ -164,6 +165,7 @@ with open(path_to_result, "w+") as f:
     for num, lengths_base in enumerate(manipulators):
         lengths, base = lengths_base
         f.write(manipulator_shade_autogen(num, joints, lengths, base))
+    f.write(open(path_to_sphere, 'r').read())
     f.write(gen_obstacles['obstacles'])
     f.write('\n')
     f.write('    </worldbody>\n')

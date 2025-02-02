@@ -1,9 +1,12 @@
+#include "cbs.h"
 #include "planner.h"
 #include "utils.h"
 #include "light_mujoco.h"
 
 #include <time.h>
 
+#include <algorithm>
+#include <iostream>
 #include <stdio.h>
 #include <queue>
 
@@ -87,12 +90,185 @@ size_t ManipulatorPlanner::arms() const
     return _arms;
 }
 
+void ManipulatorPlanner::switchArm(size_t armNum, int mode) const
+{
+    for (size_t i = 1 + armNum * _dof; i < 1 + (armNum + 1) * _dof; ++i)
+    {
+        _model->geom_contype[i] = mode;
+        _model->geom_conaffinity[i] = mode;
+    }
+}
+
+void ManipulatorPlanner::switchSphere(int mode) const
+{
+    _model->geom_contype[1 + _dof * _arms] = mode;
+    _model->geom_conaffinity[1 + _dof * _arms] = mode;
+}
+
+void ManipulatorPlanner::onArmsOnly(std::set<size_t> onArms) const
+{
+    for (size_t armNum = 0; armNum < _arms; ++armNum)
+    {
+        switchArm(armNum, onArms.count(armNum));
+    }
+}
+
+void ManipulatorPlanner::offArmsOnly(std::set<size_t> offArms) const
+{
+    for (size_t armNum = 0; armNum < _arms; ++armNum)
+    {
+        switchArm(armNum, 1 - offArms.count(armNum));
+    }
+}
+
+void ManipulatorPlanner::setArmState(size_t armNum, const JointState &state) const
+{
+    size_t armIdxShift = armNum * _dof;
+
+    for (size_t i = 0; i < _dof; ++i)
+    {
+        _data->qpos[i + armIdxShift] = state.rad(i);
+    }
+}
+
+void ManipulatorPlanner::setSphereState(double centerX, double centerY, double centerZ, double radius) const
+{
+    size_t geomIndex = 1 + _dof * _arms;
+    _model->geom_size[3 * geomIndex] = radius;
+
+    _data->geom_xpos[3 * geomIndex + 0] = centerX;
+    _data->geom_xpos[3 * geomIndex + 1] = centerY;
+    _data->geom_xpos[3 * geomIndex + 2] = centerZ;
+}
+
+bool ManipulatorPlanner::checkCollisionActionObstacles(size_t armNum, const JointState &start, const Action &action) const
+{
+    size_t armIdxShift = armNum * _dof;
+
+    for (size_t i = 0; i < _dof; ++i)
+    {
+        _data->qpos[i + armIdxShift] = start.rad(i);
+    }
+
+    int jump = g_unitSize / g_checkJumps;
+    for (size_t t = jump; t <= g_unitSize; t += jump)
+    {
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            _data->qpos[i + armIdxShift] = start.rad(i) + g_worldEps * action[i] * t; // temporary we use global constant here for speed
+        }
+        if (mj_light_collision(_model, _data))
+        {
+            stopProfiling();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ManipulatorPlanner::checkCollisionActionConstraintVertex(size_t armNum, const JointState &start, int stepNum, const Action &action, std::shared_ptr<VertexConstraint> constraint) const
+{
+    if (stepNum == constraint->stepNum() && start.applied(action) == constraint->state())
+    {
+        return true;
+    }
+    return false;
+}
+
+bool ManipulatorPlanner::checkCollisionActionConstraintAvoidance(size_t armNum, const JointState &start, int stepNum, const Action &action, std::shared_ptr<AvoidanceConstraint> constraint) const
+{
+    if (stepNum == constraint->stepNum())
+    {
+        switchArm(constraint->armNum(), 1);
+        setArmState(constraint->armNum(), constraint->state());
+        bool result = checkCollisionActionObstacles(armNum, start, action);
+        switchArm(constraint->armNum(), 0);
+        return result;
+    }
+    return false;
+}
+
+bool ManipulatorPlanner::checkCollisionActionConstraintSphere(size_t armNum, const JointState &start, int stepNum, const Action &action, std::shared_ptr<SphereConstraint> constraint) const
+{
+    if (stepNum == constraint->stepNum())
+    {
+        switchSphere(1);
+        setSphereState(constraint->centerX(), constraint->centerZ(), constraint->centerY(), constraint->radius());
+        bool result = checkCollisionActionObstacles(armNum, start, action);
+        switchSphere(0);
+        return result;
+    }
+    return false;
+}
+
+bool ManipulatorPlanner::checkCollisionActionConstraintPriority(size_t armNum, const JointState &start, int stepNum, const Action &action, std::shared_ptr<PriorityConstraint> constraint, const StateChain &states) const
+{
+    switchArm(constraint->armNum(), 1);
+    setArmState(constraint->armNum(), states[stepNum]);
+    bool result = checkCollisionActionObstacles(armNum, start, action);
+    switchArm(constraint->armNum(), 0);
+    return result;
+}
+
+bool ManipulatorPlanner::checkCollisionStayForeverConstraintVertex(size_t armNum, const JointState &start, int stepNum, std::shared_ptr<VertexConstraint> constraint) const
+{
+    if (stepNum <= constraint->stepNum() && start == constraint->state())
+    {
+        return true;
+    }
+    return false;
+}
+
+bool ManipulatorPlanner::checkCollisionStayForeverConstraintAvoidance(size_t armNum, const JointState &start, int stepNum, std::shared_ptr<AvoidanceConstraint> constraint) const
+{
+    if (stepNum <= constraint->stepNum())
+    {
+        switchArm(constraint->armNum(), 1);
+        setArmState(constraint->armNum(), constraint->state());
+        bool result = checkCollisionActionObstacles(armNum, start, _zeroAction);
+        switchArm(constraint->armNum(), 0);
+        return result;
+    }
+    return false;
+}
+
+bool ManipulatorPlanner::checkCollisionStayForeverConstraintSphere(size_t armNum, const JointState &start, int stepNum, std::shared_ptr<SphereConstraint> constraint) const
+{
+    if (stepNum <= constraint->stepNum())
+    {
+        switchSphere(1);
+        setSphereState(constraint->centerX(), constraint->centerZ(), constraint->centerY(), constraint->radius());
+        bool result = checkCollisionActionObstacles(armNum, start, _zeroAction);
+        switchSphere(0);
+        return result;
+    }
+    return false;
+}
+
+bool ManipulatorPlanner::checkCollisionStayForeverConstraintPriority(size_t armNum, const JointState &start, int stepNum, std::shared_ptr<PriorityConstraint> constraint, const StateChain &states) const
+{
+    bool result = true;
+    switchArm(constraint->armNum(), 1);
+    for (size_t step = stepNum; stepNum < states.size(); ++stepNum)
+    {
+        setArmState(constraint->armNum(), states[stepNum]);
+        result = result && checkCollisionActionObstacles(armNum, start, _zeroAction);
+        if (!result)
+        {
+            break;
+        }
+    }
+    switchArm(constraint->armNum(), 0);
+    return result;
+}
+
 bool ManipulatorPlanner::checkCollision(size_t armNum, const JointState& position) const
 {
     if (_model == nullptr || _data == nullptr) // if we have not data for check
     {
         return false;
     }
+    onArmsOnly(std::set<size_t>({armNum}));
 
     size_t armIdxShift = armNum * _dof;
 
@@ -120,7 +296,7 @@ bool ManipulatorPlanner::checkMultiCollision(const MultiState &positions) const
     return mj_light_collision(_model, _data);
 }
 
-bool ManipulatorPlanner::checkCollisionAction(size_t armNum, const JointState& start, size_t stepNum, const Action& action, const vector<IConstraint>& constraints) const
+bool ManipulatorPlanner::checkCollisionAction(size_t armNum, const JointState& start, int stepNum, const Action& action, const ConstraintSet& constraints) const
 {
     startProfiling();
     if (_model == nullptr || _data == nullptr) // if we have not data for check
@@ -128,32 +304,49 @@ bool ManipulatorPlanner::checkCollisionAction(size_t armNum, const JointState& s
         stopProfiling();
         return false;
     }
-
-    size_t armIdxShift = armNum * _dof;
-
-    for (size_t i = 0; i < _dof; ++i)
+    onArmsOnly(std::set<size_t>({armNum}));
+    bool collisionObstacle = checkCollisionActionObstacles(
+        armNum, start, action
+    );
+    if (collisionObstacle)
     {
-        _data->qpos[i + armIdxShift] = start.rad(i);
+        stopProfiling();
+        return true;
     }
-
-    int jump = g_unitSize / g_checkJumps;
-    for (size_t t = jump; t <= g_unitSize; t += jump)
+    for (auto constraint : constraints.constraints)
     {
-        for (size_t i = 0; i < _dof; ++i)
+        bool collisionConstraint = false;
+        if (constraint->type() == CONSTRAINT_VERTEX)
         {
-            _data->qpos[i + armIdxShift] = start.rad(i) + g_worldEps * action[i] * t; // temporary we use global constant here for speed
+            collisionConstraint = checkCollisionActionConstraintVertex(
+                armNum, start, stepNum, action, std::static_pointer_cast<VertexConstraint>(constraint)
+            );
         }
-        if (mj_light_collision(_model, _data))
+        else if (constraint->type() == CONSTRAINT_AVOIDANCE)
+        {
+            collisionConstraint = checkCollisionActionConstraintAvoidance(
+                armNum, start, stepNum, action, std::static_pointer_cast<AvoidanceConstraint>(constraint)
+            );
+        }
+        else if (constraint->type() == CONSTRAINT_SPHERE)
+        {
+            collisionConstraint = checkCollisionActionConstraintSphere(
+                armNum, start, stepNum, action, std::static_pointer_cast<SphereConstraint>(constraint)
+            );
+        }
+
+        if (collisionConstraint)
         {
             stopProfiling();
             return true;
         }
     }
+
     stopProfiling();
     return false;
 }
 
-bool ManipulatorPlanner::checkMultiCollisionAction(const MultiState &start, size_t stepNum, const MultiAction &action, const vector<vector<IConstraint>> &constraints) const
+bool ManipulatorPlanner::checkCollisionStayForever(size_t armNum, const JointState &start, int stepNum, const ConstraintSet &constraints) const
 {
     startProfiling();
     if (_model == nullptr || _data == nullptr) // if we have not data for check
@@ -161,6 +354,57 @@ bool ManipulatorPlanner::checkMultiCollisionAction(const MultiState &start, size
         stopProfiling();
         return false;
     }
+    onArmsOnly(std::set<size_t>({armNum}));
+    // bool collisionObstacle = checkCollisionActionObstacles(
+    //     armNum, start, _zeroAction
+    // );
+    // if (collisionObstacle)
+    // {
+    //     stopProfiling();
+    //     return true;
+    // }
+    for (auto constraint : constraints.constraints)
+    {
+        bool collisionConstraint = false;
+        if (constraint->type() == CONSTRAINT_VERTEX)
+        {
+            collisionConstraint = checkCollisionStayForeverConstraintVertex(
+                armNum, start, stepNum, std::static_pointer_cast<VertexConstraint>(constraint)
+            );
+        }
+        else if (constraint->type() == CONSTRAINT_AVOIDANCE)
+        {
+            collisionConstraint = checkCollisionStayForeverConstraintAvoidance(
+                armNum, start, stepNum, std::static_pointer_cast<AvoidanceConstraint>(constraint)
+            );
+        }
+        else if (constraint->type() == CONSTRAINT_SPHERE)
+        {
+            collisionConstraint = checkCollisionStayForeverConstraintSphere(
+                armNum, start, stepNum, std::static_pointer_cast<SphereConstraint>(constraint)
+            );
+        }
+
+        if (collisionConstraint)
+        {
+            stopProfiling();
+            return true;
+        }
+    }
+
+    stopProfiling();
+    return false;
+}
+
+bool ManipulatorPlanner::checkMultiCollisionAction(const MultiState &start, int stepNum, const MultiAction &action) const
+{
+    startProfiling();
+    if (_model == nullptr || _data == nullptr) // if we have not data for check
+    {
+        stopProfiling();
+        return false;
+    }
+    // offArmsOnly(std::set<size_t>({}));
 
     for (size_t armNum = 0; armNum < _arms; ++armNum)
     {
@@ -188,6 +432,110 @@ bool ManipulatorPlanner::checkMultiCollisionAction(const MultiState &start, size
     }
     stopProfiling();
     return false;
+}
+
+std::vector<double> ManipulatorPlanner::findIntersectionPoint(size_t armNum1, size_t armNum2, const JointState &state1, const JointState &state2) const
+{
+    setArmState(armNum1, state1);
+    setArmState(armNum2, state2);
+    mj_light_collision(_model, _data);
+
+    size_t n_contacts = _data->ncon;
+    for (int i = 0; i < n_contacts; ++i) {
+        const mjContact& contact = _data->contact[i];
+
+        int geom1_id = contact.geom1;
+        int geom2_id = contact.geom2;
+        if (
+        ((geom1_id - 1) / _dof == armNum1 && (geom2_id - 1) / _dof == armNum2) ||
+        ((geom1_id - 1) / _dof == armNum2 && (geom2_id - 1) / _dof == armNum1))
+        {
+            return std::vector<double>({contact.pos[0], contact.pos[1], contact.pos[2]});
+        }
+    }
+    std::cerr << "ALARM NO COLLISION POINT THERE" << std::endl;
+    return std::vector<double>();
+}
+
+Conflict ManipulatorPlanner::findFirstConflict(MultiState startPos, MultiSolution solution) const
+{
+    int stepNum = 0;
+    while (!solution.goalAchieved())
+    {
+        MultiAction action = solution.nextAction();
+        offArmsOnly(std::set<size_t>({}));
+        if (checkMultiCollisionAction(startPos, stepNum, action))
+        {
+            std::vector<std::vector<size_t>> checkPairs;
+            for (size_t firstArm = 0; firstArm < _arms; ++firstArm)
+            {
+                for (size_t secondArm = firstArm + 1; secondArm < _arms; ++secondArm)
+                {
+                    checkPairs.push_back({(size_t)rand(), firstArm, secondArm});
+                }
+            }
+            std::sort(checkPairs.begin(), checkPairs.end());
+
+            for (auto item : checkPairs)
+            {
+                size_t firstArm = item[1];
+                size_t secondArm = item[2];
+                onArmsOnly(std::set<size_t>({firstArm, secondArm}));
+                if (checkMultiCollisionAction(startPos, stepNum, action))
+                {
+                    std::vector<double> point = findIntersectionPoint(
+                        firstArm, secondArm, 
+                        startPos[firstArm].applied(action[firstArm]),
+                        startPos[secondArm].applied(action[secondArm])
+                    );
+                    return Conflict(
+                        firstArm,
+                        startPos[firstArm],
+                        action[firstArm],
+                        secondArm,
+                        startPos[secondArm],
+                        action[secondArm],
+                        stepNum,
+                        point
+                    );
+                }
+            }
+        }
+
+        ++stepNum;
+        startPos.apply(action);
+    }
+    return Conflict();
+}
+
+size_t ManipulatorPlanner::calculateConflictsCount(MultiState startPos, MultiSolution solution) const
+{
+    size_t conflicts = 0;
+    int stepNum = 0;
+    while (!solution.goalAchieved())
+    {
+        MultiAction action = solution.nextAction();
+        offArmsOnly(std::set<size_t>({}));
+        if (checkMultiCollisionAction(startPos, stepNum, action))
+        {
+            std::vector<std::vector<size_t>> checkPairs(_arms * (_arms - 1) / 2);
+            for (size_t firstArm = 0; firstArm < _arms; ++firstArm)
+            {
+                for (size_t secondArm = firstArm + 1; secondArm < _arms; ++secondArm)
+                {
+                    onArmsOnly(std::set<size_t>({firstArm, secondArm}));
+                    if (checkMultiCollisionAction(startPos, stepNum, action))
+                    {
+                        ++conflicts;
+                    }
+                }
+            }
+        }
+
+        ++stepNum;
+        startPos.apply(action);
+    }
+    return conflicts;
 }
 
 void putSymbol(vector<string>& cSpace, int i, int j, char symbol)
@@ -225,19 +573,55 @@ vector<string> ManipulatorPlanner::pathInConfigurationSpace(const JointState& st
 
 MultiSolution ManipulatorPlanner::planMultiActions(const MultiState &startPos, const MultiState &goalPos, int alg, double timeLimit, double w)
 {
-    MultiSolution multiSolution(_primitiveActions, _zeroAction, _dof, _arms);
-    for (size_t armNum = 0; armNum < _arms; ++armNum)
-    {
-        multiSolution[armNum] = planActions(armNum, startPos[armNum], goalPos[armNum], {}, alg, 60.0, 1.0);
-    }
-    return multiSolution;
+    return CBS(
+        _dof,
+        _arms,
+        this,
+        startPos,
+        goalPos,
+        w,
+        timeLimit
+    );
 }
 
 Solution ManipulatorPlanner::planActions(
     size_t armNum, const JointState& startPos, const JointState& goalPos,
-    const vector<IConstraint>& constraints, int alg, double timeLimit, double w)
+    const ConstraintSet& constraints, int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
+    std::cerr << "CALL PLANNING FOR ARM " << armNum << " WITH " << constraints.constraints.size() << " CONSTRAINTS" << std::endl;
+    for (auto constraint : constraints.constraints)
+    {
+        if (constraint->type() == CONSTRAINT_VERTEX)
+        {
+            std::shared_ptr<VertexConstraint> cst = std::static_pointer_cast<VertexConstraint>(constraint);
+            std::cerr << cst->stepNum() << " |v| ";
+            for (int i = 0; i < _dof; ++i)
+            {
+                std::cerr << cst->state()[i] << " ";
+            }
+            std::cerr << std::endl;
+        }
+        if (constraint->type() == CONSTRAINT_AVOIDANCE)
+        {
+            std::shared_ptr<AvoidanceConstraint> cst = std::static_pointer_cast<AvoidanceConstraint>(constraint);
+            std::cerr << cst->stepNum() << " |a| ";
+            for (int i = 0; i < _dof; ++i)
+            {
+                std::cerr << cst->state()[i] << " ";
+            }
+            std::cerr << " | " << cst->armNum();
+            std::cerr << std::endl;
+        }
+        if (constraint->type() == CONSTRAINT_SPHERE)
+        {
+            std::shared_ptr<SphereConstraint> cst = std::static_pointer_cast<SphereConstraint>(constraint);
+            std::cerr << cst->stepNum() << " |s| ";
+            std::cerr << cst->centerX() << " " << cst->centerY() << " " << cst->centerZ() << " " << cst->radius();
+            std::cerr << std::endl;
+        }
+    }
+    std::cerr << std::endl;
 
     if (checkCollision(armNum, startPos) || checkCollision(armNum, goalPos))
     {
@@ -266,7 +650,7 @@ Solution ManipulatorPlanner::planActions(
 
 Solution ManipulatorPlanner::planActions(
     size_t armNum, const JointState& startPos, double goalX, double goalY,
-    const vector<IConstraint>& constraints, int alg, double timeLimit, double w)
+    const ConstraintSet& constraints, int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
 
@@ -393,17 +777,23 @@ const vector<Action>& ManipulatorPlanner::getPrimitiveActions() const
     return _primitiveActions;
 }
 
+const Action &ManipulatorPlanner::getZeroAction() const
+{
+    return _zeroAction;
+}
+
 // opposite actions must be reversed
 void ManipulatorPlanner::initPrimitiveActions()
 {
     _zeroAction = Action(_dof, 0);
 
-    _primitiveActions.assign(2 * _dof, Action(_dof, 0));
+    _primitiveActions.assign(2 * _dof + 1, Action(_dof, 0));
+    // _primitiveActions[_dof] = Action(_dof, 0);
 
     for (int i = 0; i < _dof; ++i)
     {
         _primitiveActions[i][i] = 1;
-        _primitiveActions[2 * _dof - i - 1][i] = -1;
+        _primitiveActions[2 * _dof - i][i] = -1;
     }
 }
 
@@ -444,11 +834,11 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
                 t = 2 * _dof - i - 1;
             }
 
-            if (checkCollisionAction(0, currentPos, 0, _primitiveActions[t], {}))
-            {
-                solution.stats.pathVerdict = PATH_NOT_FOUND;
-                return solution; // we temporary need to give up : TODO
-            }
+            // if (checkCollisionAction(0, currentPos, 0, _primitiveActions[t], {}))
+            // {
+            //     solution.stats.pathVerdict = PATH_NOT_FOUND;
+            //     return solution; // we temporary need to give up : TODO
+            // }
             currentPos.apply(_primitiveActions[t]);
             solution.addAction(t);
         }
@@ -460,7 +850,7 @@ Solution ManipulatorPlanner::linearPlanning(const JointState& startPos, const Jo
 
 Solution ManipulatorPlanner::astarPlanning(
     size_t armNum, const JointState& startPos, const JointState& goalPos,
-    const vector<IConstraint>& constraints,
+    const ConstraintSet& constraints,
     float weight, double timeLimit
 )
 {
@@ -471,7 +861,7 @@ Solution ManipulatorPlanner::astarPlanning(
 }
 Solution ManipulatorPlanner::astarPlanning(
     size_t armNum, const JointState& startPos, double goalX, double goalY,
-    const vector<IConstraint>& constraints,
+    const ConstraintSet& constraints,
     float weight, double timeLimit
 )
 {
@@ -483,18 +873,56 @@ Solution ManipulatorPlanner::astarPlanning(
 
 Solution ManipulatorPlanner::lazyAstarPlanning(
     size_t armNum, const JointState& startPos, const JointState& goalPos,
-    const vector<IConstraint>& constraints,
+    const ConstraintSet& constraints,
     float weight, double timeLimit
 )
 {
+    std::cerr << "LAZY A* PLANNING SELECTED" << std::endl;
     AstarChecker checker(this, armNum, goalPos, constraints);
     Solution solution = astar::lazyAstar(startPos, checker, weight, timeLimit);
+    {
+        bool checkPassed = true;
+        std::cerr << "SANITY CHECK" << std::endl;
+        JointState copyPos = startPos;
+        Solution copySol = solution;
+        int stepNum = 0;
+        while (!copySol.goalAchieved())
+        {
+            Action nAction = copySol.nextAction();
+            if (checkCollisionAction(armNum, copyPos, stepNum, nAction, constraints))
+            {
+                copyPos.apply(nAction);
+                std::cerr << stepNum <<  " | ";
+                for (int i = 0; i < _dof; ++i)
+                {
+                    std::cerr << copyPos[i] << " ";
+                }
+                std::cerr << " FAILED" << std::endl;
+                checkPassed = false;
+            }
+            else
+            {
+                copyPos.apply(nAction);
+                std::cerr << stepNum <<  " | ";
+                for (int i = 0; i < _dof; ++i)
+                {
+                    std::cerr << copyPos[i] << " ";
+                }
+                std::cerr << " SUCCEED" << std::endl;
+            }
+            ++stepNum;
+        }
+        if (!checkPassed)
+        {
+            exit(0);
+        }
+    }
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }
 Solution ManipulatorPlanner::lazyAstarPlanning(
     size_t armNum, const JointState& startPos, double goalX, double goalY,
-    const vector<IConstraint>& constraints,
+    const ConstraintSet& constraints,
     float weight, double timeLimit
 )
 {
@@ -506,7 +934,7 @@ Solution ManipulatorPlanner::lazyAstarPlanning(
 
 Solution ManipulatorPlanner::lazyARAstarPlanning(
     size_t armNum, const JointState& startPos, const JointState& goalPos,
-    const vector<IConstraint>& constraints,
+    const ConstraintSet& constraints,
     float weight, double timeLimit
 )
 {
@@ -635,23 +1063,24 @@ Solution ManipulatorPlanner::preprocARAstarPlanning(const JointState &startPos, 
 
 ManipulatorPlanner::AstarChecker::AstarChecker(
     ManipulatorPlanner* planner, size_t armNum, const JointState& goal,
-    const vector<IConstraint>& constraints)
+    const ConstraintSet& constraints)
     : _goal(goal), _constraints(constraints)
 {
     _armNum = armNum;
     _planner = planner;
 }
 
-bool ManipulatorPlanner::AstarChecker::isCorrect(const JointState& state, size_t stepNum, const Action& action)
+bool ManipulatorPlanner::AstarChecker::isCorrect(const JointState& state, int stepNum, const Action& action)
 {
     return state.applied(action).isCorrect() && (!_planner->checkCollisionAction(_armNum, state, stepNum, action, _constraints));
 }
-bool ManipulatorPlanner::AstarChecker::isGoal(const JointState& state)
+bool ManipulatorPlanner::AstarChecker::isGoal(const JointState& state, int stepNum)
 {
-    return state == _goal;
+    return state == _goal && !_planner->checkCollisionStayForever(_armNum, state, stepNum + 1, _constraints);
 }
 CostType ManipulatorPlanner::AstarChecker::costAction(const JointState& state, const Action& action)
 {
+    return 1;
     if (state.lastAction() == nullptr)
     {
         return action.abs();
@@ -679,7 +1108,7 @@ CostType ManipulatorPlanner::AstarChecker::heuristic(const JointState& state)
 
 ManipulatorPlanner::AstarCheckerSite::AstarCheckerSite(
     ManipulatorPlanner* planner, size_t armNum, double goalX, double goalY,
-    const vector<IConstraint>& constraints)
+    const ConstraintSet& constraints)
     : _constraints(constraints)
 {
     _armNum = armNum;
@@ -688,12 +1117,17 @@ ManipulatorPlanner::AstarCheckerSite::AstarCheckerSite(
     _goalY = goalY;
 }
 
-bool ManipulatorPlanner::AstarCheckerSite::isCorrect(const JointState& state, size_t stepNum, const Action& action)
+bool ManipulatorPlanner::AstarCheckerSite::isCorrect(const JointState& state, int stepNum, const Action& action)
 {
     return state.applied(action).isCorrect() && (!_planner->checkCollisionAction(_armNum, state, stepNum, action, _constraints));
 }
-bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
+bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state, int stepNum)
 {
+    bool canStayForever = !_planner->checkCollisionStayForever(_armNum, state, stepNum + 1, _constraints);
+    if (!canStayForever)
+    {
+        return false;
+    }
     const double r = 0.05; // const minimum dist from pos
     if (state.hasCacheXY())
     {
@@ -712,6 +1146,7 @@ bool ManipulatorPlanner::AstarCheckerSite::isGoal(const JointState& state)
 }
 CostType ManipulatorPlanner::AstarCheckerSite::costAction(const JointState& state, const Action& action)
 {
+    return 1;
     if (state.lastAction() == nullptr)
     {
         return action.abs();

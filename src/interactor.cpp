@@ -191,79 +191,103 @@ void Interactor::setTask()
 void Interactor::solveTask()
 {
     // planning path to goal
-    ++_modelState.counter;
-    if (_modelState.counter > 8) // to first of all simulator can show picture
+    if (_modelState.task->type() == TASK_STATE)
     {
-        _modelState.counter = 0;
-        if (_modelState.task->type() == TASK_STATE)
-        {
-            _modelState.solution = _planner->planMultiActions(_modelState.currentState, _modelState.goal,
-                _config.algorithm, _config.timeLimit, _config.w);
-            _modelState.emptySolution = false;
+        _modelState.solution = _planner->planMultiActions(_modelState.currentState, _modelState.goal,
+            _config.algorithm, _config.timeLimit, _config.w);
 
-            // _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
-        }
-        else if (_modelState.task->type() == TASK_POSITION)
-        {
-            // _modelState.solution = _planner->planActions(_modelState.currentState,
-            //     static_cast<const TaskPosition*>(_modelState.task)->goalX(),
-            //     static_cast<const TaskPosition*>(_modelState.task)->goalY(),
-            //     _config.algorithm, _config.timeLimit, _config.w);
-
-            // _logger->printScenLog(_modelState.solution, _modelState.currentState, 
-            //     static_cast<const TaskPosition*>(_modelState.task)->goalX(),
-            //     static_cast<const TaskPosition*>(_modelState.task)->goalY());
-        }
-        _modelState.haveToPlan = false;
-
-        // _logger->printMainLog(_modelState.solution);
-        
-        // _logger->printStatsLog(_modelState.solution);
-
-        // _logger->printRuntimeLog(_modelState.solution);
-
-        if (_dof == 2)
-        {
-            // _logger->printPath(
-            //     _planner->pathInConfigurationSpace(
-            //         _modelState.start,
-            //         _modelState.solution
-            //     )
-            // );
-        }
-        
-        printf("progress %zu/%zu\n\n", _taskset->progress(), _taskset->size());
+        // _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
     }
+    else if (_modelState.task->type() == TASK_POSITION)
+    {
+        // _modelState.solution = _planner->planActions(_modelState.currentState,
+        //     static_cast<const TaskPosition*>(_modelState.task)->goalX(),
+        //     static_cast<const TaskPosition*>(_modelState.task)->goalY(),
+        //     _config.algorithm, _config.timeLimit, _config.w);
+
+        // _logger->printScenLog(_modelState.solution, _modelState.currentState, 
+        //     static_cast<const TaskPosition*>(_modelState.task)->goalX(),
+        //     static_cast<const TaskPosition*>(_modelState.task)->goalY());
+    }
+    _modelState.haveToPlan = false;
+
+    // _logger->printMainLog(_modelState.solution);
+    
+    // _logger->printStatsLog(_modelState.solution);
+
+    // _logger->printRuntimeLog(_modelState.solution);
+
+    if (_dof == 2)
+    {
+        // _logger->printPath(
+        //     _planner->pathInConfigurationSpace(
+        //         _modelState.start,
+        //         _modelState.solution
+        //     )
+        // );
+    }
+    
+    printf("progress %zu/%zu\n\n", _taskset->progress(), _taskset->size());
+    
 }
 
 void Interactor::step()
 {
-    if (!_config.displayMotion || _modelState.emptySolution || _modelState.solution.goalAchieved())
+    if (_shouldClose)
+    {
+        return;
+    }
+    if (_modelState.needSetTask)
     {
         _modelState.action = MultiAction(_dof, _arms, 0);
-        if (!_modelState.haveToPlan)
+        if (_config.displayMotion && _modelState.freezeCounter++ < 256)
         {
-            if (_config.displayMotion && _modelState.freezeCounter++ < 256)
-            {
-                
-            }
-            else
-            {
-                setTask();
-                _modelState.freezeCounter = 0;
-            }
+            
         }
-        else if (_modelState.haveToPlan)
+        else
+        {
+            setTask();
+            _modelState.needSetTask = false;
+            _modelState.haveToPlan = true;
+            _modelState.freezeCounter = 0;
+        }
+    }
+    else if (_modelState.haveToPlan)
+    {
+        _modelState.action = MultiAction(_dof, _arms, 0);
+
+        if (_config.displayMotion && _modelState.freezeCounter++ < 256)
+        {
+            
+        }
+        else
         {
             solveTask();
+            _modelState.haveToPlan = false;
+            _modelState.partOfMove = 0;
+            _modelState.freezeCounter = 0;
         }
     }
     else
     {
-        _modelState.partOfMove = simulateAction(_modelState.currentState, _modelState.action, _modelState.partOfMove);
-        if (_modelState.partOfMove == 0)
+        if (!_config.displayMotion)
         {
-            _modelState.action = _modelState.solution.nextAction();
+            _modelState.needSetTask = true;
+        }
+        else
+        {
+            if (_modelState.partOfMove == 0)
+            {
+                if (_modelState.solution.goalAchieved())
+                {
+                    _modelState.needSetTask = true;
+                }
+                else
+                {
+                    _modelState.action = _modelState.solution.nextAction();
+                }
+            }
+            _modelState.partOfMove = simulateAction(_modelState.currentState, _modelState.action, _modelState.partOfMove);
         }
     }
 

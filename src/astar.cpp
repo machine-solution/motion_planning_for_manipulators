@@ -5,12 +5,13 @@
 
 namespace astar {
 
-SearchNode::SearchNode(CostType g, CostType h, CostType w, const JointState& state, size_t stepNum, int actionNum, SearchNode* parent, bool isLazy)
+SearchNode::SearchNode(CostType g, CostType h, CostType w, const JointState& state, int stepNum, int actionNum, SearchNode* parent, bool isLazy)
 {
     _g = g;
     _h = h;
     _w = w;
     _state = state;
+    _stepNum = stepNum;
     _actionNum = actionNum;
     _parent = parent;
     _isLazy = isLazy;
@@ -32,7 +33,7 @@ int SearchNode::actionNum() const
 {
     return _actionNum;
 }
-size_t SearchNode::stepNum() const
+int SearchNode::stepNum() const
 {
     return _stepNum;
 }
@@ -195,7 +196,7 @@ Solution astar(
 
     // init search tree
     SearchTree tree;
-    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos, 0);
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos, -1);
     tree.addToOpen(startNode);
     SearchNode* currentNode = tree.extractBestNode();
 
@@ -204,7 +205,7 @@ Solution astar(
 
     while (currentNode != nullptr)
     {
-        if (checker.isGoal(currentNode->state()))
+        if (checker.isGoal(currentNode->state(), currentNode->stepNum()))
         {
             solution.stats.pathVerdict = PATH_FOUND;
             break;

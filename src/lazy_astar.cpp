@@ -50,7 +50,7 @@ Solution lazyAstar(
 
     // init search tree
     SearchTree tree;
-    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos, 0);
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos, -1);
     tree.addToOpen(startNode);
     SearchNode* currentNode = tree.extractBestNode();
 
@@ -76,7 +76,7 @@ Solution lazyAstar(
             }
         }
 
-        if (checker.isGoal(currentNode->state()))
+        if (checker.isGoal(currentNode->state(), currentNode->stepNum()))
         {
             solution.stats.pathVerdict = PATH_FOUND;
             break;

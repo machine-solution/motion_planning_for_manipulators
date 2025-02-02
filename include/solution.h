@@ -61,6 +61,21 @@ private:
 };
 
 
+class StateChain
+{
+public:
+    StateChain(JointState startState, Solution solution);
+
+    JointState operator[](int i) const;
+    JointState back() const;
+
+    size_t size() const;
+private:
+    JointState _startState;
+    vector<JointState> _states;
+};
+
+
 class MultiSolution
 {
 public:
@@ -71,6 +86,8 @@ public:
     Solution& operator[](size_t i);
 
     MultiAction nextAction();
+
+    size_t countActions() const;
 
     bool goalAchieved() const;
 

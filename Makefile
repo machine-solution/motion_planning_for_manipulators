@@ -6,8 +6,8 @@ SRC = src
 INC = include
 TARGET = simulator
 
-SOURCES = $(OBJ)/utils.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/solution.o $(OBJ)/interactor.o $(OBJ)/logger.o $(OBJ)/taskset.o $(OBJ)/light_mujoco.o $(OBJ)/lazy_astar.o $(OBJ)/lazy_arastar.o
-INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $(INC)/solution.h $(INC)/interactor.h $(INC)/logger.h $(INC)/taskset.h $(INC)/light_mujoco.h $(INC)/global_defs.h $(INC)/doctest.h $(INC)/lazy_astar.h $(INC)/lazy_arastar.h
+SOURCES = $(OBJ)/utils.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/solution.o $(OBJ)/interactor.o $(OBJ)/logger.o $(OBJ)/taskset.o $(OBJ)/light_mujoco.o $(OBJ)/lazy_astar.o $(OBJ)/lazy_arastar.o $(OBJ)/cbs_tree.o $(OBJ)/constraint.o $(OBJ)/cbs.o
+INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $(INC)/solution.h $(INC)/interactor.h $(INC)/logger.h $(INC)/taskset.h $(INC)/light_mujoco.h $(INC)/global_defs.h $(INC)/doctest.h $(INC)/lazy_astar.h $(INC)/lazy_arastar.h $(INC)/cbs_tree.h $(INC)/constraint.h $(INC)/cbs.h
 
 .PHONY: all clean unit_testing integration_testing simulator 
 
@@ -39,7 +39,7 @@ $(OBJ)/joint_state.o: $(SRC)/joint_state.cpp $(INC)/joint_state.h $(INC)/global_
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/joint_state.cpp $(LIBS) -c -o $(OBJ)/joint_state.o
 
-$(OBJ)/planner.o: $(SRC)/planner.cpp $(INC)/planner.h $(INC)/joint_state.h $(INC)/light_mujoco.h $(INC)/global_defs.h $(INC)/astar.h $(INC)/lazy_astar.h
+$(OBJ)/planner.o: $(SRC)/planner.cpp $(INC)/planner.h $(INC)/joint_state.h $(INC)/light_mujoco.h $(INC)/global_defs.h $(INC)/astar.h $(INC)/lazy_astar.h $(INC)/cbs.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/planner.cpp $(LIBS) -c -o $(OBJ)/planner.o
 
@@ -78,3 +78,15 @@ $(OBJ)/taskset.o: $(SRC)/taskset.cpp $(INC)/taskset.h $(INC)/global_defs.h $(INC
 $(OBJ)/interactor.o: $(SRC)/interactor.cpp $(INC)/interactor.h $(INC)/logger.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/taskset.h $(INC)/global_defs.h
 	mkdir -p $(OBJ)
 	$(CXX) $(FLAGS) $(SRC)/interactor.cpp $(LIBS) -c -o $(OBJ)/interactor.o
+
+$(OBJ)/cbs_tree.o: $(SRC)/cbs_tree.cpp $(INC)/cbs_tree.h $(INC)/global_defs.h $(INC)/constraint.h $(INC)/joint_state.h $(INC)/utils.h $(INC)/taskset.h $(INC)/solution.h
+	mkdir -p $(OBJ)
+	$(CXX) $(FLAGS) $(SRC)/cbs_tree.cpp $(LIBS) -c -o $(OBJ)/cbs_tree.o
+
+$(OBJ)/constraint.o: $(SRC)/constraint.cpp $(INC)/constraint.h $(INC)/global_defs.h $(INC)/joint_state.h $(INC)/planner.h
+	mkdir -p $(OBJ)
+	$(CXX) $(FLAGS) $(SRC)/constraint.cpp $(LIBS) -c -o $(OBJ)/constraint.o
+
+$(OBJ)/cbs.o: $(SRC)/cbs.cpp $(INC)/cbs.h $(INC)/global_defs.h $(INC)/constraint.h $(INC)/utils.h $(INC)/solution.h
+	mkdir -p $(OBJ)
+	$(CXX) $(FLAGS) $(SRC)/cbs.cpp $(LIBS) -c -o $(OBJ)/cbs.o

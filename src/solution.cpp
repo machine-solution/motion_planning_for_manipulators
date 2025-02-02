@@ -127,6 +127,16 @@ MultiAction MultiSolution::nextAction()
     return MultiAction(actions);
 }
 
+size_t MultiSolution::countActions() const
+{
+    size_t count = 0;
+    for (size_t i = 0; i < _arms; ++i)
+    {
+        count += _solutions[i].size();
+    }
+    return count;
+}
+
 bool MultiSolution::goalAchieved() const
 {
     for (size_t a = 0; a < _arms; ++a)
@@ -137,4 +147,44 @@ bool MultiSolution::goalAchieved() const
         }
     }
     return true;
+}
+
+StateChain::StateChain(JointState startState, Solution solution)
+{
+    _startState = startState;
+    while (!solution.goalAchieved())
+    {
+        startState.apply(solution.nextAction());
+        _states.push_back(startState);
+    }
+}
+
+JointState StateChain::operator[](int i) const
+{
+    if (i < 0)
+    {
+        return _startState;
+    }
+    if (i >= _states.size())
+    {
+        return back();
+    }
+    return _states.at(i);
+}
+
+JointState StateChain::back() const
+{
+    if (_states.size() > 0)
+    {
+        return _states.back();
+    }
+    else
+    {
+        return _startState;
+    }
+}
+
+size_t StateChain::size() const
+{
+    return _states.size();
 }
