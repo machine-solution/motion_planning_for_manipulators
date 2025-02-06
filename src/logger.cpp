@@ -87,17 +87,17 @@ void Logger::prepareStatsFile(const std::string& filename)
     printStatsLogHeader(_statsFile);
 }
 
-void Logger::printMainLog(const Solution& solution)
+void Logger::printMainLog(Stats stats)
 {
-    printMainLog(_mainFile, solution);
+    printMainLog(_mainFile, stats);
 }
 void Logger::printRuntimeLog(const Solution& solution)
 {
     printRuntimeLog(_runtimeFile, solution);
 }
-void Logger::printStatsLog(const Solution& solution)
+void Logger::printStatsLog(Stats stats)
 {
-    printStatsLog(_statsFile, solution);
+    printStatsLog(_statsFile, stats);
 }
 void Logger::printScenLog(const Solution& solution, const JointState& startPos, const JointState& goalPos)
 {
@@ -125,35 +125,35 @@ void Logger::printPath(const vector<string>& cSpacePath, int number)
     fclose(pathFile);
 }
 
-void Logger::printMainLog(FILE* file, const Solution& solution)
+void Logger::printMainLog(FILE* file, Stats stats)
 {
-    std::string yn[] = {"PATH FOUND", "PATH NOT FOUND", "PATH DOES NOT EXIST"};
+    std::string yn[] = {"PATH NOT FOUND", "PATH FOUND", "PATH DOES NOT EXIST"};
 
-    fprintf(file, "path verdict: %s\nexpansions: %zu\nbyte size: %zu\ncost of path: %f\nruntime: %.3fs\n",
-        yn[solution.stats.pathVerdict].c_str(),
-        solution.stats.expansions,
-        solution.stats.byteSize,
-        solution.stats.pathCost,
-        solution.stats.runtime
+    fprintf(file, "path verdict: %s\ncost of path: %f\nruntime: %.3fs\n",
+        yn[stats.pathVerdict].c_str(),
+        // solution.stats.expansions,
+        // solution.stats.byteSize,
+        stats.pathCost,
+        stats.runtime
     );
-    fprintf(file, "---Planner Profile---\n");
-    for (const ProfileInfo& info : solution.plannerProfile)
-    {
-        fprintf(file, "%.1fms\t%zu\t%s\n",
-            info.runtime * 1000,
-            info.calls,
-            info.funcName.c_str()
-        );
-    }
-    fprintf(file, "---Search Tree Profile---\n");
-    for (const ProfileInfo& info : solution.searchTreeProfile)
-    {
-        fprintf(file, "%.1fms\t%zu\t%s\n",
-            info.runtime * 1000,
-            info.calls,
-            info.funcName.c_str()
-        );
-    }
+    // fprintf(file, "---Planner Profile---\n");
+    // for (const ProfileInfo& info : solution.plannerProfile)
+    // {
+    //     fprintf(file, "%.1fms\t%zu\t%s\n",
+    //         info.runtime * 1000,
+    //         info.calls,
+    //         info.funcName.c_str()
+    //     );
+    // }
+    // fprintf(file, "---Search Tree Profile---\n");
+    // for (const ProfileInfo& info : solution.searchTreeProfile)
+    // {
+    //     fprintf(file, "%.1fms\t%zu\t%s\n",
+    //         info.runtime * 1000,
+    //         info.calls,
+    //         info.funcName.c_str()
+    //     );
+    // }
     fprintf(file, "\n");
 }
 
@@ -193,21 +193,21 @@ void Logger::printRuntimeLog(FILE* file, const Solution& solution)
 
 void Logger::printStatsLogHeader(FILE* file)
 {
-    fprintf(file, "expansions,runtime,preprocRuntime,byteSize,preprocByteSize,pathCost,pathPotentialCost,pathFound,consideredEdges,evaluatedEdges\n");
+    fprintf(file, "runtime,pathCost,pathFound\n");
 }
-void Logger::printStatsLog(FILE* file, const Solution& solution)
+void Logger::printStatsLog(FILE* file, Stats stats)
 {
-    fprintf(file, "%zu,%f,%f,%zu,%zu,%f,%f,%d,%zu,%zu\n",
-        solution.stats.expansions,
-        solution.stats.runtime,
-        solution.stats.preprocRuntime,
-        solution.stats.byteSize,
-        solution.stats.preprocByteSize,
-        solution.stats.pathCost,
-        solution.stats.pathPotentialCost,
-        solution.stats.pathVerdict,
-        solution.stats.consideredEdges,
-        solution.stats.evaluatedEdges
+    fprintf(file, "%f,%f,%d\n",
+        // solution.stats.expansions,
+        stats.runtime,
+        // solution.stats.preprocRuntime,
+        // solution.stats.byteSize,
+        // solution.stats.preprocByteSize,
+        stats.pathCost,
+        // solution.stats.pathPotentialCost,
+        stats.pathVerdict
+        // solution.stats.consideredEdges,
+        // solution.stats.evaluatedEdges
     );
 }
 

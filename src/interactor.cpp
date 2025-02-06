@@ -42,7 +42,7 @@ void Interactor::setUp(Config config)
         mju_error_s("Load model error: %s", error); // exception in constructor - bad idea TODO
     _data = mj_makeData(_model);
     _dof = _config.dof;
-    _arms = config.arms;
+    _arms = _config.arms;
 
     mjModel* mCopy = mj_copyModel(NULL, _model);
     mjData* dCopy = mj_makeData(mCopy);
@@ -90,7 +90,7 @@ void Interactor::setUp(Config config)
     if (_dof == 2 && _arms == 1)
     {
         // _logger->prepareCspaceFile(_config.cSpaceFilename);
-        _logger->printCSpace(_planner->configurationSpace());
+        // _logger->printCSpace(_planner->configurationSpace());
         // _logger->preparePathsFolder(_config.pathsFolder);
     }
 
@@ -211,9 +211,9 @@ void Interactor::solveTask()
     }
     _modelState.haveToPlan = false;
 
-    // _logger->printMainLog(_modelState.solution);
+    _logger->printMainLog(_modelState.solution.stats);
     
-    // _logger->printStatsLog(_modelState.solution);
+    _logger->printStatsLog(_modelState.solution.stats);
 
     // _logger->printRuntimeLog(_modelState.solution);
 
@@ -266,6 +266,11 @@ void Interactor::step()
             _modelState.haveToPlan = false;
             _modelState.partOfMove = 0;
             _modelState.freezeCounter = 0;
+
+            if (_modelState.solution.stats.pathVerdict != PATH_FOUND)
+            {
+                _modelState.needSetTask = true;
+            }
         }
     }
     else

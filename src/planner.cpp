@@ -101,8 +101,8 @@ void ManipulatorPlanner::switchArm(size_t armNum, int mode) const
 
 void ManipulatorPlanner::switchSphere(int mode) const
 {
-    _model->geom_contype[1 + _dof * _arms] = mode;
-    _model->geom_conaffinity[1 + _dof * _arms] = mode;
+    _model->geom_contype[1 + 2 * _dof * _arms] = mode;
+    _model->geom_conaffinity[1 + 2 *_dof * _arms] = mode;
 }
 
 void ManipulatorPlanner::onArmsOnly(std::set<size_t> onArms) const
@@ -133,7 +133,7 @@ void ManipulatorPlanner::setArmState(size_t armNum, const JointState &state) con
 
 void ManipulatorPlanner::setSphereState(double centerX, double centerY, double centerZ, double radius) const
 {
-    size_t geomIndex = 1 + _dof * _arms;
+    size_t geomIndex = 1 + 2 * _dof * _arms;
     _model->geom_size[3 * geomIndex] = radius;
 
     _data->geom_xpos[3 * geomIndex + 0] = centerX;

@@ -1,14 +1,14 @@
 {
     "model": {
-        "filename": "model/2-arm/2-dof/manipulator_0.xml",
-        "dof": 2,
-        "arms": 2
+        "filename": "model/4-arm/3-dof/manipulator_0.xml",
+        "dof": 3,
+        "arms": 4
     },
     "algorithm": {
-        "time_limit": 20.0,
+        "time_limit": 3.0,
         "type": 4,
         "heuristic": {
-            "weight": 2.0
+            "weight": 100.0
         }
     },
     "preprocess": {
@@ -24,7 +24,7 @@
     },
     "output": {
         "profiling": "pyplot/0/runtime_hard_w=1.0.log",
-        "statistics": "pyplot/0/stats_hard_w=1.0.log",
+        "statistics": "pyplot/0/stats_arms=4_dof=3.log",
         "taskset": "scenaries/0_scen.log",
         "configuration_space": "maps/c_space_12.map",
         "paths_folder": "maps/paths_12/"

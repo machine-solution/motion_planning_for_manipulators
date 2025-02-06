@@ -214,6 +214,7 @@ std::vector<size_t> topSortReverse(size_t arms, const std::vector<std::vector<si
             rGraph[b].push_back(a);
         }
     }
+    std::cerr << "OPEN DFS" << std::endl;
     _topsortDfs(startVertex, used, rGraph, order);
     // order is a reverse topsort order for rGraph, but normal topsort order for graph
     return order;
@@ -221,6 +222,7 @@ std::vector<size_t> topSortReverse(size_t arms, const std::vector<std::vector<si
 
 bool evaluateNode(CBSNode *node, ManipulatorPlanner *planner, const MultiState &startPos, const MultiState &goalPos, double weight, double time)
 {
+    std::cerr << "ERROR IS HERE" << std::endl;
     MultiSolution solution = node->solution();
 
     size_t oldConflictsCount = node->conflictCount();
@@ -240,7 +242,18 @@ bool evaluateNode(CBSNode *node, ManipulatorPlanner *planner, const MultiState &
         return false;
     }
 
+    std::cerr << "LISTING GRAPH" << std::endl;
+    std::cerr << arms << std::endl;
+    for (size_t a = 0; a < arms; ++a)
+    {
+        for (size_t b : graph[a])
+        {
+            std::cerr << a << " -> " << b << std::endl;
+        }
+    }
+    std::cerr << "start " << node->armNum() << std::endl;
     std::vector<size_t> order = topSortReverse(arms, graph, node->armNum());
+    std::cerr << "ERROR IS ABOVE" << std::endl;
 
     for (size_t armNum : order)
     {
@@ -260,7 +273,7 @@ bool evaluateNode(CBSNode *node, ManipulatorPlanner *planner, const MultiState &
         solution[armNum] = armSolution;
         std::cerr << "ARM SOLUTION IS GOTTEN FOR ARM " << armNum << std::endl;
     }
-    std::cerr << "ARMS SOLUTION IS GOTTEN FOR ALL ARMS";
+    std::cerr << "ARMS SOLUTION IS GOTTEN FOR ALL ARMS" << std::endl;
     {
         size_t armNum = node->armNum();
         JointState cState = startPos[armNum];
@@ -289,6 +302,21 @@ bool evaluateNode(CBSNode *node, ManipulatorPlanner *planner, const MultiState &
     );
 
     return conflictsCount < oldConflictsCount;
+}
+
+bool _solutionIsCorrect(ManipulatorPlanner* planner, MultiSolution solution, MultiState startPos, const MultiState &goalPos, bool needZeroConflicts)
+{
+    bool pathFound = (planner->calculateConflictsCount(startPos, solution) == 0) || (!needZeroConflicts);
+    for (size_t a = 0; a < planner->arms(); ++a)
+    {
+        pathFound &= (solution[a].stats.pathVerdict == PATH_FOUND);
+    }
+    while (!solution.goalAchieved())
+    {
+        startPos.apply(solution.nextAction());
+    }
+    pathFound &= (startPos == goalPos);
+    return pathFound;
 }
 
 MultiSolution CBS(
@@ -340,13 +368,12 @@ MultiSolution CBS(
     tree.addToOpen(startNode);
     CBSNode* currentNode = tree.extractBestNode();
 
-    PathVerdict pathVerdict = PATH_NOT_FOUND;
-
     // stats
     // solution.stats.pathPotentialCost = checker.heuristic(startPos);
 
     while (currentNode != nullptr)
     {
+        std::cerr << "TRACE LOG node id is " << currentNode->id() << std::endl;
         if (currentNode->isLazy())
         {
             bool successEvaluate = evaluateNode(
@@ -357,7 +384,8 @@ MultiSolution CBS(
                 weight,
                 (clockTimeLimit - clock() + start) / CLOCKS_PER_SEC
             );
-            if (successEvaluate)
+            bool pathIsCorrect = _solutionIsCorrect(planner, solution, startPos, goalPos, false);
+            if (successEvaluate && pathIsCorrect)
             {
                 tree.payReward(currentNode->newConstraintType());
             }
@@ -365,21 +393,23 @@ MultiSolution CBS(
             {
                 tree.payPenalty(currentNode->newConstraintType());
             }
-            tree.addToOpen(currentNode);
+            if (pathIsCorrect)
+            {
+                tree.addToOpen(currentNode);
+            }
             currentNode = tree.extractBestNode();
             continue;
         }
-        if (currentNode->conflictCount() == 0)
+        bool pathFound = _solutionIsCorrect(planner, solution, startPos, goalPos, true);
+        if (pathFound)
         {
-            // solution.stats.pathVerdict = PATH_FOUND;
-            pathVerdict = PATH_FOUND;
+            solution.stats.pathVerdict = PATH_FOUND;
             break;
         }
         // give up if time limit is exhausted
         if (clock() - start > clockTimeLimit)
         {
-            // solution.stats.pathVerdict = PATH_NOT_FOUND;
-            pathVerdict = PATH_NOT_FOUND;
+            solution.stats.pathVerdict = PATH_NOT_FOUND;
             break;
         }
         // expand current node
@@ -404,23 +434,27 @@ MultiSolution CBS(
 
     // end timer
     clock_t end = clock();
-    // solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
+    solution.stats.runtime = (double)(end - start) / CLOCKS_PER_SEC;
 
     if (currentNode == nullptr)
     {
-        // solution.stats.pathVerdict = PATH_NOT_EXISTS;
+        solution.stats.pathVerdict = PATH_NOT_FOUND;
     }
-    else if (pathVerdict == PATH_FOUND)
+    else if (solution.stats.pathVerdict == PATH_FOUND)
     {
         // solution.stats.byteSize *= currentNode->byteSize(); // max tree size * node bytes
-        // solution.stats.pathCost = currentNode->g();
+        solution.stats.pathCost = currentNode->sumG();
         
         // solution.stats.pathPotentialCost = checker.heuristic(startPos);
 
+        Stats stats = solution.stats;
         // push actions
         solution = currentNode->solution();
+        solution.reset();
+        solution.stats = stats;
     }
 
     // solution.searchTreeProfile = tree.getNamedProfileInfo();
+    solution.reset();
     return solution;
 }

@@ -88,6 +88,11 @@ Action Solution::operator[](size_t i) const
     return _primitiveActions[_solveActions[i]];
 }
 
+void Solution::reset()
+{
+    _nextActionId = 0;
+}
+
 size_t Solution::byteSize() const
 {
     return _zeroAction.byteSize() * (1 + _primitiveActions.size())
@@ -125,6 +130,15 @@ MultiAction MultiSolution::nextAction()
         actions[a] = _solutions[a].nextAction();
     }
     return MultiAction(actions);
+}
+
+void MultiSolution::reset()
+{
+    _nextActionId = 0;
+    for (size_t i = 0; i < _arms; ++i)
+    {
+        _solutions[i].reset();
+    }
 }
 
 size_t MultiSolution::countActions() const

@@ -1,11 +1,21 @@
+joint_length = 0.5
+
 manipulators = [
     (
-        [1, 1],
-        (-1, 0, 0),
+        [joint_length, joint_length, joint_length],
+        (-1, -1, 0),
     ),
     (
-        [1, 1],
-        ( 1, 0, 0),
+        [joint_length, joint_length, joint_length],
+        ( 1, -1, 0),
+    ),
+    (
+        [joint_length, joint_length, joint_length],
+        ( 1, 1, 0),
+    ),
+    (
+        [joint_length, joint_length, joint_length],
+        ( -1, 1, 0),
     ),
 ] 
 # first element - list of lengths, second element - offset
@@ -30,19 +40,19 @@ def collision_section(joints, arms, obstacles):
     # shades collisions
     for a in range(arms):
         for i in range(joints - 1):
-            output += offset8 + f'<exclude body1=\"link {a}-{i} shade\" body2=\"link {a}-{i + 1} shade\"/>\n'
+            output += offset8 + f'<exclude body1=\"link {a}-{i}\" body2=\"link {a}-{i + 1}\"/>\n'
 
-    # all shades with all links
-    for a in range(arms):
-        for b in range(arms):
-            for i in range(joints):
-                for j in range(joints):
-                    output += offset8 + f'<exclude body1=\"link {a}-{i} shade\" body2=\"link {b}-{j}\"/>\n'
-    # all shades with all obstacles
-    for a in range(arms):
-        for i in range(joints):
-            for j in range(obstacles):
-                output += offset8 + f'<exclude body1=\"link {a}-{i} shade\" body2=\"obstacle {j}\"/>\n'
+    # # all shades with all links
+    # for a in range(arms):
+    #     for b in range(arms):
+    #         for i in range(joints):
+    #             for j in range(joints):
+    #                 output += offset8 + f'<exclude body1=\"link {a}-{i} shade\" body2=\"link {b}-{j}\"/>\n'
+    # # all shades with all obstacles
+    # for a in range(arms):
+    #     for i in range(joints):
+    #         for j in range(obstacles):
+    #             output += offset8 + f'<exclude body1=\"link {a}-{i} shade\" body2=\"obstacle {j}\"/>\n'
     return output
 
 
@@ -169,8 +179,8 @@ with open(path_to_result, "w+") as f:
     f.write(gen_obstacles['obstacles'])
     f.write('\n')
     f.write('    </worldbody>\n')
-    # f.write('    <contact>\n')
-    # f.write(collision_section(joints, arms, gen_obstacles['obstacles_counter']))    
-    # f.write('    </contact>\n')
+    f.write('    <contact>\n')
+    f.write(collision_section(joints, arms, gen_obstacles['obstacles_counter']))    
+    f.write('    </contact>\n')
     # f.write(footer_gen(arms))
     f.write(open(path_to_footer, 'r').read())

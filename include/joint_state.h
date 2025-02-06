@@ -124,6 +124,8 @@ public:
 
     MultiState& operator=(const MultiState& other);
 
+    friend bool operator==(const MultiState& state1, const MultiState& state2);
+
 private:
     vector<JointState> _states;
     size_t _dof;

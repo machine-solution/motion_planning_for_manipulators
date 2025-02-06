@@ -268,6 +268,24 @@ JointState randomState(size_t dof, int units)
     return state;
 }
 
+bool operator==(const MultiState &state1, const MultiState &state2)
+{
+    if (state1.arms() != state2.arms())
+    {
+        return false;
+    }
+    if (state1.dof() != state2.dof())
+    {
+        return false;
+    }
+    bool equal = true;
+    for (size_t a = 0; a < state1.arms(); ++a)
+    {
+        equal &= state1[a] == state2[a];
+    }
+    return equal;
+}
+
 MultiAction::MultiAction(size_t dof, size_t arms, int value)
 {
     _dof = dof;
@@ -331,7 +349,7 @@ size_t MultiState::dof() const
 
 size_t MultiState::arms() const
 {
-    return _dof;
+    return _arms;
 }
 
 JointState MultiState::operator[](size_t i) const

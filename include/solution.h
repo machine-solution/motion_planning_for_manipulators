@@ -5,8 +5,8 @@
 
 enum PathVerdict
 {
-    PATH_FOUND,
     PATH_NOT_FOUND,
+    PATH_FOUND,
     PATH_NOT_EXISTS,
 };
 
@@ -45,6 +45,8 @@ public:
 
     size_t size() const;
     Action operator[](size_t i) const;
+
+    void reset();
 
     Stats stats;
 
@@ -86,6 +88,8 @@ public:
     Solution& operator[](size_t i);
 
     MultiAction nextAction();
+
+    void reset();
 
     size_t countActions() const;
 

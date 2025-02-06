@@ -235,7 +235,7 @@ private:
         ManipulatorPlanner* _planner;
         size_t _armNum;
         const JointState& _goal;
-        const ConstraintSet& _constraints;
+        ConstraintSet _constraints;
     };
 
     class AstarCheckerSite : public astar::IAstarChecker
@@ -252,7 +252,7 @@ private:
     protected:
         ManipulatorPlanner* _planner;
         size_t _armNum;
-        const ConstraintSet& _constraints;
+        ConstraintSet _constraints;
         double _goalX;
         double _goalY;
     };
