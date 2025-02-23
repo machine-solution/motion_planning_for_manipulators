@@ -1,10 +1,10 @@
-scen_name = "scenaries/kuka_4/tasks_1.log"
-stats_name = "pyplot/kuka_4/stats_1.log"
-taskset_name = "scenaries/tasksets/kuka_4.txt"
+scen_name = "scenaries/kuka_2/tasks_1.log"
+stats_name = "pyplot/kuka_2/stats_1.log"
+taskset_name = "scenaries/tasksets/kuka_2.txt"
 
 number = 50
 dof = 7
-arms = 4
+arms = 2
 
 test_size = 3 + 2 * arms
 
