@@ -172,7 +172,6 @@ CBSTree::~CBSTree()
 void CBSTree::addToOpen(CBSNode* node)
 {
     startProfiling();
-    std::cerr << "FOCAL SIZE / OPEN SIZE = " << sizeFocal() << " / " << size() << std::endl;
     if (node->sumG() <= _w * _focal.minSumG())
     {
         _focal.add(node);
@@ -186,7 +185,6 @@ void CBSTree::addToOpen(CBSNode* node)
 void CBSTree::addToClosed(CBSNode* node)
 {
     startProfiling();
-    std::cerr << "FOCAL SIZE / OPEN SIZE = " << sizeFocal() << " / " << size() << std::endl;
     _closed.insert(node);
     stopProfiling();
 }
@@ -194,7 +192,6 @@ void CBSTree::addToClosed(CBSNode* node)
 CBSNode* CBSTree::extractBestNode()
 {
     startProfiling();
-    std::cerr << "FOCAL SIZE / OPEN SIZE = " << sizeFocal() << " / " << size() << std::endl;
     CBSNode* returnNode = _focal.extractBestNode(sampleK());
     while (!_open.empty() && (*_open.begin())->sumG() <= _w * _focal.minSumG())
     {

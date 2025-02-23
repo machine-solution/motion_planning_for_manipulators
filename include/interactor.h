@@ -14,8 +14,11 @@ struct Config
     std::string modelFilename;
     size_t dof;
     size_t arms;
+    size_t totalGeoms;
+    std::vector<size_t> collideGeomList;
     double timeLimit;
     double w;
+    size_t constraintInterval;
     int taskNum;
     TaskType taskType;
     bool randomTasks;
@@ -54,6 +57,8 @@ public:
     Interactor();
     ~Interactor();
 
+    void logQPos(const std::string& text);
+
     void setUp(Config config);
     void setUp(const string& filename);
 
@@ -67,6 +72,8 @@ public:
     void setTask();
     void solveTask();
 
+    void cleanAcc();
+
     void step();
 
     void stepLoop(double duration);
@@ -76,6 +83,9 @@ public:
     bool shouldClose();
 
     void doMainLoop();
+
+    void constructorStep();
+    void doConstructorLoop();
 
 private:
     mjData* _data;

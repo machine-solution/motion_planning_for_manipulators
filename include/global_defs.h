@@ -6,7 +6,7 @@
 class ManipulatorPlanner;
 
 const int g_worldUnits = 1024; // the number of world units from [0, pi]
-const int g_jumpSize = 8; // size of jump in world units
+const int g_jumpSize = 16; // size of jump in world units
 
 const int g_units = 64; // the number of planner units from [0, pi]
 const double g_eps = (M_PI / g_units); // length of 1 planner unit

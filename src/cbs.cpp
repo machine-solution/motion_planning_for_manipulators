@@ -1,16 +1,17 @@
 #include "cbs.h"
 #include <iostream>
 
-vector<CBSNode*> generateSuccessorsCBS(CBSNode* node, ManipulatorPlanner* planner, const MultiState& startPos)
+vector<CBSNode*> generateSuccessorsCBS(CBSNode* node, ManipulatorPlanner* planner, const MultiState& startPos, size_t constraintInterval)
 {
     vector<CBSNode*> result;
     Conflict conflict = planner->findFirstConflict(startPos, node->solution());
-    std::cerr << "FIRST CONFLICT IS FOUND" << std::endl;
     if (!conflict.has())
     {
         return vector<CBSNode*>();
     }
-    std::cerr << conflict.stepNum() << std::endl;
+
+    int stepFrom = conflict.stepNum() - constraintInterval / 2;
+    int stepTo = stepFrom + constraintInterval;
 
     result.push_back(
         new CBSNode(
@@ -18,7 +19,7 @@ vector<CBSNode*> generateSuccessorsCBS(CBSNode* node, ManipulatorPlanner* planne
             node->sumG(),
             node->constraintsMap(),
             node->solution(),
-            std::make_shared<VertexConstraint>(conflict.stepNum(), conflict.firstState()),
+            std::make_shared<VertexConstraint>(conflict.stepNum(), conflict.stepNum() + 1, conflict.firstState()),
             conflict.firstArm(),
             node,
             true
@@ -30,7 +31,7 @@ vector<CBSNode*> generateSuccessorsCBS(CBSNode* node, ManipulatorPlanner* planne
             node->sumG(),
             node->constraintsMap(),
             node->solution(),
-            std::make_shared<VertexConstraint>(conflict.stepNum(), conflict.secondState()),
+            std::make_shared<VertexConstraint>(conflict.stepNum(), conflict.stepNum() + 1, conflict.secondState()),
             conflict.secondArm(),
             node,
             true
@@ -43,7 +44,7 @@ vector<CBSNode*> generateSuccessorsCBS(CBSNode* node, ManipulatorPlanner* planne
             node->sumG(),
             node->constraintsMap(),
             node->solution(),
-            std::make_shared<AvoidanceConstraint>(conflict.stepNum(), conflict.secondArm(), conflict.secondState()),
+            std::make_shared<AvoidanceConstraint>(stepFrom, stepTo, conflict.secondArm(), conflict.secondState()),
             conflict.firstArm(),
             node,
             true
@@ -55,7 +56,7 @@ vector<CBSNode*> generateSuccessorsCBS(CBSNode* node, ManipulatorPlanner* planne
             node->sumG(),
             node->constraintsMap(),
             node->solution(),
-            std::make_shared<AvoidanceConstraint>(conflict.stepNum(), conflict.firstArm(), conflict.firstState()),
+            std::make_shared<AvoidanceConstraint>(stepFrom, stepTo, conflict.firstArm(), conflict.firstState()),
             conflict.secondArm(),
             node,
             true
@@ -69,7 +70,7 @@ vector<CBSNode*> generateSuccessorsCBS(CBSNode* node, ManipulatorPlanner* planne
             node->constraintsMap(),
             node->solution(),
             std::make_shared<SphereConstraint>(
-                conflict.stepNum(),
+                stepFrom, stepTo,
                 conflict.point()[0],
                 conflict.point()[1],
                 conflict.point()[2]
@@ -86,7 +87,7 @@ vector<CBSNode*> generateSuccessorsCBS(CBSNode* node, ManipulatorPlanner* planne
             node->constraintsMap(),
             node->solution(),
             std::make_shared<SphereConstraint>(
-                conflict.stepNum(),
+                stepFrom, stepTo,
                 conflict.point()[0],
                 conflict.point()[1],
                 conflict.point()[2]
@@ -214,7 +215,6 @@ std::vector<size_t> topSortReverse(size_t arms, const std::vector<std::vector<si
             rGraph[b].push_back(a);
         }
     }
-    std::cerr << "OPEN DFS" << std::endl;
     _topsortDfs(startVertex, used, rGraph, order);
     // order is a reverse topsort order for rGraph, but normal topsort order for graph
     return order;
@@ -222,7 +222,6 @@ std::vector<size_t> topSortReverse(size_t arms, const std::vector<std::vector<si
 
 bool evaluateNode(CBSNode *node, ManipulatorPlanner *planner, const MultiState &startPos, const MultiState &goalPos, double weight, double time)
 {
-    std::cerr << "ERROR IS HERE" << std::endl;
     MultiSolution solution = node->solution();
 
     size_t oldConflictsCount = node->conflictCount();
@@ -242,18 +241,7 @@ bool evaluateNode(CBSNode *node, ManipulatorPlanner *planner, const MultiState &
         return false;
     }
 
-    std::cerr << "LISTING GRAPH" << std::endl;
-    std::cerr << arms << std::endl;
-    for (size_t a = 0; a < arms; ++a)
-    {
-        for (size_t b : graph[a])
-        {
-            std::cerr << a << " -> " << b << std::endl;
-        }
-    }
-    std::cerr << "start " << node->armNum() << std::endl;
     std::vector<size_t> order = topSortReverse(arms, graph, node->armNum());
-    std::cerr << "ERROR IS ABOVE" << std::endl;
 
     for (size_t armNum : order)
     {
@@ -271,26 +259,6 @@ bool evaluateNode(CBSNode *node, ManipulatorPlanner *planner, const MultiState &
             weight
         );
         solution[armNum] = armSolution;
-        std::cerr << "ARM SOLUTION IS GOTTEN FOR ARM " << armNum << std::endl;
-    }
-    std::cerr << "ARMS SOLUTION IS GOTTEN FOR ALL ARMS" << std::endl;
-    {
-        size_t armNum = node->armNum();
-        JointState cState = startPos[armNum];
-        Solution copy = solution[armNum];
-        int stepNum = 0;
-        while (!copy.goalAchieved())
-        {
-            cState.apply(copy.nextAction());
-            std::cerr << stepNum << " | ";
-            for (int i = 0; i < planner->dof(); ++i)
-            {
-                std::cerr << cState[i] << " ";
-            }
-            std::cerr << std::endl;
-            ++stepNum;
-        }
-        std::cerr << std::endl;
     }
 
     size_t conflictsCount = planner->calculateConflictsCount(startPos, solution);
@@ -321,9 +289,11 @@ bool _solutionIsCorrect(ManipulatorPlanner* planner, MultiSolution solution, Mul
 
 MultiSolution CBS(
     size_t dof, size_t arms, ManipulatorPlanner* planner, const MultiState &startPos, const MultiState &goalPos,
-    double weight, double timeLimit
+    double weight, double timeLimit, size_t constraintInterval
 )
 {
+    std::cerr << std::endl << std::endl;
+    std::cerr << "NEW CBS" << std::endl;
     clock_t clockTimeLimit = timeLimit * CLOCKS_PER_SEC;
 
     // start timer
@@ -348,11 +318,12 @@ MultiSolution CBS(
             (clockTimeLimit - clock() + start) / CLOCKS_PER_SEC,
             weight
         );
-        std::cerr << "SOLUTION FROM ARM " << armNum << " IS FOUND WITH ACTIONS NUMBER " << armSolution.size() << std::endl;
-        std::cerr << "PATH VERDICT IS " << armSolution.stats.pathVerdict << std::endl;
         solution[armNum] = armSolution;
     }
-    std::cerr << "INITIAL CONFLICTS COUNT IS " << planner->calculateConflictsCount(startPos, solution) << std::endl;
+    if (planner->calculateConflictsCount(startPos, solution) == 0)
+    {
+        solution.stats.pathTrivial = 1;
+    }
     // init search tree
     CBSTree tree(weight);
     CBSNode* startNode = new CBSNode(
@@ -373,7 +344,12 @@ MultiSolution CBS(
 
     while (currentNode != nullptr)
     {
-        std::cerr << "TRACE LOG node id is " << currentNode->id() << std::endl;
+        // give up if time limit is exhausted
+        if (clock() - start > clockTimeLimit)
+        {
+            solution.stats.pathVerdict = PATH_NOT_FOUND;
+            break;
+        }
         if (currentNode->isLazy())
         {
             bool successEvaluate = evaluateNode(
@@ -384,7 +360,7 @@ MultiSolution CBS(
                 weight,
                 (clockTimeLimit - clock() + start) / CLOCKS_PER_SEC
             );
-            bool pathIsCorrect = _solutionIsCorrect(planner, solution, startPos, goalPos, false);
+            bool pathIsCorrect = _solutionIsCorrect(planner, currentNode->solution(), startPos, goalPos, false);
             if (successEvaluate && pathIsCorrect)
             {
                 tree.payReward(currentNode->newConstraintType());
@@ -400,23 +376,21 @@ MultiSolution CBS(
             currentNode = tree.extractBestNode();
             continue;
         }
-        bool pathFound = _solutionIsCorrect(planner, solution, startPos, goalPos, true);
+        bool pathFound = _solutionIsCorrect(planner, currentNode->solution(), startPos, goalPos, true);
         if (pathFound)
         {
+            Stats stats = solution.stats;
+            solution = currentNode->solution();
+            solution.stats = stats;
             solution.stats.pathVerdict = PATH_FOUND;
-            break;
-        }
-        // give up if time limit is exhausted
-        if (clock() - start > clockTimeLimit)
-        {
-            solution.stats.pathVerdict = PATH_NOT_FOUND;
             break;
         }
         // expand current node
         vector<CBSNode*> successors = generateSuccessorsCBS(
             currentNode,
             planner,
-            startPos
+            startPos,
+            constraintInterval
         );
         for (auto successor : successors)
         {

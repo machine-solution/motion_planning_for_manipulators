@@ -9,7 +9,8 @@
 vector<CBSNode*> generateSuccessorsCBS(
     CBSNode* node,
     ManipulatorPlanner* planner,
-    const MultiState& startPos
+    const MultiState& startPos,
+    size_t constraintInterval
 );
 // evaluate node and updates internal fields such as
 // solution, sumG, conflictsNumber etc
@@ -28,5 +29,6 @@ MultiSolution CBS(
     const MultiState& startPos,
     const MultiState& goalPos,
     double weight = 1.0,
-    double timeLimit = 1.0
+    double timeLimit = 1.0,
+    size_t constraintInterval = 1
 );

@@ -68,23 +68,26 @@ public:
 class VertexConstraint : public IConstraint
 {
 public:
-    VertexConstraint(int stepNum, const JointState& state);
+    VertexConstraint(int stepFrom, int stepTo, const JointState& state);
 
-    int stepNum() const;
+    int stepFrom() const;
+    int stepTo() const;
     JointState state() const;
     
     ConstraintType type() const override;
 private:
-    int _stepNum;
+    int _stepFrom;
+    int _stepTo;
     JointState _state;
 };
 
 class SphereConstraint : public IConstraint
 {
 public:
-    SphereConstraint(int stepNum, double centerX, double centerY, double centerZ, double radius = 0.1);
+    SphereConstraint(int stepFrom, int stepTo, double centerX, double centerY, double centerZ, double radius = 0.1);
 
-    int stepNum() const;
+    int stepFrom() const;
+    int stepTo() const;
     const double centerX() const;
     const double centerY() const;
     const double centerZ() const;
@@ -92,7 +95,8 @@ public:
     
     ConstraintType type() const override ;
 private:
-    int _stepNum;
+    int _stepFrom;
+    int _stepTo;
     double _centerX;
     double _centerY;
     double _centerZ;
@@ -102,15 +106,17 @@ private:
 class AvoidanceConstraint : public IConstraint
 {
 public:
-    AvoidanceConstraint(int stepNum, size_t armNum, const JointState& state);
+    AvoidanceConstraint(int stepFrom, int stepTo, size_t armNum, const JointState& state);
 
-    int stepNum() const;
+    int stepFrom() const;
+    int stepTo() const;
     const size_t armNum() const;
     const JointState& state() const;
     
     ConstraintType type() const override ;
 private:
-    int _stepNum;
+    int _stepFrom;
+    int _stepTo;
     size_t _armNum;
     JointState _state;
 };

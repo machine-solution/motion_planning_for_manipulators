@@ -71,7 +71,13 @@ size_t PreprocData::mbyteSize() const
     return byteSize() / (1024 * 1024);
 }
 
-ManipulatorPlanner::ManipulatorPlanner(size_t dof, size_t arms, mjModel* model, mjData* data)
+ArmGeoms::ArmGeoms(size_t count, const std::vector<size_t>& geoms)
+{
+    _count = count;
+    _geoms = geoms;
+}
+
+ManipulatorPlanner::ManipulatorPlanner(size_t dof, size_t arms, ArmGeoms armGeoms, mjModel* model, mjData* data) : _armGeoms(armGeoms)
 {
     _dof = dof;
     _arms = arms;
@@ -90,19 +96,25 @@ size_t ManipulatorPlanner::arms() const
     return _arms;
 }
 
+size_t ManipulatorPlanner::armGeomOffset(size_t armNum) const
+{
+    return armNum * _armGeoms._count + 1;
+}
+
 void ManipulatorPlanner::switchArm(size_t armNum, int mode) const
 {
-    for (size_t i = 1 + armNum * _dof; i < 1 + (armNum + 1) * _dof; ++i)
+    size_t offset = armGeomOffset(armNum);
+    for (size_t i : _armGeoms._geoms)
     {
-        _model->geom_contype[i] = mode;
-        _model->geom_conaffinity[i] = mode;
+        _model->geom_contype[i + offset] = mode;
+        _model->geom_conaffinity[i + offset] = mode;
     }
 }
 
 void ManipulatorPlanner::switchSphere(int mode) const
 {
-    _model->geom_contype[1 + 2 * _dof * _arms] = mode;
-    _model->geom_conaffinity[1 + 2 *_dof * _arms] = mode;
+    _model->geom_contype[armGeomOffset(2 * _arms)] = mode;
+    _model->geom_conaffinity[armGeomOffset(2 * _arms)] = mode;
 }
 
 void ManipulatorPlanner::onArmsOnly(std::set<size_t> onArms) const
@@ -133,7 +145,7 @@ void ManipulatorPlanner::setArmState(size_t armNum, const JointState &state) con
 
 void ManipulatorPlanner::setSphereState(double centerX, double centerY, double centerZ, double radius) const
 {
-    size_t geomIndex = 1 + 2 * _dof * _arms;
+    size_t geomIndex = armGeomOffset(2 * _arms);
     _model->geom_size[3 * geomIndex] = radius;
 
     _data->geom_xpos[3 * geomIndex + 0] = centerX;
@@ -168,7 +180,7 @@ bool ManipulatorPlanner::checkCollisionActionObstacles(size_t armNum, const Join
 
 bool ManipulatorPlanner::checkCollisionActionConstraintVertex(size_t armNum, const JointState &start, int stepNum, const Action &action, std::shared_ptr<VertexConstraint> constraint) const
 {
-    if (stepNum == constraint->stepNum() && start.applied(action) == constraint->state())
+    if (stepNum >= constraint->stepFrom() && stepNum < constraint->stepTo() && start.applied(action) == constraint->state())
     {
         return true;
     }
@@ -177,7 +189,7 @@ bool ManipulatorPlanner::checkCollisionActionConstraintVertex(size_t armNum, con
 
 bool ManipulatorPlanner::checkCollisionActionConstraintAvoidance(size_t armNum, const JointState &start, int stepNum, const Action &action, std::shared_ptr<AvoidanceConstraint> constraint) const
 {
-    if (stepNum == constraint->stepNum())
+    if (stepNum >= constraint->stepFrom() && stepNum < constraint->stepTo())
     {
         switchArm(constraint->armNum(), 1);
         setArmState(constraint->armNum(), constraint->state());
@@ -190,7 +202,7 @@ bool ManipulatorPlanner::checkCollisionActionConstraintAvoidance(size_t armNum, 
 
 bool ManipulatorPlanner::checkCollisionActionConstraintSphere(size_t armNum, const JointState &start, int stepNum, const Action &action, std::shared_ptr<SphereConstraint> constraint) const
 {
-    if (stepNum == constraint->stepNum())
+    if (stepNum >= constraint->stepFrom() && stepNum < constraint->stepTo())
     {
         switchSphere(1);
         setSphereState(constraint->centerX(), constraint->centerZ(), constraint->centerY(), constraint->radius());
@@ -212,7 +224,7 @@ bool ManipulatorPlanner::checkCollisionActionConstraintPriority(size_t armNum, c
 
 bool ManipulatorPlanner::checkCollisionStayForeverConstraintVertex(size_t armNum, const JointState &start, int stepNum, std::shared_ptr<VertexConstraint> constraint) const
 {
-    if (stepNum <= constraint->stepNum() && start == constraint->state())
+    if (stepNum < constraint->stepTo() && start == constraint->state())
     {
         return true;
     }
@@ -221,7 +233,7 @@ bool ManipulatorPlanner::checkCollisionStayForeverConstraintVertex(size_t armNum
 
 bool ManipulatorPlanner::checkCollisionStayForeverConstraintAvoidance(size_t armNum, const JointState &start, int stepNum, std::shared_ptr<AvoidanceConstraint> constraint) const
 {
-    if (stepNum <= constraint->stepNum())
+    if (stepNum < constraint->stepTo())
     {
         switchArm(constraint->armNum(), 1);
         setArmState(constraint->armNum(), constraint->state());
@@ -234,7 +246,7 @@ bool ManipulatorPlanner::checkCollisionStayForeverConstraintAvoidance(size_t arm
 
 bool ManipulatorPlanner::checkCollisionStayForeverConstraintSphere(size_t armNum, const JointState &start, int stepNum, std::shared_ptr<SphereConstraint> constraint) const
 {
-    if (stepNum <= constraint->stepNum())
+    if (stepNum < constraint->stepTo())
     {
         switchSphere(1);
         setSphereState(constraint->centerX(), constraint->centerZ(), constraint->centerY(), constraint->radius());
@@ -447,8 +459,8 @@ std::vector<double> ManipulatorPlanner::findIntersectionPoint(size_t armNum1, si
         int geom1_id = contact.geom1;
         int geom2_id = contact.geom2;
         if (
-        ((geom1_id - 1) / _dof == armNum1 && (geom2_id - 1) / _dof == armNum2) ||
-        ((geom1_id - 1) / _dof == armNum2 && (geom2_id - 1) / _dof == armNum1))
+        ((geom1_id - 1) / _armGeoms._count == armNum1 && (geom2_id - 1) / _armGeoms._count == armNum2) ||
+        ((geom1_id - 1) / _armGeoms._count == armNum2 && (geom2_id - 1) / _armGeoms._count == armNum1))
         {
             return std::vector<double>({contact.pos[0], contact.pos[1], contact.pos[2]});
         }
@@ -571,7 +583,7 @@ vector<string> ManipulatorPlanner::pathInConfigurationSpace(const JointState& st
     return cSpace;
 }
 
-MultiSolution ManipulatorPlanner::planMultiActions(const MultiState &startPos, const MultiState &goalPos, int alg, double timeLimit, double w)
+MultiSolution ManipulatorPlanner::planMultiActions(const MultiState &startPos, const MultiState &goalPos, int alg, double timeLimit, double w, size_t constraintInterval)
 {
     return CBS(
         _dof,
@@ -580,7 +592,8 @@ MultiSolution ManipulatorPlanner::planMultiActions(const MultiState &startPos, c
         startPos,
         goalPos,
         w,
-        timeLimit
+        timeLimit,
+        constraintInterval
     );
 }
 
@@ -589,39 +602,6 @@ Solution ManipulatorPlanner::planActions(
     const ConstraintSet& constraints, int alg, double timeLimit, double w)
 {
     clearAllProfiling(); // reset profiling
-    std::cerr << "CALL PLANNING FOR ARM " << armNum << " WITH " << constraints.constraints.size() << " CONSTRAINTS" << std::endl;
-    for (auto constraint : constraints.constraints)
-    {
-        if (constraint->type() == CONSTRAINT_VERTEX)
-        {
-            std::shared_ptr<VertexConstraint> cst = std::static_pointer_cast<VertexConstraint>(constraint);
-            std::cerr << cst->stepNum() << " |v| ";
-            for (int i = 0; i < _dof; ++i)
-            {
-                std::cerr << cst->state()[i] << " ";
-            }
-            std::cerr << std::endl;
-        }
-        if (constraint->type() == CONSTRAINT_AVOIDANCE)
-        {
-            std::shared_ptr<AvoidanceConstraint> cst = std::static_pointer_cast<AvoidanceConstraint>(constraint);
-            std::cerr << cst->stepNum() << " |a| ";
-            for (int i = 0; i < _dof; ++i)
-            {
-                std::cerr << cst->state()[i] << " ";
-            }
-            std::cerr << " | " << cst->armNum();
-            std::cerr << std::endl;
-        }
-        if (constraint->type() == CONSTRAINT_SPHERE)
-        {
-            std::shared_ptr<SphereConstraint> cst = std::static_pointer_cast<SphereConstraint>(constraint);
-            std::cerr << cst->stepNum() << " |s| ";
-            std::cerr << cst->centerX() << " " << cst->centerY() << " " << cst->centerZ() << " " << cst->radius();
-            std::cerr << std::endl;
-        }
-    }
-    std::cerr << std::endl;
 
     if (checkCollision(armNum, startPos) || checkCollision(armNum, goalPos))
     {
@@ -877,46 +857,8 @@ Solution ManipulatorPlanner::lazyAstarPlanning(
     float weight, double timeLimit
 )
 {
-    std::cerr << "LAZY A* PLANNING SELECTED" << std::endl;
     AstarChecker checker(this, armNum, goalPos, constraints);
     Solution solution = astar::lazyAstar(startPos, checker, weight, timeLimit);
-    {
-        bool checkPassed = true;
-        std::cerr << "SANITY CHECK" << std::endl;
-        JointState copyPos = startPos;
-        Solution copySol = solution;
-        int stepNum = 0;
-        while (!copySol.goalAchieved())
-        {
-            Action nAction = copySol.nextAction();
-            if (checkCollisionAction(armNum, copyPos, stepNum, nAction, constraints))
-            {
-                copyPos.apply(nAction);
-                std::cerr << stepNum <<  " | ";
-                for (int i = 0; i < _dof; ++i)
-                {
-                    std::cerr << copyPos[i] << " ";
-                }
-                std::cerr << " FAILED" << std::endl;
-                checkPassed = false;
-            }
-            else
-            {
-                copyPos.apply(nAction);
-                std::cerr << stepNum <<  " | ";
-                for (int i = 0; i < _dof; ++i)
-                {
-                    std::cerr << copyPos[i] << " ";
-                }
-                std::cerr << " SUCCEED" << std::endl;
-            }
-            ++stepNum;
-        }
-        if (!checkPassed)
-        {
-            exit(0);
-        }
-    }
     solution.plannerProfile = getNamedProfileInfo();
     return solution;
 }

@@ -328,7 +328,7 @@ MultiState::MultiState(size_t dof, size_t arms, int value)
 {
     _dof = dof;
     _arms = arms;
-    _states = std::vector<JointState>(arms, JointState(dof, value));
+    _states.assign(arms, JointState(dof, value));
 }
 
 MultiState::MultiState(std::vector<JointState> states)

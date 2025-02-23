@@ -1,0 +1,84 @@
+      <body name="base_{id}" childclass="iiwa_shade">
+        <geom class="visual_shade" mesh="link_0_shade"/>
+        <geom class="collision_shade" size="0.12" pos="0 0 0.03"/>
+        <geom class="collision_shade" size="0.08" pos="-0.08 0 0.103"/>
+        <geom class="collision_shade" size="0.08" pos="-0.08 0 0.04"/>
+        <geom class="collision_shade" size="0.1" pos="0 0 0.14"/>
+        <body name="link1_{id}" pos="0 0 0.1575">
+          <joint name="joint1_{id}" class="joint1_shade"/>
+          <geom class="visual_shade" mesh="link_1_shade"/>
+          <geom class="collision_shade" size="0.08" pos="0 0 -0.0005"/>
+          <geom class="collision_shade" size="0.075" pos="0.01 -0.025 0.0425"/>
+          <geom class="collision_shade" size="0.075" pos="-0.01 -0.025 0.0425"/>
+          <geom class="collision_shade" size="0.07" pos="0.01 -0.045 0.1025"/>
+          <geom class="collision_shade" size="0.07" pos="-0.01 -0.045 0.1025"/>
+          <body name="link2_{id}" pos="0 0 0.2025" quat="0 0 1 1">
+            <joint name="joint2_{id}" class="joint2_shade"/>
+            <geom class="visual_shade" material="orange_shade" mesh="link_2_orange_shade"/>
+            <geom class="visual_shade" mesh="link_2_grey_shade"/>
+            <geom class="collision_shade" size="0.095" pos="0 0 -0.01"/>
+            <geom class="collision_shade" size="0.09" pos="0 0 0.045"/>
+            <geom class="collision_shade" size="0.07" pos="-0.01 0.04 0.054"/>
+            <geom class="collision_shade" size="0.065" pos="-0.01 0.09 0.04"/>
+            <geom class="collision_shade" size="0.065" pos="-0.01 0.13 0.02"/>
+            <geom class="collision_shade" size="0.07" pos="0.01 0.04 0.054"/>
+            <geom class="collision_shade" size="0.065" pos="0.01 0.09 0.04"/>
+            <geom class="collision_shade" size="0.065" pos="0.01 0.13 0.02"/>
+            <geom class="collision_shade" size="0.075" pos="0 0.18 0"/>
+            <body name="link3_{id}" pos="0 0.2045 0" quat="0 0 1 1">
+              <joint name="joint3_{id}" class="joint1_shade"/>
+              <geom class="visual_shade" mesh="link_3_shade"/>
+              <geom class="visual_shade" material="light_gray_shade" mesh="band_shade"/>
+              <geom class="visual_shade" material="black_shade" mesh="kuka_shade"/>
+              <geom class="collision_shade" size="0.075" pos="0 0 0.0355"/>
+              <geom class="collision_shade" size="0.06" pos="0.01 0.023 0.0855"/>
+              <geom class="collision_shade" size="0.055" pos="0.01 0.048 0.1255"/>
+              <geom class="collision_shade" size="0.06" pos="0.01 0.056 0.1755"/>
+              <geom class="collision_shade" size="0.06" pos="-0.01 0.023 0.0855"/>
+              <geom class="collision_shade" size="0.055" pos="-0.01 0.048 0.1255"/>
+              <geom class="collision_shade" size="0.06" pos="-0.01 0.056 0.1755"/>
+              <geom class="collision_shade" size="0.075" pos="0 0.045 0.2155"/>
+              <geom class="collision_shade" size="0.075" pos="0 0 0.2155"/>
+              <body name="link4_{id}" pos="0 0 0.2155" quat="1 1 0 0">
+                <joint name="joint4_{id}" class="joint2_shade"/>
+                <geom class="visual_shade" material="orange_shade" mesh="link_4_orange_shade"/>
+                <geom class="visual_shade" mesh="link_4_grey_shade"/>
+                <geom class="collision_shade" size="0.078" pos="0 0.01 0.046"/>
+                <geom class="collision_shade" size="0.06" pos="0.01 0.06 0.052"/>
+                <geom class="collision_shade" size="0.065" pos="0.01 0.12 0.034"/>
+                <geom class="collision_shade" size="0.06" pos="-0.01 0.06 0.052"/>
+                <geom class="collision_shade" size="0.065" pos="-0.01 0.12 0.034"/>
+                <geom class="collision_shade" size="0.075" pos="0 0.184 0"/>
+                <body name="link5_{id}" pos="0 0.1845 0" quat="0 0 1 1">
+                  <joint name="joint5_{id}" class="joint1_shade"/>
+                  <geom class="visual_shade" mesh="link_5_shade"/>
+                  <geom class="visual_shade" material="light_gray_shade" mesh="band_shade"/>
+                  <geom class="visual_shade" material="black_shade" mesh="kuka_shade"/>
+                  <geom class="collision_shade" size="0.075" pos="0 0 0.0335"/>
+                  <geom class="collision_shade" size="0.05" pos="-0.012 0.031 0.0755"/>
+                  <geom class="collision_shade" size="0.05" pos="0.012 0.031 0.0755"/>
+                  <geom class="collision_shade" size="0.04" pos="-0.012 0.06 0.1155"/>
+                  <geom class="collision_shade" size="0.04" pos="0.012 0.06 0.1155"/>
+                  <geom class="collision_shade" size="0.04" pos="-0.01 0.065 0.1655"/>
+                  <geom class="collision_shade" size="0.04" pos="0.01 0.065 0.1655"/>
+                  <geom class="collision_shade" size="0.035" pos="-0.012 0.065 0.1855"/>
+                  <geom class="collision_shade" size="0.035" pos="0.012 0.065 0.1855"/>
+                  <body name="link6_{id}" pos="0 0 0.2155" quat="1 1 0 0">
+                    <joint name="joint6_{id}" class="joint2_shade"/>
+                    <geom class="visual_shade" material="orange_shade" mesh="link_6_orange_shade"/>
+                    <geom class="visual_shade" mesh="link_6_grey_shade"/>
+                    <geom class="collision_shade" size="0.055" pos="0 0 -0.059"/>
+                    <geom class="collision_shade" size="0.065" pos="0 -0.03 0.011"/>
+                    <geom class="collision_shade" size="0.08"/>
+                    <body name="link7_{id}" pos="0 0.081 0" quat="0 0 1 1">
+                      <joint name="joint7_{id}" class="joint3_shade"/>
+                      <geom class="visual_shade" mesh="link_7_shade"/>
+                      <geom class="collision_shade" size="0.06" pos="0 0 0.001"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>

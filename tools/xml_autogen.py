@@ -1,3 +1,5 @@
+# TODO MOVE FLOOR DOWN
+
 joint_length = 0.5
 
 manipulators = [

@@ -8,7 +8,46 @@
 #include <fstream>
 #include <stdexcept>
 
+#include <thread>     // Для std::this_thread::sleep_for
+#include <chrono>     // Для std::chrono::milliseconds
+
 using json = nlohmann::json;
+
+void Interactor::logQPos(const std::string& text)
+{
+    std::cerr << text << std::endl;
+    std::cerr << _model->nv << " " << _data->ncon << std::endl;
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            std::cerr << _data->qpos[i + a * _dof] << " ";
+        }
+        if (a + 1 < _arms)
+            std::cerr << "| ";
+    }
+    std::cerr << std::endl;
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            std::cerr << _data->qvel[i + a * _dof] << " ";
+        }
+        if (a + 1 < _arms)
+            std::cerr << "| ";
+    }
+    std::cerr << std::endl;
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            std::cerr << _data->qacc[i + a * _dof] << " ";
+        }
+        if (a + 1 < _arms)
+            std::cerr << "| ";
+    }
+    std::cerr << std::endl;
+}
 
 Interactor::Interactor() {}
 Interactor::~Interactor()
@@ -47,9 +86,15 @@ void Interactor::setUp(Config config)
     mjModel* mCopy = mj_copyModel(NULL, _model);
     mjData* dCopy = mj_makeData(mCopy);
 
-    _planner = new ManipulatorPlanner(_dof, _arms, mCopy, dCopy);
+    _planner = new ManipulatorPlanner(
+        _dof,
+        _arms,
+        ArmGeoms(_config.totalGeoms, _config.collideGeomList),
+        mCopy,
+        dCopy
+    );
     // _planner->preprocess(); TODO return
-    _logger = new Logger(_dof);
+    _logger = new Logger(_dof, _arms);
     _taskset = new TaskSet(_dof, _arms);
 
     // init GLFW
@@ -70,7 +115,7 @@ void Interactor::setUp(Config config)
     mjr_makeContext(_model, &_con, mjFONTSCALE_150);   // model-specific context
 
     // init camera
-    double arr_view[] = {90, -90, 5.5, 0.000000, 0.000000, 0.000000};
+    double arr_view[] = {45, -45, 3.5, 0.000000, 0.000000, 0.000000};
     _cam.azimuth = arr_view[0];
     _cam.elevation = arr_view[1];
     _cam.distance = arr_view[2];
@@ -194,9 +239,9 @@ void Interactor::solveTask()
     if (_modelState.task->type() == TASK_STATE)
     {
         _modelState.solution = _planner->planMultiActions(_modelState.currentState, _modelState.goal,
-            _config.algorithm, _config.timeLimit, _config.w);
+            _config.algorithm, _config.timeLimit, _config.w, _config.constraintInterval);
 
-        // _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
+        _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
     }
     else if (_modelState.task->type() == TASK_POSITION)
     {
@@ -231,8 +276,18 @@ void Interactor::solveTask()
     
 }
 
+void Interactor::cleanAcc()
+{
+    for (size_t i = 0; i < _model->nv; ++i)
+    {
+        _data->qvel[i] = 0;
+        _data->qacc[i] = 0;
+    }
+}
+
 void Interactor::step()
 {
+    const int freeze = 256;
     if (_shouldClose)
     {
         return;
@@ -240,9 +295,9 @@ void Interactor::step()
     if (_modelState.needSetTask)
     {
         _modelState.action = MultiAction(_dof, _arms, 0);
-        if (_config.displayMotion && _modelState.freezeCounter++ < 256)
+        if (_config.displayMotion && _modelState.freezeCounter++ < freeze)
         {
-            
+
         }
         else
         {
@@ -256,7 +311,7 @@ void Interactor::step()
     {
         _modelState.action = MultiAction(_dof, _arms, 0);
 
-        if (_config.displayMotion && _modelState.freezeCounter++ < 256)
+        if (_config.displayMotion && _modelState.freezeCounter++ < freeze)
         {
             
         }
@@ -296,6 +351,7 @@ void Interactor::step()
         }
     }
 
+    cleanAcc();
     mj_step(_model, _data);
 }
 
@@ -305,10 +361,10 @@ void Interactor::stepLoop(double duration)
     while (_data->time - simstart < duration && !shouldClose())
     {
         step();
-        if (_data->ncon)
-        {
-            printf("Collision detected! Acc[0] = (%f)\n", fabs(_data->qacc[0]));
-        }
+        // if (_data->ncon)
+        // {
+        //     printf("Collision detected! Acc[0] = (%f)\n", fabs(_data->qacc[0]));
+        // }
     }
 }
 
@@ -344,6 +400,85 @@ void Interactor::doMainLoop()
     }
 }
 
+void Interactor::constructorStep()
+{
+    static size_t joint = 0;
+    char c; std::cin >> c;
+    if (c == 'c')
+    {
+        std::cin >> joint;
+    }
+    else if (c == 'p')
+    {
+        for (size_t a = 0; a < _arms;++a)
+        {
+            for (size_t i = 0; i < _dof; ++i)
+            {
+                std::cout << _modelState.start[a][i] << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+        for (size_t a = 0; a < _arms;++a)
+        {
+            for (size_t i = 0; i < _dof; ++i)
+            {
+                std::cout << _modelState.goal[a][i] << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+        std::cout << (_planner->checkMultiCollision(_modelState.start) || _planner->checkMultiCollision(_modelState.goal)) << std::endl;
+    }
+    else
+    {
+        size_t delta = 0;
+        if (c == ',')
+        {
+            delta = -1;
+        }
+        else if (c == '.')
+        {
+            delta = 1;
+        }
+        size_t mj = (joint % (_arms * _dof));
+
+        size_t a = mj / _dof;
+        size_t i = mj % _dof;
+        if (joint < _arms * _dof)
+        {
+            MultiState state = _modelState.start;
+            state[a][i] += delta;
+            if (state[a].isCorrect())
+            {
+                _modelState.start = state;
+                setManipulatorState(_modelState.start);
+            }
+        }
+        else
+        {
+            MultiState state = _modelState.goal;
+            state[a][i] += delta;
+            if (state[a].isCorrect())
+            {
+                _modelState.goal = state;
+                setGoalState(_modelState.goal);
+            }
+        }
+    }
+    mj_step(_model, _data);
+
+}
+
+void Interactor::doConstructorLoop()
+{
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        constructorStep();
+        show();
+    }
+}
 
 Config Interactor::parseJSON(const string& filename)
 {
@@ -353,9 +488,12 @@ Config Interactor::parseJSON(const string& filename)
     std::string modelFilename = data["model"]["filename"];
     size_t dof = data["model"]["dof"];
     size_t arms = data["model"]["arms"];
+    size_t totalGeoms = data["model"]["single_arm"]["total_geoms"];
+    std::vector<size_t> collideGeomList = data["model"]["single_arm"]["collide_geom_list"].get<std::vector<size_t>>();
     double timeLimit = data["algorithm"]["time_limit"];
     Algorithm algorithm = data["algorithm"]["type"];
     double w = data["algorithm"]["heuristic"]["weight"];
+    size_t constraintInterval = data["algorithm"]["constraint_interval"];
     int taskNum = data["taskset"]["task_number"];
     TaskType taskType = data["taskset"]["task_type"];
     bool randomTasks = data["taskset"]["use_random_tasks"];
@@ -374,8 +512,11 @@ Config Interactor::parseJSON(const string& filename)
         modelFilename,
         dof,
         arms,
+        totalGeoms,
+        collideGeomList,
         timeLimit,
         w,
+        constraintInterval,
         taskNum,
         taskType,
         randomTasks,

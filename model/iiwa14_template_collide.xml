@@ -1,0 +1,7 @@
+    <exclude body1="base_{id}" body2="link1_{id}"/>
+    <exclude body1="base_{id}" body2="link2_{id}"/>
+    <exclude body1="base_{id}" body2="link3_{id}"/>
+    <exclude body1="link1_{id}" body2="link3_{id}"/>
+    <exclude body1="link3_{id}" body2="link5_{id}"/>
+    <exclude body1="link4_{id}" body2="link7_{id}"/>
+    <exclude body1="link5_{id}" body2="link7_{id}"/>

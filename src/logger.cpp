@@ -2,8 +2,9 @@
 
 #include <stdexcept>
 
-Logger::Logger(size_t dof)
+Logger::Logger(size_t dof, size_t arms)
 {
+    _arms = arms;
     _dof = dof;
 }
 Logger::~Logger()
@@ -75,7 +76,7 @@ void Logger::prepareScenFile(const std::string& filename)
     {
         throw std::runtime_error("Logger::prepareMainFile: Could not open file " + filename);
     }
-    printScenLogHeader(_scenFile, _dof);
+    printScenLogHeader(_scenFile, _dof, _arms);
 }
 void Logger::prepareStatsFile(const std::string& filename)
 {
@@ -99,7 +100,7 @@ void Logger::printStatsLog(Stats stats)
 {
     printStatsLog(_statsFile, stats);
 }
-void Logger::printScenLog(const Solution& solution, const JointState& startPos, const JointState& goalPos)
+void Logger::printScenLog(const MultiSolution& solution, const MultiState& startPos, const MultiState& goalPos)
 {
     printScenLog(_scenFile, solution, startPos, goalPos);
 }
@@ -193,11 +194,11 @@ void Logger::printRuntimeLog(FILE* file, const Solution& solution)
 
 void Logger::printStatsLogHeader(FILE* file)
 {
-    fprintf(file, "runtime,pathCost,pathFound\n");
+    fprintf(file, "runtime,pathCost,pathFound,pathTrivial\n");
 }
 void Logger::printStatsLog(FILE* file, Stats stats)
 {
-    fprintf(file, "%f,%f,%d\n",
+    fprintf(file, "%f,%f,%d,%d\n",
         // solution.stats.expansions,
         stats.runtime,
         // solution.stats.preprocRuntime,
@@ -205,37 +206,37 @@ void Logger::printStatsLog(FILE* file, Stats stats)
         // solution.stats.preprocByteSize,
         stats.pathCost,
         // solution.stats.pathPotentialCost,
-        stats.pathVerdict
+        stats.pathVerdict,
         // solution.stats.consideredEdges,
         // solution.stats.evaluatedEdges
+        stats.pathTrivial
     );
 }
 
-void Logger::printScenLogHeader(FILE* file, size_t dof)
+void Logger::printScenLogHeader(FILE* file, size_t dof, size_t arms)
 {
-    for (size_t i = 0; i < dof; ++i)
-    {
-        fprintf(file, "start_%zu,", i);
-    }
-    for (size_t i = 0; i < dof; ++i)
-    {
-        fprintf(file, "goal_%zu,", i);
-    }
-    fprintf(file, "path_cost,difficulty,runtime\n");
+    fprintf(file, "%d %d\n\n", dof, arms);
 }
-void Logger::printScenLog(FILE* file, const Solution& solution, const JointState& startPos, const JointState& goalPos)
+void Logger::printScenLog(FILE* file, const MultiSolution& solution, const MultiState& startPos, const MultiState& goalPos)
 {
-    for (size_t i = 0; i < startPos.dof(); ++i)
+    for (size_t a = 0; a < startPos.arms(); ++a)
     {
-        fprintf(file, "%d,", startPos[i]);
+        for (size_t i = 0; i < startPos.dof(); ++i)
+        {
+            fprintf(file, "%d ", startPos[a][i]);
+        }
+        fprintf(file, "\n");
     }
-    for (size_t i = 0; i < goalPos.dof(); ++i)
+    fprintf(file, "\n");
+    for (size_t a = 0; a < startPos.arms(); ++a)
     {
-        fprintf(file, "%d,", goalPos[i]);
+        for (size_t i = 0; i < startPos.dof(); ++i)
+        {
+            fprintf(file, "%d ", goalPos[a][i]);
+        }
+        fprintf(file, "\n");
     }
-    fprintf(file, "%f,%f,%f\n", solution.stats.pathCost,
-        1.0 * solution.stats.pathCost / solution.stats.pathPotentialCost,
-        solution.stats.runtime);
+    fprintf(file, "\n\n");
 }
 void Logger::printScenLog(FILE* file, const Solution& solution, const JointState& startPos, double goalX, double goalY)
 {

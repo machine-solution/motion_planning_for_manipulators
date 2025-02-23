@@ -81,7 +81,11 @@ void TaskSet::loadTasks(const std::string& filename, TaskType type)
     }
     int dof;
     int arms;
-    fscanf(file, "%d %d", &dof, &arms);
+    int scanned = fscanf(file, "%d %d", &dof, &arms);
+    if (scanned != 2)
+    {
+        throw std::runtime_error("TaskSet::loadTasks: dof or/and arms was not scanned");
+    }
     if (dof != _dof)
     {
         throw std::runtime_error("TaskSet::loadTasks: dof in taskfile and in class are not same");
@@ -94,8 +98,8 @@ void TaskSet::loadTasks(const std::string& filename, TaskType type)
     {
         while (!feof(file))
         {
-            MultiState starts(arms, dof);
-            MultiState goals(arms, dof);
+            std::vector<JointState> starts(arms, JointState(dof));
+            std::vector<JointState> goals(arms, JointState(dof));
             int counter_scanned = 0;
             for (size_t a = 0; a < arms; ++a)
             {
@@ -111,37 +115,13 @@ void TaskSet::loadTasks(const std::string& filename, TaskType type)
                     counter_scanned += fscanf(file, "%d", &goals[a][i]);
                 }
             }
-            float optimal;
-            counter_scanned += fscanf(file, "%f", &optimal); // it is really unused now
-            if (counter_scanned == (2 * dof * arms + 1))
+            if (counter_scanned == (2 * dof * arms))
             {
-                _tasks.push_back(std::make_unique<TaskState>(starts, goals, dof, arms));
+                _tasks.push_back(std::make_unique<TaskState>(MultiState(starts), MultiState(goals), dof, arms));
             }
-        }
-    }
-    else if (type == TASK_POSITION)
-    {
-        while (!feof(file))
-        {
-            MultiState starts(arms, dof);
-            int counter_scanned = 0;
-            for (size_t a = 0; a < arms; ++a)
+            else
             {
-                for (size_t i = 0; i < dof; ++i)
-                {
-                    counter_scanned += fscanf(file, "%d", &starts[a][i]);
-                }
-            }
-            std::vector<double> goalXs(arms), goalYs(arms);
-            for (size_t a = 0; a < arms; ++a)
-            {
-                counter_scanned += fscanf(file, "%lf%lf", &goalXs[a], &goalYs[a]);
-            }
-            float optimal;
-            counter_scanned += fscanf(file, "%f", &optimal); // it is really unused now
-            if (counter_scanned == ((dof + 2) * arms + 1))
-            {
-                _tasks.push_back(std::make_unique<TaskPosition>(starts, goalXs, goalYs, dof, arms));
+                break;
             }
         }
     }
@@ -166,6 +146,11 @@ void TaskSet::generateRandomTasks(size_t n, TaskType type, const ManipulatorPlan
             {
                 _tasks.push_back(std::make_unique<TaskState>(starts, ends, _dof, _arms));
                 ++created_tasks;
+                std::cout << "  CORRECT TASK " << created_tasks << "/" << n << std::endl;
+            }
+            else
+            {
+                std::cout << "INCORRECT TASK " << created_tasks << "/" << n << std::endl;
             }
         }
     }

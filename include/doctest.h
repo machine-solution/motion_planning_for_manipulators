@@ -5073,7 +5073,7 @@ namespace {
         };
 
 #ifndef DOCTEST_CONFIG_NO_INCLUDE_IOSTREAM
-        XmlWriter( std::ostream& os = std::cout );
+        XmlWriter( std::ostream& os = std::cerr );
 #else // DOCTEST_CONFIG_NO_INCLUDE_IOSTREAM
         XmlWriter( std::ostream& os );
 #endif // DOCTEST_CONFIG_NO_INCLUDE_IOSTREAM
@@ -6814,7 +6814,7 @@ int Context::run() {
         } else {
 #ifndef DOCTEST_CONFIG_NO_INCLUDE_IOSTREAM
             // stdout by default
-            p->cout = &std::cout;
+            p->cout = &std::cerr;
 #else // DOCTEST_CONFIG_NO_INCLUDE_IOSTREAM
             return EXIT_FAILURE;
 #endif // DOCTEST_CONFIG_NO_INCLUDE_IOSTREAM

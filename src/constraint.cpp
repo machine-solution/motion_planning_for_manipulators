@@ -85,15 +85,21 @@ ConstraintType EmptyConstraint::type() const
     return CONSTRAINT_MAX;
 }
 
-VertexConstraint::VertexConstraint(int stepNum, const JointState &state)
+VertexConstraint::VertexConstraint(int stepFrom, int stepTo, const JointState &state)
 {
-    _stepNum = stepNum;
+    _stepFrom = stepFrom;
+    _stepTo = stepTo;
     _state = state;
 }
 
-int VertexConstraint::stepNum() const
+int VertexConstraint::stepFrom() const
 {
-    return _stepNum;
+    return _stepFrom;
+}
+
+int VertexConstraint::stepTo() const
+{
+    return _stepTo;
 }
 
 JointState VertexConstraint::state() const
@@ -106,16 +112,22 @@ ConstraintType VertexConstraint::type() const
     return CONSTRAINT_VERTEX;
 }
 
-AvoidanceConstraint::AvoidanceConstraint(int stepNum, size_t armNum, const JointState &state)
+AvoidanceConstraint::AvoidanceConstraint(int stepFrom, int stepTo, size_t armNum, const JointState &state)
 {
-    _stepNum = stepNum;
+    _stepFrom = stepFrom;
+    _stepTo = stepTo;
     _armNum = armNum;
     _state = state;
 }
 
-int AvoidanceConstraint::stepNum() const
+int AvoidanceConstraint::stepFrom() const
 {
-    return _stepNum;
+    return _stepFrom;
+}
+
+int AvoidanceConstraint::stepTo() const
+{
+    return _stepTo;
 }
 
 const size_t AvoidanceConstraint::armNum() const
@@ -133,18 +145,24 @@ ConstraintType AvoidanceConstraint::type() const
     return CONSTRAINT_AVOIDANCE;
 }
 
-SphereConstraint::SphereConstraint(int stepNum, double centerX, double centerY, double centerZ, double radius)
+SphereConstraint::SphereConstraint(int stepFrom, int stepTo, double centerX, double centerY, double centerZ, double radius)
 {
-    _stepNum = stepNum;
+    _stepFrom = stepFrom;
+    _stepTo = stepTo;
     _centerX = centerX;
     _centerY = centerY;
     _centerZ = centerZ;
     _radius = radius;
 }
 
-int SphereConstraint::stepNum() const
+int SphereConstraint::stepFrom() const
 {
-    return _stepNum;
+    return _stepFrom;
+}
+
+int SphereConstraint::stepTo() const
+{
+    return _stepTo;
 }
 
 const double SphereConstraint::centerX() const

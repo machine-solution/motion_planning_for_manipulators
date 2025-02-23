@@ -18,6 +18,7 @@ struct Stats
     size_t byteSize = 0;
     size_t preprocByteSize = 0;
     int pathVerdict = PATH_NOT_FOUND;
+    int pathTrivial = 0;
     size_t evaluatedEdges = 0;
     size_t consideredEdges = 0;
 

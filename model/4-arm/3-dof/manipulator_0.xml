@@ -8,9 +8,6 @@
 	</asset>
 
     <worldbody>
-        <light diffuse=".5 .5 .5" pos="0 0 10" dir="0 0 -1"/>
-        <geom type="plane" size="4 3 0.1" rgba="1 1 1 1"/>
-
         <body name="link 0-0" pos="-0.75 -1 0.1" euler="0 90 0">
             <joint name="joint 0-0" type="hinge" axis="-1 0 0" pos="0 0 -0.25"/>
             <geom name="geom link 0-0" type="cylinder" size="0.05 0.25" material="red"/>
@@ -119,6 +116,9 @@
         <body name="sudo sphere">
             <geom name="sudo sphere 1" type="sphere" size="0.1" pos="0.0 0.0 -100.0" contype="0" conaffinity="0"  material="blue"/>
         </body>
+
+        <light diffuse=".5 .5 .5" pos="0 0 10" dir="0 0 -1"/>
+        <geom type="plane" size="4 3 0.1" rgba="1 1 1 1"/>
 
     </worldbody>
     <contact>

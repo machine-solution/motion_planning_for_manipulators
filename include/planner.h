@@ -63,13 +63,24 @@ public:
     double preprocRuntime = 0.0;
 };
 
+class ArmGeoms
+{
+public:
+    ArmGeoms(size_t count, const std::vector<size_t>& geoms);
+
+    size_t _count;
+    std::vector<size_t> _geoms;
+};
+
 class ManipulatorPlanner : public Profiler
 {
 public:
-    ManipulatorPlanner(size_t dof, size_t arms, mjModel* model = nullptr, mjData* data = nullptr);
+    ManipulatorPlanner(size_t dof, size_t arms, ArmGeoms armGeoms, mjModel* model = nullptr, mjData* data = nullptr);
 
     size_t dof() const;
     size_t arms() const;
+
+    size_t armGeomOffset(size_t armNum) const;
 
     void switchArm(size_t armNum, int mode) const;
     void switchSphere(int mode) const;
@@ -134,7 +145,7 @@ public:
 
     MultiSolution planMultiActions(
         const MultiState& startPos, const MultiState& goalPos, int alg = ALG_ASTAR,
-        double timeLimit = 1.0, double w = 1.0);
+        double timeLimit = 1.0, double w = 1.0, size_t constraintInterval = 1);
 
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
     Solution planActions(size_t armNum, const JointState& startPos, const JointState& goalPos,
@@ -219,6 +230,7 @@ private:
 
     mutable mjModel* _model; // model for collision checks
     mutable mjData* _data; // data for collision checks and calculations
+    ArmGeoms _armGeoms;
 
     class AstarChecker : public astar::IAstarChecker
     {

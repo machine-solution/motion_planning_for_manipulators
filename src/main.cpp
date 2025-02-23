@@ -13,6 +13,8 @@
 #include <string.h>
 #include <fstream>
 
+#define SOLVE
+
 // main function
 int main(int argc, const char** argv)
 {
@@ -21,8 +23,11 @@ int main(int argc, const char** argv)
     {
         Interactor interactor;
         interactor.setUp(pathJSON);
-        std::cerr << "Starting main loop" << std::endl;
+#ifdef SOLVE
         interactor.doMainLoop();
+#else
+        interactor.doConstructorLoop();
+#endif
     }
 
     return 0;
