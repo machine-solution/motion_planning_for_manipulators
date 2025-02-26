@@ -28,9 +28,9 @@
         "taskset_filename": "scenaries/kuka_2/tasks.txt"
     },
     "output": {
-        "profiling": "pyplot/0/runtime_hard_w=1.0.log",
-        "statistics": "pyplot/kuka_2/stats_1.log",
-        "taskset": "scenaries/kuka_2/tasks_1.log",
+        "profiling": "pyplot/_old/0/runtime_hard_w=1.0.log",
+        "statistics": "pyplot/kuka_2/0.log",
+        "taskset": "scenaries/kuka_2/0.log",
         "configuration_space": "maps/c_space_12.map",
         "paths_folder": "maps/paths_12/"
     },

@@ -104,6 +104,7 @@ class Focal
 {
 public:
     Focal(double w);
+    ~Focal();
 
     void add(CBSNode* node);
 

@@ -1,10 +1,11 @@
-scen_name = "scenaries/kuka_2/tasks_1.log"
-stats_name = "pyplot/kuka_2/stats_1.log"
-taskset_name = "scenaries/tasksets/kuka_2.txt"
+arms = 8
+
+scen_name = f"scenaries/kuka_{arms}/tasks_1.log"
+stats_name = f"pyplot/kuka_{arms}/stats_1.log"
+taskset_name = f"scenaries/tasksets/kuka_{arms}.txt"
 
 number = 50
 dof = 7
-arms = 2
 
 test_size = 3 + 2 * arms
 
@@ -22,7 +23,7 @@ with open(taskset_name, "w+") as outp:
         if stats_list[i].strip().split(',')[-1] == "0":
             number -= 1
             for j in range(test_size):
-                outp.write(scen_list[2 + i * test_size + j])
+                outp.write(scen_list[2 + (i - 1) * test_size + j])
 
 
 

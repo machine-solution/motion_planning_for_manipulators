@@ -294,6 +294,16 @@ Focal::Focal(double w)
     _minSumG = g_inf;
 }
 
+Focal::~Focal()
+{
+    while (!_setSumG.empty())
+    {
+        CBSNode* node = *_setSumG.begin();
+        _setSumG.erase(_setSumG.begin());
+        delete node;
+    }
+}
+
 void Focal::add(CBSNode *node)
 {
     _setSumG.insert(node);
