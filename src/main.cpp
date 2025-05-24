@@ -7,10 +7,13 @@
 #include <mujoco/mujoco.h>
 #include <GLFW/glfw3.h>
 
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fstream>
+
+#define SOLVE
 
 // main function
 int main(int argc, const char** argv)
@@ -20,7 +23,11 @@ int main(int argc, const char** argv)
     {
         Interactor interactor;
         interactor.setUp(pathJSON);
+#ifdef SOLVE
         interactor.doMainLoop();
+#else
+        interactor.doConstructorLoop();
+#endif
     }
 
     return 0;

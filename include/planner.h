@@ -1,6 +1,7 @@
 #pragma once
 
 #include "astar.h"
+#include "constraint.h"
 #include "joint_state.h"
 #include "lazy_astar.h"
 #include "lazy_arastar.h"
@@ -62,31 +63,102 @@ public:
     double preprocRuntime = 0.0;
 };
 
+class ArmGeoms
+{
+public:
+    ArmGeoms(size_t count, const std::vector<size_t>& geoms);
+
+    size_t _count;
+    std::vector<size_t> _geoms;
+};
+
 class ManipulatorPlanner : public Profiler
 {
 public:
-    ManipulatorPlanner(size_t dof, mjModel* model = nullptr, mjData* data = nullptr);
+    ManipulatorPlanner(size_t dof, size_t arms, ArmGeoms armGeoms, mjModel* model = nullptr, mjData* data = nullptr);
 
     size_t dof() const;
+    size_t arms() const;
 
-    bool checkCollision(const JointState& position) const;
-    bool checkCollisionAction(const JointState& start, const Action& action) const;
+    size_t armGeomOffset(size_t armNum) const;
+
+    void switchArm(size_t armNum, int mode) const;
+    void switchSphere(int mode) const;
+    void onArmsOnly(std::set<size_t> onArms) const;
+    void onAllArms() const;
+    void offArmsOnly(std::set<size_t> offArms) const;
+
+    std::vector<double> getSiteCoords(size_t armNum) const;
+
+    void setArmState(size_t armNum, const JointState& state) const;
+    void setSphereState(double centerX, double centerY, double centerZ, double radius) const;
+
+    bool checkCollisionActionObstacles(
+        size_t armNum, const JointState& start, const Action& action) const;
+    bool checkCollisionActionConstraintVertex(
+        size_t armNum, const JointState& start, int stepNum, const Action& action,
+        std::shared_ptr<VertexConstraint> constraint) const;
+    bool checkCollisionActionConstraintAvoidance(
+        size_t armNum, const JointState& start, int stepNum, const Action& action,
+        std::shared_ptr<AvoidanceConstraint> constraint) const;
+    bool checkCollisionActionConstraintSphere(
+        size_t armNum, const JointState& start, int stepNum, const Action& action,
+        std::shared_ptr<SphereConstraint> constraint) const;
+    bool checkCollisionActionConstraintPriority(
+        size_t armNum, const JointState& start, int stepNum, const Action& action,
+        std::shared_ptr<PriorityConstraint> constraint, const StateChain& states) const;
+
+    bool checkCollisionStayForeverConstraintVertex(
+        size_t armNum, const JointState& start, int stepNum,
+        std::shared_ptr<VertexConstraint> constraint) const;
+    bool checkCollisionStayForeverConstraintAvoidance(
+        size_t armNum, const JointState& start, int stepNum,
+        std::shared_ptr<AvoidanceConstraint> constraint) const;
+    bool checkCollisionStayForeverConstraintSphere(
+        size_t armNum, const JointState& start, int stepNum,
+        std::shared_ptr<SphereConstraint> constraint) const;
+    bool checkCollisionStayForeverConstraintPriority(
+        size_t armNum, const JointState& start, int stepNum,
+        std::shared_ptr<PriorityConstraint> constraint, const StateChain& states) const;
+
+    bool checkCollision(size_t armNum, const JointState& position) const;
+    bool checkMultiCollision(const MultiState& positions) const;
+    bool checkCollisionAction(
+        size_t armNum, const JointState& start, int stepNum, const Action& action,
+        const ConstraintSet& constraints) const;
+    // stepNum is a step directly after last step in solution
+    // function checks that staying all steps from [stepNum, inf) with zero action are correct
+    bool checkCollisionStayForever(
+        size_t armNum, const JointState& start, int stepNum,
+        const ConstraintSet& constraints) const;
+    bool checkMultiCollisionAction(
+        const MultiState& start, int stepNum, const MultiAction& action) const;
+    
+    std::vector<double> findIntersectionPoint(size_t armNum1, size_t armNum2, const JointState& state1, const JointState& state2) const;
+    Conflict findFirstConflict(MultiState startPos, MultiSolution solution) const;
+    size_t calculateConflictsCount(MultiState startPos, MultiSolution solution) const;
 
     // return C-Space as strings where @ an obstacle, . - is not
-    // only for _dof = 2 now
+    // only for _dof * _arms = 2 now
     vector<string> configurationSpace() const;
 
     // On C-Space print start as 'A', end as 'B', path as '+'
     // Make copy of solution to call nextStep()
     vector<string> pathInConfigurationSpace(const JointState& start, Solution solution) const;
 
+    MultiSolution planMultiActions(
+        const MultiState& startPos, const MultiState& goalPos, int alg = ALG_ASTAR,
+        double timeLimit = 1.0, double w = 1.0, size_t constraintInterval = 1);
+
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
-    Solution planActions(const JointState& startPos, const JointState& goalPos,
-        int alg = ALG_ASTAR, double timeLimit = 1.0, double w = 1.0);
+    Solution planActions(size_t armNum, const JointState& startPos, const JointState& goalPos,
+        const ConstraintSet& constraints, int alg = ALG_ASTAR,
+        double timeLimit = 1.0, double w = 1.0);
     // plan path to move end-effector to (doubleX, doubleY) point
     // timeLimit - is a maximum time in *seconds*, after that planner will give up
-    Solution planActions(const JointState& startPos, double goalX, double goalY,
-        int alg = ALG_ASTAR, double timeLimit = 1.0, double w = 1.0);
+    Solution planActions(size_t armNum, const JointState& startPos, double goalX, double goalY,
+        const ConstraintSet& constraints, int alg = ALG_ASTAR,
+        double timeLimit = 1.0, double w = 1.0);
     
     void preprocess(int pre = PRE_NONE, int clusters = 0, size_t seed = 12345);
     bool isPreprocessed() const;
@@ -99,12 +171,13 @@ public:
     // calculate answer only 1 time
     double maxActionLength() const;
     // return coords of site by state of joints
-    std::pair<double, double> sitePosition(const JointState& state) const;
+    std::pair<double, double> sitePosition(size_t armNum, const JointState& state) const;
 
     const int units = g_units;
     const double eps = g_eps;
 
     const vector<Action>& getPrimitiveActions() const;
+    const Action& getZeroAction() const;
 
 private:
     void initPrimitiveActions();
@@ -114,25 +187,30 @@ private:
     Solution linearPlanning(const JointState& startPos, const JointState& goalPos);
 
     Solution astarPlanning(
-        const JointState& startPos, const JointState& goalPos,
+        size_t armNum, const JointState& startPos, const JointState& goalPos,
+        const ConstraintSet& constraints,
         float weight, double timeLimit
     );
     Solution astarPlanning(
-        const JointState& startPos, double goalX, double goalY,
+        size_t armNum, const JointState& startPos, double goalX, double goalY,
+        const ConstraintSet& constraints,
         float weight, double timeLimit
     );
 
     Solution lazyAstarPlanning(
-        const JointState& startPos, const JointState& goalPos,
+        size_t armNum, const JointState& startPos, const JointState& goalPos,
+        const ConstraintSet& constraints,
         float weight, double timeLimit
     );
     Solution lazyAstarPlanning(
-        const JointState& startPos, double goalX, double goalY,
+        size_t armNum, const JointState& startPos, double goalX, double goalY,
+        const ConstraintSet& constraints,
         float weight, double timeLimit
     );
 
     Solution lazyARAstarPlanning(
-        const JointState& startPos, const JointState& goalPos,
+        size_t armNum, const JointState& startPos, const JointState& goalPos,
+        const ConstraintSet& constraints,
         float weight, double timeLimit
     );
 
@@ -146,44 +224,50 @@ private:
         float weight, double timeLimit
     );
 
-    vector<Action> _primitiveActions;
-    Action _zeroAction;
-    size_t _dof;
+    vector<Action> _primitiveActions; // actions of one manipulator
+    Action _zeroAction; // vector of zeroes
+    size_t _dof; // dof of one manipulator
+    size_t _arms; // the number of manipulators
 
     PreprocData _preprocData;
 
     mutable mjModel* _model; // model for collision checks
     mutable mjData* _data; // data for collision checks and calculations
+    ArmGeoms _armGeoms;
 
     class AstarChecker : public astar::IAstarChecker
     {
     public:
-        AstarChecker(ManipulatorPlanner* planner, const JointState& goal);
+        AstarChecker(ManipulatorPlanner* planner, size_t armNum, const JointState& goal, const ConstraintSet& constraints);
 
-        bool isCorrect(const JointState& state, const Action& action) override;
-        bool isGoal(const JointState& state) override;
+        bool isCorrect(const JointState& state, int stepNum, const Action& action) override;
+        bool isGoal(const JointState& state, int stepNum) override;
         CostType costAction(const JointState& state, const Action& action) override;
         const std::vector<Action>& getActions() override;
         const Action& getZeroAction() override;
         CostType heuristic(const JointState& state) override;
     protected:
         ManipulatorPlanner* _planner;
+        size_t _armNum;
         const JointState& _goal;
+        ConstraintSet _constraints;
     };
 
     class AstarCheckerSite : public astar::IAstarChecker
     {
     public:
-        AstarCheckerSite(ManipulatorPlanner* planner, double goalX, double goalY);
+        AstarCheckerSite(ManipulatorPlanner* planner, size_t armNum, double goalX, double goalY, const ConstraintSet& constraints);
 
-        bool isCorrect(const JointState& state, const Action& action) override;
-        bool isGoal(const JointState& state) override;
+        bool isCorrect(const JointState& state, int stepNum, const Action& action) override;
+        bool isGoal(const JointState& state, int stepNum) override;
         CostType costAction(const JointState& state, const Action& action) override;
         const std::vector<Action>& getActions() override;
         const Action& getZeroAction() override;
         CostType heuristic(const JointState& state) override;
     protected:
         ManipulatorPlanner* _planner;
+        size_t _armNum;
+        ConstraintSet _constraints;
         double _goalX;
         double _goalY;
     };

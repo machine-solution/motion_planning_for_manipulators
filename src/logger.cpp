@@ -2,8 +2,9 @@
 
 #include <stdexcept>
 
-Logger::Logger(size_t dof)
+Logger::Logger(size_t dof, size_t arms)
 {
+    _arms = arms;
     _dof = dof;
 }
 Logger::~Logger()
@@ -75,7 +76,7 @@ void Logger::prepareScenFile(const std::string& filename)
     {
         throw std::runtime_error("Logger::prepareMainFile: Could not open file " + filename);
     }
-    printScenLogHeader(_scenFile, _dof);
+    printScenLogHeader(_scenFile, _dof, _arms);
 }
 void Logger::prepareStatsFile(const std::string& filename)
 {
@@ -87,19 +88,19 @@ void Logger::prepareStatsFile(const std::string& filename)
     printStatsLogHeader(_statsFile);
 }
 
-void Logger::printMainLog(const Solution& solution)
+void Logger::printMainLog(Stats stats)
 {
-    printMainLog(_mainFile, solution);
+    printMainLog(_mainFile, stats);
 }
 void Logger::printRuntimeLog(const Solution& solution)
 {
     printRuntimeLog(_runtimeFile, solution);
 }
-void Logger::printStatsLog(const Solution& solution)
+void Logger::printStatsLog(Stats stats)
 {
-    printStatsLog(_statsFile, solution);
+    printStatsLog(_statsFile, stats);
 }
-void Logger::printScenLog(const Solution& solution, const JointState& startPos, const JointState& goalPos)
+void Logger::printScenLog(const MultiSolution& solution, const MultiState& startPos, const MultiState& goalPos)
 {
     printScenLog(_scenFile, solution, startPos, goalPos);
 }
@@ -125,35 +126,35 @@ void Logger::printPath(const vector<string>& cSpacePath, int number)
     fclose(pathFile);
 }
 
-void Logger::printMainLog(FILE* file, const Solution& solution)
+void Logger::printMainLog(FILE* file, Stats stats)
 {
-    std::string yn[] = {"PATH FOUND", "PATH NOT FOUND", "PATH DOES NOT EXIST"};
+    std::string yn[] = {"PATH NOT FOUND", "PATH FOUND", "PATH DOES NOT EXIST"};
 
-    fprintf(file, "path verdict: %s\nexpansions: %zu\nbyte size: %zu\ncost of path: %f\nruntime: %.3fs\n",
-        yn[solution.stats.pathVerdict].c_str(),
-        solution.stats.expansions,
-        solution.stats.byteSize,
-        solution.stats.pathCost,
-        solution.stats.runtime
+    fprintf(file, "path verdict: %s\ncost of path: %f\nruntime: %.3fs\n",
+        yn[stats.pathVerdict].c_str(),
+        // solution.stats.expansions,
+        // solution.stats.byteSize,
+        stats.pathCost,
+        stats.runtime
     );
-    fprintf(file, "---Planner Profile---\n");
-    for (const ProfileInfo& info : solution.plannerProfile)
-    {
-        fprintf(file, "%.1fms\t%zu\t%s\n",
-            info.runtime * 1000,
-            info.calls,
-            info.funcName.c_str()
-        );
-    }
-    fprintf(file, "---Search Tree Profile---\n");
-    for (const ProfileInfo& info : solution.searchTreeProfile)
-    {
-        fprintf(file, "%.1fms\t%zu\t%s\n",
-            info.runtime * 1000,
-            info.calls,
-            info.funcName.c_str()
-        );
-    }
+    // fprintf(file, "---Planner Profile---\n");
+    // for (const ProfileInfo& info : solution.plannerProfile)
+    // {
+    //     fprintf(file, "%.1fms\t%zu\t%s\n",
+    //         info.runtime * 1000,
+    //         info.calls,
+    //         info.funcName.c_str()
+    //     );
+    // }
+    // fprintf(file, "---Search Tree Profile---\n");
+    // for (const ProfileInfo& info : solution.searchTreeProfile)
+    // {
+    //     fprintf(file, "%.1fms\t%zu\t%s\n",
+    //         info.runtime * 1000,
+    //         info.calls,
+    //         info.funcName.c_str()
+    //     );
+    // }
     fprintf(file, "\n");
 }
 
@@ -193,49 +194,50 @@ void Logger::printRuntimeLog(FILE* file, const Solution& solution)
 
 void Logger::printStatsLogHeader(FILE* file)
 {
-    fprintf(file, "expansions,runtime,preprocRuntime,byteSize,preprocByteSize,pathCost,pathPotentialCost,pathFound,consideredEdges,evaluatedEdges\n");
+    fprintf(file, "runtime,pathCost,pathTrivialCost,pathFound,pathTrivial\n");
 }
-void Logger::printStatsLog(FILE* file, const Solution& solution)
+void Logger::printStatsLog(FILE* file, Stats stats)
 {
-    fprintf(file, "%zu,%f,%f,%zu,%zu,%f,%f,%d,%zu,%zu\n",
-        solution.stats.expansions,
-        solution.stats.runtime,
-        solution.stats.preprocRuntime,
-        solution.stats.byteSize,
-        solution.stats.preprocByteSize,
-        solution.stats.pathCost,
-        solution.stats.pathPotentialCost,
-        solution.stats.pathVerdict,
-        solution.stats.consideredEdges,
-        solution.stats.evaluatedEdges
+    fprintf(file, "%f,%f,%f,%d,%d\n",
+        // solution.stats.expansions,
+        stats.runtime,
+        // solution.stats.preprocRuntime,
+        // solution.stats.byteSize,
+        // solution.stats.preprocByteSize,
+        stats.pathCost,
+        stats.pathTrivialCost,
+        // solution.stats.pathPotentialCost,
+        stats.pathVerdict,
+        // solution.stats.consideredEdges,
+        // solution.stats.evaluatedEdges
+        stats.pathTrivial
     );
 }
 
-void Logger::printScenLogHeader(FILE* file, size_t dof)
+void Logger::printScenLogHeader(FILE* file, size_t dof, size_t arms)
 {
-    for (size_t i = 0; i < dof; ++i)
-    {
-        fprintf(file, "start_%zu,", i);
-    }
-    for (size_t i = 0; i < dof; ++i)
-    {
-        fprintf(file, "goal_%zu,", i);
-    }
-    fprintf(file, "path_cost,difficulty,runtime\n");
+    fprintf(file, "%ld %ld\n\n", dof, arms);
 }
-void Logger::printScenLog(FILE* file, const Solution& solution, const JointState& startPos, const JointState& goalPos)
+void Logger::printScenLog(FILE* file, const MultiSolution& solution, const MultiState& startPos, const MultiState& goalPos)
 {
-    for (size_t i = 0; i < startPos.dof(); ++i)
+    for (size_t a = 0; a < startPos.arms(); ++a)
     {
-        fprintf(file, "%d,", startPos[i]);
+        for (size_t i = 0; i < startPos.dof(); ++i)
+        {
+            fprintf(file, "%d ", startPos[a][i]);
+        }
+        fprintf(file, "\n");
     }
-    for (size_t i = 0; i < goalPos.dof(); ++i)
+    fprintf(file, "\n");
+    for (size_t a = 0; a < startPos.arms(); ++a)
     {
-        fprintf(file, "%d,", goalPos[i]);
+        for (size_t i = 0; i < startPos.dof(); ++i)
+        {
+            fprintf(file, "%d ", goalPos[a][i]);
+        }
+        fprintf(file, "\n");
     }
-    fprintf(file, "%f,%f,%f\n", solution.stats.pathCost,
-        1.0 * solution.stats.pathCost / solution.stats.pathPotentialCost,
-        solution.stats.runtime);
+    fprintf(file, "\n\n");
 }
 void Logger::printScenLog(FILE* file, const Solution& solution, const JointState& startPos, double goalX, double goalY)
 {

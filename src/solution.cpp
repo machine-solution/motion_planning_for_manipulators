@@ -1,6 +1,8 @@
 #include "solution.h"
 #include "utils.h"
 
+#include <iostream>
+
 Solution::Solution()
 {
     _nextActionId = 0;
@@ -86,8 +88,117 @@ Action Solution::operator[](size_t i) const
     return _primitiveActions[_solveActions[i]];
 }
 
+void Solution::reset()
+{
+    _nextActionId = 0;
+}
+
 size_t Solution::byteSize() const
 {
     return _zeroAction.byteSize() * (1 + _primitiveActions.size())
     + sizeof(_nextActionId) * (1 + _solveActions.size());
+}
+
+MultiSolution::MultiSolution()
+{
+}
+
+MultiSolution::MultiSolution(const vector<Action> &primitiveActions, const Action &zeroAction, size_t dof, size_t arms)
+{
+    _dof = dof;
+    _arms = arms;
+    _primitiveActions = primitiveActions;
+    _zeroAction = zeroAction;
+    _solutions = std::vector<Solution>(_arms, Solution(primitiveActions, zeroAction));
+}
+
+size_t MultiSolution::arms() const
+{
+    return _arms;
+}
+
+Solution& MultiSolution::operator[](size_t i)
+{
+    return _solutions.at(i);
+}
+
+MultiAction MultiSolution::nextAction()
+{
+    vector<Action> actions(_arms, Action(_dof));
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        actions[a] = _solutions[a].nextAction();
+    }
+    return MultiAction(actions);
+}
+
+void MultiSolution::reset()
+{
+    _nextActionId = 0;
+    for (size_t i = 0; i < _arms; ++i)
+    {
+        _solutions[i].reset();
+    }
+}
+
+size_t MultiSolution::countActions() const
+{
+    size_t count = 0;
+    for (size_t i = 0; i < _arms; ++i)
+    {
+        count += _solutions[i].size();
+    }
+    return count;
+}
+
+bool MultiSolution::goalAchieved() const
+{
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        if (!_solutions[a].goalAchieved())
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+StateChain::StateChain(JointState startState, Solution solution)
+{
+    _startState = startState;
+    while (!solution.goalAchieved())
+    {
+        startState.apply(solution.nextAction());
+        _states.push_back(startState);
+    }
+}
+
+JointState StateChain::operator[](int i) const
+{
+    if (i < 0)
+    {
+        return _startState;
+    }
+    if (i >= _states.size())
+    {
+        return back();
+    }
+    return _states.at(i);
+}
+
+JointState StateChain::back() const
+{
+    if (_states.size() > 0)
+    {
+        return _states.back();
+    }
+    else
+    {
+        return _startState;
+    }
+}
+
+size_t StateChain::size() const
+{
+    return _states.size();
 }

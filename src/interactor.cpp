@@ -4,10 +4,50 @@
 
 #include <external/json.h>
 
+#include <iostream>
 #include <fstream>
 #include <stdexcept>
 
+#include <thread>     // Для std::this_thread::sleep_for
+#include <chrono>     // Для std::chrono::milliseconds
+
 using json = nlohmann::json;
+
+void Interactor::logQPos(const std::string& text)
+{
+    std::cerr << text << std::endl;
+    std::cerr << _model->nv << " " << _data->ncon << std::endl;
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            std::cerr << _data->qpos[i + a * _dof] << " ";
+        }
+        if (a + 1 < _arms)
+            std::cerr << "| ";
+    }
+    std::cerr << std::endl;
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            std::cerr << _data->qvel[i + a * _dof] << " ";
+        }
+        if (a + 1 < _arms)
+            std::cerr << "| ";
+    }
+    std::cerr << std::endl;
+    for (size_t a = 0; a < _arms; ++a)
+    {
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            std::cerr << _data->qacc[i + a * _dof] << " ";
+        }
+        if (a + 1 < _arms)
+            std::cerr << "| ";
+    }
+    std::cerr << std::endl;
+}
 
 Interactor::Interactor() {}
 Interactor::~Interactor()
@@ -40,15 +80,22 @@ void Interactor::setUp(Config config)
     if (!_model)
         mju_error_s("Load model error: %s", error); // exception in constructor - bad idea TODO
     _data = mj_makeData(_model);
-    _dof = _model->nq / 2;
+    _dof = _config.dof;
+    _arms = _config.arms;
 
     mjModel* mCopy = mj_copyModel(NULL, _model);
     mjData* dCopy = mj_makeData(mCopy);
 
-    _planner = new ManipulatorPlanner(_dof, mCopy, dCopy);
+    _planner = new ManipulatorPlanner(
+        _dof,
+        _arms,
+        ArmGeoms(_config.totalGeoms, _config.collideGeomList),
+        mCopy,
+        dCopy
+    );
     // _planner->preprocess(); TODO return
-    _logger = new Logger(_dof);
-    _taskset = new TaskSet(_dof);
+    _logger = new Logger(_dof, _arms);
+    _taskset = new TaskSet(_dof, _arms);
 
     // init GLFW
     if (!glfwInit())
@@ -68,7 +115,7 @@ void Interactor::setUp(Config config)
     mjr_makeContext(_model, &_con, mjFONTSCALE_150);   // model-specific context
 
     // init camera
-    double arr_view[] = {90, -90, 5.5, 0.000000, 0.000000, 0.000000};
+    double arr_view[] = {45, -45, 3.5, 0.000000, 0.000000, 0.000000};
     _cam.azimuth = arr_view[0];
     _cam.elevation = arr_view[1];
     _cam.distance = arr_view[2];
@@ -76,20 +123,20 @@ void Interactor::setUp(Config config)
     _cam.lookat[1] = arr_view[4];
     _cam.lookat[2] = arr_view[5];
 
-    _modelState.start = JointState(_dof, 0);
-    _modelState.currentState = JointState(_dof, 0);
-    _modelState.goal = JointState(_dof, 0);
-    _modelState.action = Action(_dof, 0);
+    _modelState.start = MultiState(_dof, _arms, 0);
+    _modelState.currentState = MultiState(_dof, _arms, 0);
+    _modelState.goal = MultiState(_dof, _arms, 0);
+    _modelState.action = MultiAction(_dof, _arms, 0);
 
     _logger->prepareMainFile("");
     _logger->prepareScenFile(_config.scenFilename);
     _logger->prepareStatsFile(_config.statsFilename);
     _logger->prepareRuntimeFile(_config.runtimeFilename);
-    if (_dof == 2)
+    if (_dof == 2 && _arms == 1)
     {
-        _logger->prepareCspaceFile(_config.cSpaceFilename);
-        _logger->printCSpace(_planner->configurationSpace());
-        _logger->preparePathsFolder(_config.pathsFolder);
+        // _logger->prepareCspaceFile(_config.cSpaceFilename);
+        // _logger->printCSpace(_planner->configurationSpace());
+        // _logger->preparePathsFolder(_config.pathsFolder);
     }
 
     _planner->preprocess(_config.preprocess, _config.clusters, _config.randomSeed);
@@ -111,21 +158,27 @@ void Interactor::setUp(const string& filename)
     setUp(parseJSON(filename));
 }
 
-void Interactor::setManipulatorState(const JointState& state)
+void Interactor::setManipulatorState(const MultiState& state)
 {
-    for (size_t i = 0; i < _dof; ++i)
+    for (size_t a = 0; a < _arms; ++a)
     {
-        _data->qpos[i] = state.rad(i);
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            _data->qpos[i + a * _dof] = state[a].rad(i);
+        }
     }
 }
-void Interactor::setGoalState(const JointState& state)
+void Interactor::setGoalState(const MultiState& state)
 {
-    for (size_t i = 0; i < _dof; ++i)
+    for (size_t a = 0; a < _arms; ++a)
     {
-        _data->qpos[i + _dof] = state.rad(i);
+        for (size_t i = 0; i < _dof; ++i)
+        {
+            _data->qpos[i + a * _dof + _arms * _dof] = state[a].rad(i);
+        }
     }
 }
-size_t Interactor::simulateAction(JointState& currentState, const Action& action, size_t stage)
+size_t Interactor::simulateAction(MultiState& currentState, const MultiAction& action, size_t stage)
 {
     if (stage == g_unitSize - 1)
     {
@@ -135,9 +188,12 @@ size_t Interactor::simulateAction(JointState& currentState, const Action& action
     }
     else
     {
-        for (size_t i = 0; i < _dof; ++i)
+        for (size_t a = 0; a < _arms; ++a)
         {
-            _data->qpos[i] += action[i] * g_worldEps;
+            for (size_t i = 0; i < _dof; ++i)
+            {
+                _data->qpos[i + a * _dof] += action[a][i] * g_worldEps;
+            }
         }
         return stage + 1;
     }
@@ -158,7 +214,7 @@ void Interactor::setTask()
         _modelState.currentState = _modelState.start;
         _modelState.goal = static_cast<const TaskState*>(_modelState.task)->goal();
         // if correct task TODO remove
-        if (!_planner->checkCollision(_modelState.currentState) && !_planner->checkCollision(_modelState.goal))
+        if (!_planner->checkMultiCollision(_modelState.currentState) && !_planner->checkMultiCollision(_modelState.goal))
         {
             setManipulatorState(_modelState.currentState);
             setGoalState(_modelState.goal);
@@ -170,7 +226,7 @@ void Interactor::setTask()
         _modelState.start = static_cast<const TaskPosition*>(_modelState.task)->start();
         _modelState.currentState = _modelState.start;
         // if correct task TODO remove
-        if (!_planner->checkCollision(_modelState.currentState))
+        if (!_planner->checkMultiCollision(_modelState.currentState))
         {
             setManipulatorState(_modelState.currentState);
             _modelState.haveToPlan = true;
@@ -180,73 +236,122 @@ void Interactor::setTask()
 void Interactor::solveTask()
 {
     // planning path to goal
-    ++_modelState.counter;
-    if (_modelState.counter > 8) // to first of all simulator can show picture
+    if (_modelState.task->type() == TASK_STATE)
     {
-        _modelState.counter = 0;
-        if (_modelState.task->type() == TASK_STATE)
-        {
-            _modelState.solution = _planner->planActions(_modelState.currentState, _modelState.goal,
-                _config.algorithm, _config.timeLimit, _config.w);
+        _modelState.solution = _planner->planMultiActions(_modelState.currentState, _modelState.goal,
+            _config.algorithm, _config.timeLimit, _config.w, _config.constraintInterval);
 
-            _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
-        }
-        else if (_modelState.task->type() == TASK_POSITION)
-        {
-            _modelState.solution = _planner->planActions(_modelState.currentState,
-                static_cast<const TaskPosition*>(_modelState.task)->goalX(),
-                static_cast<const TaskPosition*>(_modelState.task)->goalY(),
-                _config.algorithm, _config.timeLimit, _config.w);
+        _logger->printScenLog(_modelState.solution, _modelState.currentState, _modelState.goal);
+    }
+    else if (_modelState.task->type() == TASK_POSITION)
+    {
+        // _modelState.solution = _planner->planActions(_modelState.currentState,
+        //     static_cast<const TaskPosition*>(_modelState.task)->goalX(),
+        //     static_cast<const TaskPosition*>(_modelState.task)->goalY(),
+        //     _config.algorithm, _config.timeLimit, _config.w);
 
-            _logger->printScenLog(_modelState.solution, _modelState.currentState, 
-                static_cast<const TaskPosition*>(_modelState.task)->goalX(),
-                static_cast<const TaskPosition*>(_modelState.task)->goalY());
-        }
-        _modelState.haveToPlan = false;
+        // _logger->printScenLog(_modelState.solution, _modelState.currentState, 
+        //     static_cast<const TaskPosition*>(_modelState.task)->goalX(),
+        //     static_cast<const TaskPosition*>(_modelState.task)->goalY());
+    }
+    _modelState.haveToPlan = false;
 
-        _logger->printMainLog(_modelState.solution);
-        
-        _logger->printStatsLog(_modelState.solution);
+    _logger->printMainLog(_modelState.solution.stats);
+    
+    _logger->printStatsLog(_modelState.solution.stats);
 
-        _logger->printRuntimeLog(_modelState.solution);
+    // _logger->printRuntimeLog(_modelState.solution);
 
-        if (_dof == 2)
-        {
-            _logger->printPath(
-                _planner->pathInConfigurationSpace(
-                    _modelState.start,
-                    _modelState.solution
-                )
-            );
-        }
-        
-        printf("progress %zu/%zu\n\n", _taskset->progress(), _taskset->size());
+    if (_dof == 2)
+    {
+        // _logger->printPath(
+        //     _planner->pathInConfigurationSpace(
+        //         _modelState.start,
+        //         _modelState.solution
+        //     )
+        // );
+    }
+    
+    printf("progress %zu/%zu\n\n", _taskset->progress(), _taskset->size());
+    
+}
+
+void Interactor::cleanAcc()
+{
+    for (size_t i = 0; i < _model->nv; ++i)
+    {
+        _data->qvel[i] = 0;
+        _data->qacc[i] = 0;
     }
 }
 
 void Interactor::step()
 {
-    if (!_config.displayMotion || _modelState.solution.goalAchieved())
+    const int freeze = 256;
+    if (_shouldClose)
     {
-        _modelState.action = Action(_dof, 0);
-        if (!_modelState.haveToPlan)
+        return;
+    }
+    if (_modelState.needSetTask)
+    {
+        _modelState.action = MultiAction(_dof, _arms, 0);
+        if (_config.displayMotion && _modelState.freezeCounter++ < freeze)
+        {
+
+        }
+        else
         {
             setTask();
+            _modelState.needSetTask = false;
+            _modelState.haveToPlan = true;
+            _modelState.freezeCounter = 0;
         }
-        else if (_modelState.haveToPlan)
+    }
+    else if (_modelState.haveToPlan)
+    {
+        _modelState.action = MultiAction(_dof, _arms, 0);
+
+        if (_config.displayMotion && _modelState.freezeCounter++ < freeze)
+        {
+            
+        }
+        else
         {
             solveTask();
+            _modelState.haveToPlan = false;
+            _modelState.partOfMove = 0;
+            _modelState.freezeCounter = 0;
+
+            if (_modelState.solution.stats.pathVerdict != PATH_FOUND)
+            {
+                _modelState.needSetTask = true;
+            }
         }
     }
     else
     {
-        _modelState.partOfMove = simulateAction(_modelState.currentState, _modelState.action, _modelState.partOfMove);
-        if (_modelState.partOfMove == 0)
+        if (!_config.displayMotion)
         {
-            _modelState.action = _modelState.solution.nextAction();
+            _modelState.needSetTask = true;
+        }
+        else
+        {
+            if (_modelState.partOfMove == 0)
+            {
+                if (_modelState.solution.goalAchieved())
+                {
+                    _modelState.needSetTask = true;
+                }
+                else
+                {
+                    _modelState.action = _modelState.solution.nextAction();
+                }
+            }
+            _modelState.partOfMove = simulateAction(_modelState.currentState, _modelState.action, _modelState.partOfMove);
         }
     }
 
+    cleanAcc();
     mj_step(_model, _data);
 }
 
@@ -256,10 +361,10 @@ void Interactor::stepLoop(double duration)
     while (_data->time - simstart < duration && !shouldClose())
     {
         step();
-        if (_data->ncon)
-        {
-            printf("Collision detected! Acc[0] = (%f)\n", fabs(_data->qacc[0]));
-        }
+        // if (_data->ncon)
+        // {
+        //     printf("Collision detected! Acc[0] = (%f)\n", fabs(_data->qacc[0]));
+        // }
     }
 }
 
@@ -295,16 +400,100 @@ void Interactor::doMainLoop()
     }
 }
 
+void Interactor::constructorStep()
+{
+    static size_t joint = 0;
+    char c; std::cin >> c;
+    if (c == 'c')
+    {
+        std::cin >> joint;
+    }
+    else if (c == 'p')
+    {
+        for (size_t a = 0; a < _arms;++a)
+        {
+            for (size_t i = 0; i < _dof; ++i)
+            {
+                std::cout << _modelState.start[a][i] << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+        for (size_t a = 0; a < _arms;++a)
+        {
+            for (size_t i = 0; i < _dof; ++i)
+            {
+                std::cout << _modelState.goal[a][i] << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+        std::cout << (_planner->checkMultiCollision(_modelState.start) || _planner->checkMultiCollision(_modelState.goal)) << std::endl;
+    }
+    else
+    {
+        size_t delta = 0;
+        if (c == ',')
+        {
+            delta = -1;
+        }
+        else if (c == '.')
+        {
+            delta = 1;
+        }
+        size_t mj = (joint % (_arms * _dof));
+
+        size_t a = mj / _dof;
+        size_t i = mj % _dof;
+        if (joint < _arms * _dof)
+        {
+            MultiState state = _modelState.start;
+            state[a][i] += delta;
+            if (state[a].isCorrect())
+            {
+                _modelState.start = state;
+                setManipulatorState(_modelState.start);
+            }
+        }
+        else
+        {
+            MultiState state = _modelState.goal;
+            state[a][i] += delta;
+            if (state[a].isCorrect())
+            {
+                _modelState.goal = state;
+                setGoalState(_modelState.goal);
+            }
+        }
+    }
+    mj_step(_model, _data);
+
+}
+
+void Interactor::doConstructorLoop()
+{
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        constructorStep();
+        show();
+    }
+}
 
 Config Interactor::parseJSON(const string& filename)
 {
     std::ifstream fin(filename);
     json data = json::parse(fin);
 
-    std::string modelFilename = data["model_filename"];
+    std::string modelFilename = data["model"]["filename"];
+    size_t dof = data["model"]["dof"];
+    size_t arms = data["model"]["arms"];
+    size_t totalGeoms = data["model"]["single_arm"]["total_geoms"];
+    std::vector<size_t> collideGeomList = data["model"]["single_arm"]["collide_geom_list"].get<std::vector<size_t>>();
     double timeLimit = data["algorithm"]["time_limit"];
     Algorithm algorithm = data["algorithm"]["type"];
     double w = data["algorithm"]["heuristic"]["weight"];
+    size_t constraintInterval = data["algorithm"]["constraint_interval"];
     int taskNum = data["taskset"]["task_number"];
     TaskType taskType = data["taskset"]["task_type"];
     bool randomTasks = data["taskset"]["use_random_tasks"];
@@ -321,8 +510,13 @@ Config Interactor::parseJSON(const string& filename)
 
     return Config{
         modelFilename,
+        dof,
+        arms,
+        totalGeoms,
+        collideGeomList,
         timeLimit,
         w,
+        constraintInterval,
         taskNum,
         taskType,
         randomTasks,

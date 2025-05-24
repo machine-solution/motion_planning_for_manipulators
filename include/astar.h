@@ -20,7 +20,8 @@ public:
         CostType h,
         CostType w,
         const JointState& state,
-        int stepNum = -1,
+        int stepNum,
+        int actionNum = -1,
         SearchNode* parent = nullptr,
         bool isLazy = false
     );
@@ -28,6 +29,7 @@ public:
     CostType g() const;
     CostType h() const;
     CostType f() const;
+    int actionNum() const;
     int stepNum() const;
     const JointState& state() const;
     SearchNode* parent();
@@ -46,6 +48,7 @@ public:
 protected:
     CostType _g, _h, _w;
     // number of step, which change parent.state() -> this.state(). -1 if have no parent
+    int _actionNum;
     int _stepNum;
     JointState _state;
     SearchNode* _parent;
@@ -95,8 +98,9 @@ private:
 class IAstarChecker
 {
 public:
-    virtual bool isCorrect(const JointState& state, const Action& action) = 0;
-    virtual bool isGoal(const JointState& state) = 0;
+    virtual bool isCorrect(const JointState& state, int stepNum, const Action& action) = 0;
+    // stepNum is number of step to go in this vertex
+    virtual bool isGoal(const JointState& state, int stepNum) = 0;
     virtual CostType costAction(const JointState& state, const Action& action) = 0;
     virtual const std::vector<Action>& getActions() = 0;
     virtual const Action& getZeroAction() = 0;

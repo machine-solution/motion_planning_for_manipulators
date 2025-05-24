@@ -17,42 +17,51 @@ class ITask
 {
 public:
     virtual TaskType type() const = 0;
+    virtual size_t arms() const = 0;
 };
 
 class TaskState : public ITask
 {
 public:
-    TaskState(const JointState& startPos, const JointState& goalPos);
+    TaskState(const MultiState& startPoses, const MultiState& goalPoses, size_t dof, size_t arms);
 
-    const JointState& start() const;
-    const JointState& goal() const;
+    const MultiState& start() const;
+    const MultiState& goal() const;
     
     TaskType type() const override;
+    size_t arms() const override;
 private:
-    JointState _start;
-    JointState _goal;
+    MultiState _starts;
+    MultiState _goals;
+
+    size_t _dof; // dof of one manipulator
+    size_t _arms; // the number of manipulators
 };
 
 class TaskPosition : public ITask
 {
 public:
-    TaskPosition(const JointState& startPos, double goalX, double goalY);
+    TaskPosition(const MultiState& startPoses, vector<double> goalXs, vector<double> goalYs, size_t dof, size_t arms);
 
-    const JointState& start() const;
-    double goalX() const;
-    double goalY() const;
+    const MultiState& start() const;
+    double goalX(size_t i) const;
+    double goalY(size_t i) const;
     
     TaskType type() const override;
+    size_t arms() const override;
 private:
-    JointState _start;
-    double _goalX;
-    double _goalY;
+    MultiState _starts;
+    vector<double> _goalXs;
+    vector<double> _goalYs;
+
+    size_t _dof; // dof of one manipulator
+    size_t _arms; // the number of manipulators
 };
 
 class TaskSet
 {
 public:
-    TaskSet(size_t dof);
+    TaskSet(size_t dof, size_t arms);
 
     void loadTasks(const std::string& filename, TaskType type);
     void generateRandomTasks(size_t n, TaskType type, const ManipulatorPlanner& planner, size_t seed = 12345);
@@ -69,5 +78,6 @@ public:
 private:
     std::vector<std::unique_ptr<ITask>> _tasks;
     size_t _nextTaskId;
-    size_t _dof;
+    size_t _dof; // dof of one manipulator
+    size_t _arms; // the number of manipulators
 };

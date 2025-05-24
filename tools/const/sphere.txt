@@ -1,0 +1,3 @@
+        <body name="sudo sphere">
+            <geom name="sudo sphere 1" type="sphere" size="0.1" pos="0.0 0.0 -100.0" contype="0" conaffinity="0"  material="blue"/>
+        </body>

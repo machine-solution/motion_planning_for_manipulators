@@ -12,8 +12,13 @@
 struct Config
 {
     std::string modelFilename;
+    size_t dof;
+    size_t arms;
+    size_t totalGeoms;
+    std::vector<size_t> collideGeomList;
     double timeLimit;
     double w;
+    size_t constraintInterval;
     int taskNum;
     TaskType taskType;
     bool randomTasks;
@@ -34,13 +39,15 @@ struct ModelState
 {
     int counter = 0;
     int partOfMove = 0;
+    int freezeCounter = 0;
     bool haveToPlan = false;
-    Solution solution;
+    bool needSetTask = true;
+    MultiSolution solution;
 
-    JointState start;
-    JointState currentState;
-    JointState goal;
-    Action action;
+    MultiState start;
+    MultiState currentState;
+    MultiState goal;
+    MultiAction action;
     const ITask* task;
 };
 
@@ -50,18 +57,22 @@ public:
     Interactor();
     ~Interactor();
 
+    void logQPos(const std::string& text);
+
     void setUp(Config config);
     void setUp(const string& filename);
 
-    void setManipulatorState(const JointState& state);
-    void setGoalState(const JointState& state);
+    void setManipulatorState(const MultiState& state);
+    void setGoalState(const MultiState& state);
     // simulate action in currentState
     // at end stage aplies action to currentState
     // return next stage
-    size_t simulateAction(JointState& currentState, const Action& action, size_t stage);
+    size_t simulateAction(MultiState& currentState, const MultiAction& action, size_t stage);
 
     void setTask();
     void solveTask();
+
+    void cleanAcc();
 
     void step();
 
@@ -72,6 +83,9 @@ public:
     bool shouldClose();
 
     void doMainLoop();
+
+    void constructorStep();
+    void doConstructorLoop();
 
 private:
     mjData* _data;
@@ -88,6 +102,7 @@ private:
     TaskSet* _taskset;
 
     size_t _dof;
+    size_t _arms;
 
     bool _shouldClose = false;
 

@@ -176,8 +176,8 @@ Solution improveSolution(
         if (currentNode->isLazy())
         {
             solution.stats.evaluatedEdges++;
-            const Action& lastAction = checker.getActions()[currentNode->stepNum()];
-            if (!checker.isCorrect(currentNode->parent()->state(), lastAction))
+            const Action& lastAction = checker.getActions()[currentNode->actionNum()];
+            if (!checker.isCorrect(currentNode->parent()->state(), currentNode->stepNum(), lastAction))
             {
                 delete currentNode;
                 currentNode = tree.extractBestNode();
@@ -190,7 +190,7 @@ Solution improveSolution(
             }
         }
 
-        if (checker.isGoal(currentNode->state()))
+        if (checker.isGoal(currentNode->state(), currentNode->stepNum()))
         {
             solution.stats.pathVerdict = PATH_FOUND;
             break;
@@ -250,7 +250,7 @@ Solution improveSolution(
         vector<size_t> actions;
         while (currentNode->parent() != nullptr)
         {
-            actions.push_back(currentNode->stepNum());
+            actions.push_back(currentNode->actionNum());
             currentNode = currentNode->parent();
         }
         solution.stats.pathPotentialCost = checker.heuristic(startPos);
@@ -343,7 +343,7 @@ Solution lazyARAstar(
 
     // init search tree
     SearchTreeARA tree;
-    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos);
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos, -1);
     tree.addToOpen(startNode);
 
     return improveSolutionCycle(
@@ -363,7 +363,7 @@ Solution lazyARAstar(const JointState &startPos, IAstarChecker &checker, Solutio
     clock_t start = clock();
 
     SearchTreeARA tree;
-    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos);
+    SearchNode* startNode = new astar::SearchNode(0, checker.heuristic(startPos), weight, startPos, -1);
     tree.addToOpen(startNode);
 
     Solution solution(startSolution);
@@ -371,20 +371,22 @@ Solution lazyARAstar(const JointState &startPos, IAstarChecker &checker, Solutio
 
     JointState currentState(startPos);
     CostType g = 0;
+    int stepNum = 0;
     SearchNode* parent = nullptr;
     while (!startSolution.goalAchieved())
     {
         int stepId = startSolution.thisActionId();
         Action action = startSolution.nextAction();
         g += checker.costAction(currentState, action);
-        currentState.applied(action);
+        currentState.apply(action);
         SearchNode* current = new SearchNode(
-            g, checker.heuristic(currentState), weight, currentState, stepId, parent, false
+            g, checker.heuristic(currentState), weight, currentState, stepNum, stepId, parent, false
         );
         tree.addToOpen(
             current
         );
         parent = current;
+        ++stepNum;
     }
 
     if (startSolution.stats.pathVerdict != PATH_FOUND)

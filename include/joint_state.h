@@ -88,3 +88,46 @@ int manhattanDistance(const Action& action1, const Action& action2);
 CostType manhattanHeuristic(const JointState& state1, const JointState& state2);
 
 JointState randomState(size_t dof, int units = g_units);
+
+class MultiAction
+{
+public:
+    MultiAction(size_t dof = 2, size_t arms = 1, int value = 0);
+    MultiAction(std::vector<Action> actions);
+
+    size_t dof() const;
+    size_t arms() const;
+    Action operator[](size_t i) const;
+    Action& operator[](size_t i);
+
+private:
+    vector<Action> _actions;
+    size_t _dof;
+    size_t _arms;
+};
+
+class MultiState
+{
+public:
+    MultiState(size_t dof = 2, size_t arms = 1, int value = 0);
+    MultiState(std::vector<JointState> states);
+
+    size_t dof() const;
+    size_t arms() const;
+
+    JointState operator[](size_t i) const;
+    JointState& operator[](size_t i);
+
+    // TODO forbid to use temporaty action object
+    MultiState& apply(const MultiAction& action);
+    MultiState applied(const MultiAction& action) const;
+
+    MultiState& operator=(const MultiState& other);
+
+    friend bool operator==(const MultiState& state1, const MultiState& state2);
+
+private:
+    vector<JointState> _states;
+    size_t _dof;
+    size_t _arms;
+};
