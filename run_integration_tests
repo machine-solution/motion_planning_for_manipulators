@@ -1,2 +1,0 @@
-make integration_testing && \
-./tests/integration_tests/tests

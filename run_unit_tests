@@ -1,2 +1,0 @@
-make unit_testing && \
-./tests/unit_tests/tests
