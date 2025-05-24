@@ -29,7 +29,7 @@
     },
     "output": {
         "profiling": "pyplot/0.log",
-        "statistics": "pyplot/kuka_4/0.log",
+        "statistics": "pyplot/00.log",
         "taskset": "scenaries/0.log",
         "configuration_space": "maps/c_space_12.map",
         "paths_folder": "maps/paths_12/"
