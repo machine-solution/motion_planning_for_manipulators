@@ -7,9 +7,9 @@ INC = include
 TARGET = simulator
 
 SOURCES = $(OBJ)/utils.o $(OBJ)/joint_state.o $(OBJ)/planner.o $(OBJ)/astar.o $(OBJ)/solution.o $(OBJ)/interactor.o $(OBJ)/logger.o $(OBJ)/taskset.o $(OBJ)/light_mujoco.o $(OBJ)/lazy_astar.o $(OBJ)/lazy_arastar.o $(OBJ)/cbs_tree.o $(OBJ)/constraint.o $(OBJ)/cbs.o
-INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $(INC)/solution.h $(INC)/interactor.h $(INC)/logger.h $(INC)/taskset.h $(INC)/light_mujoco.h $(INC)/global_defs.h $(INC)/doctest.h $(INC)/lazy_astar.h $(INC)/lazy_arastar.h $(INC)/cbs_tree.h $(INC)/constraint.h $(INC)/cbs.h
+INCLUDES = $(INC)/utils.h $(INC)/joint_state.h $(INC)/planner.h $(INC)/astar.h $(INC)/solution.h $(INC)/interactor.h $(INC)/logger.h $(INC)/taskset.h $(INC)/light_mujoco.h $(INC)/global_defs.h $(INC)/lazy_astar.h $(INC)/lazy_arastar.h $(INC)/cbs_tree.h $(INC)/constraint.h $(INC)/cbs.h
 
-.PHONY: all clean unit_testing integration_testing simulator 
+.PHONY: all clean simulator 
 
 all: $(TARGET)
 
