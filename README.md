@@ -22,9 +22,9 @@ Content
     1. [Interaction with mujoco](#interaction-with-mujoco)
 
 # Short description
-This simulator for manipulator motion planning developed based on the [mujoco](https://github.com/deepmind/mujoco) as simulator and library. It implements variations of A* algorithm. It can find pathes in 2D space for custom manipulators on custom scene and calculate runtime, cost of path and the number of iterations of algorithm A*. You can run set of tasks on your scene and slightly manipulate the heuristic. After solving task project can show simulation images in graphical window.
+This simulator for manipulator motion planning developed based on the [mujoco](https://github.com/deepmind/mujoco) as simulator and library. It implements algorithm GECBS-T (article with algorithm will be added later). It can find pathes in 3D space for multiple manipulators on custom scene and calculate runtime and cost of path. There is a model of robot iiwa-14 (kuka) in repository, but you can add another schema in mujoco XML format. You can run set of tasks on your scene and manipulate the heuristic weight and time constraint interval. After solving task project can show simulation images in graphical window.
 
-![Demo of simulation](demo/simulator-demo.gif)
+![Demo of simulation](demo/multiarm-demo-4.gif)
 
 # Installation
 This instruction is written for linux. Before start make sure that you have g++ compiler installed on your machine.  
@@ -103,27 +103,27 @@ Now there is a script `jsons_generator.py` in `tools` folder. You can change cod
 
 To setup one scenario you need to describe all fields in json, even you don't use several of their. (This update of project have planned). Below is a description of the fields, each field is named as "part_1.part_2.part_3" where "part_1" is name of this field on the first level of json, "part_2" - on the second, etc
 
-- **model_filename: (string)** Use this parameter to choose scene - manipulator and obstacles. Write the path of file from the root of repository. In `models` folder you can find several scenes or create your xml-file of model.
+- **model.filename: (string)** Use this parameter to choose scene - manipulator and obstacles. Write the path of file from the root of repository. In `models` folder you can find several scenes or create your xml-file of model.
+- **model.dof: (integer)** Use this parameter to set dof of one manipulator. iiwa-14 has 7 dof.
+- **model.arms: (integer)** Use this parameter to set the number of robots.
+- **model.single_arm.total_geoms: (integer)** Use this parameter to define the number of geoms for one robot (arm) in XML schema.
+- **model.single_arm.collide_geom_list: (List\[integer\])** Use this parameter to define indices of geom with collision usage. There is a collide and visual geoms in robot, here we must describe all collide geoms and no one visual. The first geom has index 0.
 - **algorithm.time_limit: (float)** Use this parameter to set time bound **in seconds**. You can set the maximum time that planner may spend on one task. If algorithm is not found solution during this time, it returns PATH NOT FOUND verdict.
-- **algorithm.type: (integer)** You can choose type of algorithm. Now available:
-    - 1 (A*)
-    - 2 (Lazy A*)
+- **algorithm.type: (integer)** Actually does not matter. Set this to any integer value to avoid error
 - **algorithm.heuristic.weight: (float)** You can set weight of heuristic using this field.
-- **preprocess.type: (integer)** Type of preprocessing map for this scenario
-    - 0 (Without preprocess)
-    - 1 (With random clusters preprocess)
-- **preprocess.clusters: (integer)** The number of clusters for random cluster preprocessing (type == 1). Must be specified with this preprocess type
+- **preprocess.type: (integer)** Actually does not matter. Set this to any integer value to avoid error
+- **preprocess.clusters: (integer)** Actually does not matter. Set this to any integer value to avoid error
 - **taskset.use_random_tasks: (boolean)** Using this option you can turn on random generation of tasks. Set true if want generate taskset at random.
 - **taskset.random_seed: (integer)** Set random seed to generate random tasks.
 - **taskset.task_number: (integer)** You can set the number of generated random tasks if you want use random generated tasks. Doesn't affect if `taskset.use_random_tasks` = false
 - **taskset.task_type: (integer)** You can choose kind of task with this parameter. Set correct parameter even if you choose taskset file. Without this parameter impossible to determine the type of task in the file. Now available two options:
     -  0 (TASK_STATE). In this case goal is full configuration, it is set by n rotation angles, where n is the number of joints.
-    -  1 (TASK_POSITION). In this case goal is coordinates of end-effector, it is set by 2 floats. If you choose this option, the planner will find any goal with that end-effector coordinates.
+    -  1 (TASK_POSITION). THIS TYPE DOES NOT WORKS NOW. In this case goal is coordinates of end-effector, it is set by 2 floats. If you choose this option, the planner will find any goal with that end-effector coordinates.
 - **taskset.taskset_filename: (string)** With this parameter you can set taskset if `taskset.use_random_tasks` = false in special format. You can generate it from csv using scripts `tools/clusterizer_state.py` and `tools/clusterizer_position.py` (see [tools description](#tools-description) for more information). Script depends of kind of task. And you have to set `taskset.task_type` which mathes the kind of tasks presented in taskset.
 - **output.profiling: (string)** Set path for output file for profiling data for general functions of algorithm in csv format. 
 - **output.statistics: (string)** Set path for output file for data about solutions of tasks: the number of expansions, runtime, cost of path etc in csv format.
 - **output.taskset: (string)** Set path for output file for data about tasks: start configuration, goal, difficulty (not really good), cost of path, runtime in csv format. You can use this file and script `tools/clusterizer_*.py` to convert this data to input format of taskset. Using this output you can store random generated taskset.
-- **output.configuration_space: (string)** Set path for output file for dump C-Space if dof = 2. Otherwise not affected.
+- **output.configuration_space: (string)** THIS OPTION DOES NOT WORKS NOW. Set path for output file for dump C-Space if dof = 2. Otherwise not affected.
 - **output.paths_folder: (string)** Set folder to output found by manipulator paths on C-Space if dof = 2. In this folder will be created n files named "path_n", where n - is number of task starting from 0.
 - **display_motion: (boolean)** If true, after plannig in success case programm will show animation of manipulator movements from start position to goal. Set true for demonstration and false for measurement of algorithm indicators. 
 
@@ -145,7 +145,7 @@ This script has the purpose to convert output taskset in csv format to input tas
 
 # Project description
 
-This chapter may no longer be relevant, but there is a project description in [this file](https://drive.google.com/file/d/1Kil5fVnv32S68pH_mOFf5xHwrki2B6zP/view?usp=drive_link)
+This chapter may no longer be relevant, but there is a project description in [this file]() (will be added later)
 
 ## Problem description
 We have a manipulator in space with obstacles and two positions of this manipulator: start and finish. It is required to plan the actions using which the manipulator will come from the start position to the finish.
@@ -153,27 +153,24 @@ We have a manipulator in space with obstacles and two positions of this manipula
 ## Planner
 
 ### General description
-The most important class in this project is [ManipulatorPlanner](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/planner.h#L16). It solves problem in method [planSteps](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/planner.h#L30). This method must return solution with statistics and sequence of actions needed to reach finish from start.
+The most important class in this project is [ManipulatorPlanner](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/planner.h#L16). It solves problem in method [planMultiActions](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/planner.h#L149). This method must return solution with statistics and sequence of actions needed to reach finish from start.
 
-### A* algorithm
-A* algorithm is realized in two places: [node and tree](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/astar.cpp#L8) and [algorithm](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/planner.cpp#L183) in planner.\
-It is planned to move algorithm to astar.cpp.
+### GECBS-T algorithm
+GECBS-T algorithm is realized in two places: [node and tree](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/cbs_tree.h#L14) and [algorithm](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/cbs.h#L26) in cbs. This function is called at [planMultiActions](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/planner.h#L149) on call planMultiActions function.
 
 ### Collision checking
-For collision checking I use copy of original model on scene. Planner [gets this copy](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/main.cpp#L345) and uses it in [checkCollisionAction](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/planner.cpp#L36) and [checkCollision](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/planner.cpp#L22) methods.\
+For collision checking I use copy of original model on scene. Planner [gets this copy](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/interactor.cpp#L89) and uses it in [checkMultiCollisionAction](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/planner.cpp#L134) and [checkMultiCollision](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/planner.cpp#L125) methods.\
 For speed I use [light_collision](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/light_mujoco.cpp#L96) function instead mujoco standard 'mj_step_1'. Code of this function was copied from mujoco source files and refactored to more light function. But it has one constraint: it works only for predefined pairs of geoms. It means that you have to define in model file witch pair of geoms we need to check on collision. It makes some of discomfort, but gains about 20% speeding up.
 
 ## Task generation
-Now task generation is united with interactor and use only one function - [randomState](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/main.cpp#L215). This process very simple: manipulator strts with zero state and gets random finish. If it finds solution, it will get new random finish and start will be previous finish. If no, it gets new random finish without changing start.\
-I'm planning to separate interaction and test generation in future.
+Now task generation is united with interactor and use only one function - [generateRandomTasks](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/taskset.h#L67). This process not very simple, but it is described in Experiments in article about GECBS-T. In short, function generate random states for all robots for start and finish with some conditions for their end-effectors.
 
 ## Model
 For this project we can do manipulator model in xml format. To learn how to do this please read [xml reference](https://mujoco.readthedocs.io/en/latest/XMLreference.html).\
 All models are located in 'model' directory.\
-Now the easiest way to change model is execute   ```./simulator <filename>```   where filename is path to your model from root of repository.\
-Another way to do this is change default filename [here](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/main.cpp#L14).
+At 'model/iiwa14.xml' is located an original robot model. At, for example, 'model/kuka_4.xml' is located scene wit 4 robots iiwa-14. Please, study this file if you want to add your own model and do it in a similar way.
 
 ## Interaction with mujoco
-All interaction planner and mujoco simulator in [planner_step](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/main.cpp#L197) function, which is being called in infinity loop of simulation.\
+All interaction planner and mujoco simulator in [step](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/src/interactor.cpp#L288) function, which is being called in infinity loop of simulation.\
 To simulate actions of manipulator I divided angles from 0 to pi on [worldUnits](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/global_defs.h#L8) - minimal angle to move.\
-Planner can divide angles on another [units](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/global_defs.h#L5) and when interaction function gets next step, it move manipulator in step direction, but every interactor step move manipulator on one worlUnit and do this [unitSize](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/global_defs.h#L7) times.
+Planner can divide angles on another [units](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/global_defs.h#L11) and when interaction function gets next step, it move manipulator in step direction, but every interactor step move manipulator on one worlUnit and do this [unitSize](https://github.com/machine-solution/motion_planning_for_manipulators/blob/261f3460d69ccef7a86ff90b380b45a91f1aa76f/include/global_defs.h#L13) times.
