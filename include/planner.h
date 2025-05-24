@@ -85,7 +85,10 @@ public:
     void switchArm(size_t armNum, int mode) const;
     void switchSphere(int mode) const;
     void onArmsOnly(std::set<size_t> onArms) const;
+    void onAllArms() const;
     void offArmsOnly(std::set<size_t> offArms) const;
+
+    std::vector<double> getSiteCoords(size_t armNum) const;
 
     void setArmState(size_t armNum, const JointState& state) const;
     void setSphereState(double centerX, double centerY, double centerZ, double radius) const;

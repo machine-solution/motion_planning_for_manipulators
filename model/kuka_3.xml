@@ -48,10 +48,10 @@
     <material class="iiwa" name="black" rgba="0 0 0 1"/>
     <material class="iiwa" name="orange" rgba="1 0.423529 0.0392157 1"/>
 
-    <material class="iiwa_shade" name="gray_shade" rgba="0.4 0.7 0.4 0.3"/>
-    <material class="iiwa_shade" name="light_gray_shade" rgba="0.6 0.9 0.6 0.3"/>
-    <material class="iiwa_shade" name="black_shade" rgba="0 0.3 0 0.3"/>
-    <material class="iiwa_shade" name="orange_shade" rgba="1 0.723529 0.0392157 0.3"/>
+    <material class="iiwa_shade" name="gray_shade" rgba="0.4 0.7 0.4 0.0000"/>
+    <material class="iiwa_shade" name="light_gray_shade" rgba="0.6 0.9 0.6 0.0000"/>
+    <material class="iiwa_shade" name="black_shade" rgba="0 0.3 0 0.0000"/>
+    <material class="iiwa_shade" name="orange_shade" rgba="1 0.723529 0.0392157 0.0000"/>
 
     <mesh file="link_0.obj"/>
     <mesh file="link_1.obj"/>
@@ -92,14 +92,14 @@
 
   <asset>
     <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
-    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.4 0.5 0.6" rgb2="0.3 0.4 0.5"
       markrgb="0.8 0.8 0.8" width="300" height="300"/>
     <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
   </asset>
 
   <worldbody>
 
-    <body name="model_instance_0" pos=" 0.0 -0.5 0" euler="0 0 0">
+    <body name="model_instance_0" pos="-0.5 -0.5 0" euler="0 0 0">
       <body name="base_0" childclass="iiwa">
         <geom class="visual" mesh="link_0"/>
         <geom class="collision" size="0.12" pos="0 0 0.03"/>
@@ -186,7 +186,7 @@
       </body>
     </body>
 
-    <body name="model_instance_1" pos="-0.5  0.5 0" euler="0 0 0">
+    <body name="model_instance_1" pos=" 0.5 -0.5 0" euler="0 0 0">
       <body name="base_1" childclass="iiwa">
         <geom class="visual" mesh="link_0"/>
         <geom class="collision" size="0.12" pos="0 0 0.03"/>
@@ -360,7 +360,7 @@
       </body>
     </body>
 
-    <body name="model_shade_0" pos=" 0.0 -0.5 0" euler="0 0 0">
+    <body name="model_shade_0" pos="-0.5 -0.5 0" euler="0 0 0">
       <body name="base_0_shade" childclass="iiwa_shade">
         <geom class="visual_shade" mesh="link_0_shade"/>
         <geom class="collision_shade" size="0.12" pos="0 0 0.03"/>
@@ -447,7 +447,7 @@
       </body>
     </body>
 
-    <body name="model_shade_1" pos="-0.5  0.5 0" euler="0 0 0">
+    <body name="model_shade_1" pos=" 0.5 -0.5 0" euler="0 0 0">
       <body name="base_1_shade" childclass="iiwa_shade">
         <geom class="visual_shade" mesh="link_0_shade"/>
         <geom class="collision_shade" size="0.12" pos="0 0 0.03"/>

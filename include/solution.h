@@ -14,6 +14,7 @@ struct Stats
 {
     size_t expansions = 0;
     CostType pathCost = 0;
+    CostType pathTrivialCost = 0;
     CostType pathPotentialCost = 0;
     size_t byteSize = 0;
     size_t preprocByteSize = 0;

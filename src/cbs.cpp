@@ -292,8 +292,6 @@ MultiSolution CBS(
     double weight, double timeLimit, size_t constraintInterval
 )
 {
-    std::cerr << std::endl << std::endl;
-    std::cerr << "NEW CBS" << std::endl;
     clock_t clockTimeLimit = timeLimit * CLOCKS_PER_SEC;
 
     // start timer
@@ -338,6 +336,7 @@ MultiSolution CBS(
     );
     tree.addToOpen(startNode);
     CBSNode* currentNode = tree.extractBestNode();
+    solution.stats.pathTrivialCost = currentNode->sumG();
 
     // stats
     // solution.stats.pathPotentialCost = checker.heuristic(startPos);

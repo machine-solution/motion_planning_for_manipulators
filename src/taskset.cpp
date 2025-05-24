@@ -139,8 +139,27 @@ void TaskSet::generateRandomTasks(size_t n, TaskType type, const ManipulatorPlan
             MultiState ends(_dof, _arms);
             for (size_t a = 0; a < _arms; ++a)
             {
-                starts[a] = randomState(_dof, g_units);
-                ends[a] = randomState(_dof, g_units);
+                do
+                {
+                    bool siteInside = false;
+                    while (!siteInside)
+                    {
+                        starts[a] = randomState(_dof, g_units);
+
+                        planner.setArmState(a, starts[a]);
+                        auto coords = planner.getSiteCoords(a);
+                        siteInside = (abs(coords[0]) <= 1.00) && (abs(coords[1]) <= 1.00) && (abs(coords[2]) <= 1.0);
+                    }
+                    siteInside = false;
+                    while (!siteInside)
+                    {
+                        ends[a] = randomState(_dof, g_units);
+
+                        planner.setArmState(a, ends[a]);
+                        auto coords = planner.getSiteCoords(a);
+                        siteInside = (abs(coords[0]) <= 1.00) && (abs(coords[1]) <= 1.00) && (abs(coords[2]) <= 1.0);
+                    }
+                } while(planner.checkCollision(a, starts[a]) || planner.checkCollision(a, ends[a]));
             }
             if (!planner.checkMultiCollision(starts) && !planner.checkMultiCollision(ends))
             {
@@ -150,7 +169,7 @@ void TaskSet::generateRandomTasks(size_t n, TaskType type, const ManipulatorPlan
             }
             else
             {
-                std::cout << "INCORRECT TASK " << created_tasks << "/" << n << std::endl;
+                // std::cout << "INCORRECT TASK " << created_tasks << "/" << n << std::endl;
             }
         }
     }
@@ -207,4 +226,3 @@ size_t TaskSet::size() const
 {
     return _tasks.size();
 }
-

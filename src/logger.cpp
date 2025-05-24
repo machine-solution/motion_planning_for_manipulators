@@ -194,17 +194,18 @@ void Logger::printRuntimeLog(FILE* file, const Solution& solution)
 
 void Logger::printStatsLogHeader(FILE* file)
 {
-    fprintf(file, "runtime,pathCost,pathFound,pathTrivial\n");
+    fprintf(file, "runtime,pathCost,pathTrivialCost,pathFound,pathTrivial\n");
 }
 void Logger::printStatsLog(FILE* file, Stats stats)
 {
-    fprintf(file, "%f,%f,%d,%d\n",
+    fprintf(file, "%f,%f,%f,%d,%d\n",
         // solution.stats.expansions,
         stats.runtime,
         // solution.stats.preprocRuntime,
         // solution.stats.byteSize,
         // solution.stats.preprocByteSize,
         stats.pathCost,
+        stats.pathTrivialCost,
         // solution.stats.pathPotentialCost,
         stats.pathVerdict,
         // solution.stats.consideredEdges,
@@ -215,7 +216,7 @@ void Logger::printStatsLog(FILE* file, Stats stats)
 
 void Logger::printScenLogHeader(FILE* file, size_t dof, size_t arms)
 {
-    fprintf(file, "%d %d\n\n", dof, arms);
+    fprintf(file, "%ld %ld\n\n", dof, arms);
 }
 void Logger::printScenLog(FILE* file, const MultiSolution& solution, const MultiState& startPos, const MultiState& goalPos)
 {

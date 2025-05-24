@@ -125,12 +125,35 @@ void ManipulatorPlanner::onArmsOnly(std::set<size_t> onArms) const
     }
 }
 
+void ManipulatorPlanner::onAllArms() const
+{
+    for (size_t armNum = 0; armNum < _arms; ++armNum)
+    {
+        switchArm(armNum, 1);
+    }
+}
+
 void ManipulatorPlanner::offArmsOnly(std::set<size_t> offArms) const
 {
     for (size_t armNum = 0; armNum < _arms; ++armNum)
     {
         switchArm(armNum, 1 - offArms.count(armNum));
     }
+}
+
+std::vector<double> ManipulatorPlanner::getSiteCoords(size_t armNum) const
+{
+    size_t offset = armGeomOffset(armNum);
+    size_t geomNum = _armGeoms._count - 1 + offset;
+    mj_forward(_model, _data);
+    
+    return std::vector<double>(
+        {
+            _data->geom_xpos[geomNum * 3],
+            _data->geom_xpos[geomNum * 3 + 1],
+            _data->geom_xpos[geomNum * 3 + 2]
+        }
+    );
 }
 
 void ManipulatorPlanner::setArmState(size_t armNum, const JointState &state) const
@@ -298,6 +321,8 @@ bool ManipulatorPlanner::checkMultiCollision(const MultiState &positions) const
         return false;
     }
 
+    onAllArms();
+
     for (size_t armNum = 0; armNum < _arms; ++armNum)
     {
         for (size_t i = 0; i < _dof; ++i)
@@ -417,6 +442,7 @@ bool ManipulatorPlanner::checkMultiCollisionAction(const MultiState &start, int 
         return false;
     }
     // offArmsOnly(std::set<size_t>({}));
+    onAllArms();
 
     for (size_t armNum = 0; armNum < _arms; ++armNum)
     {
@@ -450,6 +476,7 @@ std::vector<double> ManipulatorPlanner::findIntersectionPoint(size_t armNum1, si
 {
     setArmState(armNum1, state1);
     setArmState(armNum2, state2);
+    onArmsOnly({armNum1, armNum2});
     mj_light_collision(_model, _data);
 
     size_t n_contacts = _data->ncon;
@@ -465,8 +492,8 @@ std::vector<double> ManipulatorPlanner::findIntersectionPoint(size_t armNum1, si
             return std::vector<double>({contact.pos[0], contact.pos[1], contact.pos[2]});
         }
     }
-    std::cerr << "ALARM NO COLLISION POINT THERE" << std::endl;
-    return std::vector<double>();
+    // std::cerr << "ALARM NO COLLISION POINT THERE" << std::endl;
+    return std::vector<double>({0, 0, 0});
 }
 
 Conflict ManipulatorPlanner::findFirstConflict(MultiState startPos, MultiSolution solution) const
